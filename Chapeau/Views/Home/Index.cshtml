@@ -3,6 +3,11 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
+    <h1 class="display-4">Welcome to Chapeau</h1>
+
+    <div class="alert @(ViewBag.DbStatus != null && ViewBag.DbStatus.Contains("Verbonden") ? "alert-success" : "alert-danger") mt-4">
+        <strong>Database Status:</strong> @ViewBag.DbStatus
+    </div>
+
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
