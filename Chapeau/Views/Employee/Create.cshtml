@@ -1,0 +1,35 @@
+@model Chapeau.Models.Employee
+
+<h2>Add New Employee</h2>
+
+<form method="post" action="@Url.Action("Create")">
+    <div class="form-group mb-3">
+        <label>Name</label>
+        <input type="text" name="Name" class="form-control" required />
+    </div>
+    <div class="form-group mb-3">
+        <label>Role</label>
+        <select name="Role" class="form-control" required>
+            <option value="Manager">Manager</option>
+            <option value="Waiter">Waiter</option>
+            <option value="Chef">Chef</option>
+            <option value="Bartender">Bartender</option>
+        </select>
+    </div>
+    <div class="form-group mb-3">
+        <label>Username / Employee Number</label>
+        <input type="text" name="Username" class="form-control" required />
+    </div>
+    <div class="form-group mb-3">
+        <label>Password Hash / PIN</label>
+        <input type="text" name="PasswordHash" class="form-control" required />
+    </div>
+    <div class="form-group mb-3">
+        <label>
+            <input type="checkbox" name="IsActive" value="true" checked /> Is Active
+        </label>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Cancel</a>
+</form>

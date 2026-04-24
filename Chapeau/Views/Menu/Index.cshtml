@@ -1,0 +1,73 @@
+@model IEnumerable<Chapeau.Models.MenuItem>
+
+<h2>Menu Management</h2>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="categoryFilter" class="form-label">Filter by Category:</label>
+        <select id="categoryFilter" class="form-select">
+            <option value="all">All Categories</option>
+            @foreach (var category in Model.Select(m => m.CategoryID).Distinct())
+            {
+                <option value="@category">Category @category</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+        <a class="btn btn-primary ms-auto" href="@Url.Action("Create")">Add New Menu Item</a>
+    </div>
+</div>
+
+<table class="table" id="menuTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Category ID</th>
+            <th>Active</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr class="menu-row" data-category="@item.CategoryID">
+                <td>@item.Name</td>
+                <td>@item.Price</td>
+                <td>@item.Stock</td>
+                <td>@item.CategoryID</td>
+                                                <td>@(item.IsActive ? "Yes" : "No")</td>
+                                <td>
+                                    <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", new { id = item.MenuItemID })">Edit</a> |
+                                    <form method="post" action="@Url.Action("ToggleActive")" style="display:inline;">
+                                        <input type="hidden" name="id" value="@item.MenuItemID" />
+                                        <input type="hidden" name="active" value="@(item.IsActive ? "false" : "true")" />
+                                        <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-danger" : "btn-success")">
+                                            @(item.IsActive ? "Deactivate" : "Activate")
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @section Scripts {
+                    <script>
+                        document.getElementById('categoryFilter').addEventListener('change', function () {
+                            var selectedCategory = this.value;
+                            var rows = document.querySelectorAll('.menu-row');
+
+                            rows.forEach(function (row) {
+                                var rowCategory = row.getAttribute('data-category');
+
+                                if (selectedCategory === 'all' || rowCategory === selectedCategory) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                        });
+                    </script>
+                }

@@ -1,4 +1,6 @@
 using Chapeau.Models;
+using Chapeau.Services;
+using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using Microsoft.Data.SqlClient;
@@ -8,10 +10,12 @@ namespace Chapeau.Controllers
     public class HomeController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly EmployeeService _employeeService;
 
-        public HomeController(IConfiguration configuration)
+        public HomeController(IConfiguration configuration, EmployeeService employeeService)
         {
             _configuration = configuration;
+            _employeeService = employeeService;
         }
 
         public IActionResult Index()
