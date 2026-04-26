@@ -3,30 +3,36 @@
 <h2>Add New Employee</h2>
 
 <form method="post" action="@Url.Action("Create")">
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
     <div class="form-group mb-3">
         <label>Name</label>
-        <input type="text" name="Name" class="form-control" required />
+        <input type="text" name="Name" value="@Model?.Name" class="form-control" required />
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>Role</label>
         <select name="Role" class="form-control" required>
-            <option value="Manager">Manager</option>
-            <option value="Waiter">Waiter</option>
-            <option value="Chef">Chef</option>
-            <option value="Bartender">Bartender</option>
+            <option value="Manager" selected="@(Model?.Role == Chapeau.Models.EmployeeRole.Manager)">Manager</option>
+            <option value="Waiter" selected="@(Model?.Role == Chapeau.Models.EmployeeRole.Waiter)">Waiter</option>
+            <option value="Kitchen" selected="@(Model?.Role == Chapeau.Models.EmployeeRole.Kitchen)">Kitchen</option>
+            <option value="Bartender" selected="@(Model?.Role == Chapeau.Models.EmployeeRole.Bartender)">Bartender</option>
         </select>
+        @Html.ValidationMessageFor(m => m.Role, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>Username / Employee Number</label>
-        <input type="text" name="Username" class="form-control" required />
+        <input type="text" name="Username" value="@Model?.Username" class="form-control" required />
+        @Html.ValidationMessageFor(m => m.Username, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>Password Hash / PIN</label>
-        <input type="text" name="PasswordHash" class="form-control" required />
+        <input type="text" name="PasswordHash" value="@Model?.PasswordHash" class="form-control" required />
+        @Html.ValidationMessageFor(m => m.PasswordHash, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>
-            <input type="checkbox" name="IsActive" value="true" checked /> Is Active
+            <input type="checkbox" name="IsActive" value="true" checked="@(Model?.IsActive ?? true)" /> Is Active
         </label>
     </div>
 

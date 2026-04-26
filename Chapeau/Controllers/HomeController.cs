@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 
+using Microsoft.AspNetCore.Diagnostics;
+
 namespace Chapeau.Controllers
 {
     public class HomeController : Controller
@@ -48,7 +50,14 @@ namespace Chapeau.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var errorMsg = exceptionHandlerPathFeature?.Error?.Message;
+
+            return View(new ErrorViewModel 
+            { 
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                ErrorMessage = errorMsg
+            });
         }
     }
 }

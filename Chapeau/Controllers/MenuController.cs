@@ -35,10 +35,26 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Create(MenuItem item)
         {
+            if (_menuService.GetMenuItems(null, null).Any(m => m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                ModelState.AddModelError("Name", "A menu item with this name already exists.");
+            }
+
             if (ModelState.IsValid)
             {
-                _menuService.AddMenuItem(item);
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    _menuService.AddMenuItem(item);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ModelState.AddModelError("Name", ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
+                }
             }
 
             foreach (var state in ModelState)
@@ -66,10 +82,26 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Edit(MenuItem item)
         {
+            if (_menuService.GetMenuItems(null, null).Any(m => m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase) && m.MenuItemID != item.MenuItemID))
+            {
+                ModelState.AddModelError("Name", "Another menu item with this name already exists.");
+            }
+
             if (ModelState.IsValid)
             {
-                _menuService.UpdateMenuItem(item);
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    _menuService.UpdateMenuItem(item);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ModelState.AddModelError("Name", ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
+                }
             }
 
             ViewBag.Categories = _categoryService.GetCategories();

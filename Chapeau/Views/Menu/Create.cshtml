@@ -15,17 +15,22 @@
 }
 
 <form method="post" action="@Url.Action("Create")">
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
     <div class="form-group mb-3">
         <label>Name</label>
-        <input type="text" name="Name" class="form-control" required />
+        <input type="text" name="Name" value="@Model?.Name" class="form-control" required />
+        @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>Price</label>
-        <input type="number" step="any" name="Price" class="form-control" required />
+        <input type="number" step="any" name="Price" value="@Model?.Price" class="form-control" required />
+        @Html.ValidationMessageFor(m => m.Price, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>Stock</label>
-        <input type="number" name="Stock" class="form-control" required />
+        <input type="number" name="Stock" value="@Model?.Stock" class="form-control" required />
+        @Html.ValidationMessageFor(m => m.Stock, "", new { @class = "text-danger" })
     </div>
     <div class="form-group">
         <label asp-for="CategoryID" class="control-label">Category</label>
@@ -36,7 +41,7 @@
     </div>
     <div class="form-group mb-3">
         <label>
-            <input type="checkbox" name="IsActive" value="true" checked /> Is Active
+            <input type="checkbox" name="IsActive" value="true" checked="@(Model?.IsActive ?? true)" /> Is Active
         </label>
     </div>
 

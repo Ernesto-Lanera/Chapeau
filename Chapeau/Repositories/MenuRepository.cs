@@ -4,6 +4,8 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
 
+using System.Data;
+
 namespace Chapeau.Repositories
 {
     public class MenuRepository
@@ -20,8 +22,9 @@ namespace Chapeau.Repositories
         {
             var menuItems = new List<MenuItem>();
 
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
+                using SqlConnection connection = new SqlConnection(_connectionString);
                 connection.Open();
 
                 string query = "SELECT MenuItemID, Name, Price, Stock, IsActive, CategoryID FROM MenuItems WHERE 1=1";
@@ -30,30 +33,40 @@ namespace Chapeau.Repositories
                     query += " AND CategoryID = @CategoryID";
                 }
 
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using SqlCommand command = new SqlCommand(query, connection);
+                if (categoryId.HasValue)
                 {
-                    if (categoryId.HasValue)
-                    {
-                        command.Parameters.AddWithValue("@CategoryID", categoryId.Value);
-                    }
+                    command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = categoryId.Value;
+                }
 
-                    using (SqlDataReader reader = command.ExecuteReader())
+                using SqlDataReader reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    int menuItemIdOrdinal = reader.GetOrdinal("MenuItemID");
+                    int nameOrdinal = reader.GetOrdinal("Name");
+                    int priceOrdinal = reader.GetOrdinal("Price");
+                    int stockOrdinal = reader.GetOrdinal("Stock");
+                    int isActiveOrdinal = reader.GetOrdinal("IsActive");
+                    int categoryIdOrdinal = reader.GetOrdinal("CategoryID");
+
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        var menuItem = new MenuItem
                         {
-                            var menuItem = new MenuItem
-                            {
-                                MenuItemID = (int)reader["MenuItemID"],
-                                Name = (string)reader["Name"],
-                                Price = (decimal)reader["Price"],
-                                Stock = (int)reader["Stock"],
-                                IsActive = (bool)reader["IsActive"],
-                                CategoryID = (int)reader["CategoryID"]
-                            };
-                            menuItems.Add(menuItem);
-                        }
+                            MenuItemID = reader.GetInt32(menuItemIdOrdinal),
+                            Name = !reader.IsDBNull(nameOrdinal) ? reader.GetString(nameOrdinal) : null,
+                            Price = reader.GetDecimal(priceOrdinal),
+                            Stock = reader.GetInt32(stockOrdinal),
+                            IsActive = reader.GetBoolean(isActiveOrdinal),
+                            CategoryID = reader.GetInt32(categoryIdOrdinal)
+                        };
+                        menuItems.Add(menuItem);
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while retrieving menu items: {ex.Message}", ex);
             }
 
             return menuItems;
@@ -61,76 +74,112 @@ namespace Chapeau.Repositories
 
         public void AddMenuItem(MenuItem item)
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
+                using SqlConnection connection = new SqlConnection(_connectionString);
                 connection.Open();
 
                 string query = "INSERT INTO MenuItems (Name, Price, Stock, IsActive, CategoryID) VALUES (@Name, @Price, @Stock, @IsActive, @CategoryID)";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Name", item.Name);
-                    command.Parameters.AddWithValue("@Price", item.Price);
-                    command.Parameters.AddWithValue("@Stock", item.Stock);
-                    command.Parameters.AddWithValue("@IsActive", item.IsActive);
-                    command.Parameters.AddWithValue("@CategoryID", item.CategoryID);
+                using SqlCommand command = new SqlCommand(query, connection);
 
-                    command.ExecuteNonQuery();
-                }
+                command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)item.Name ?? DBNull.Value;
+                command.Parameters.Add("@Price", SqlDbType.Decimal).Value = item.Price;
+                command.Parameters.Add("@Stock", SqlDbType.Int).Value = item.Stock;
+                command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = item.IsActive;
+                command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = item.CategoryID;
+
+                command.ExecuteNonQuery();
+            }
+            catch (SqlException ex) when (ex.Number == 2627)
+            {
+                throw new InvalidOperationException("A menu item with this name already exists.");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while adding the menu item: {ex.Message}", ex);
             }
         }
 
         public void UpdateMenuItem(MenuItem item)
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
+                using SqlConnection connection = new SqlConnection(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE MenuItems SET Name = @Name, Price = @Price, Stock = @Stock, IsActive = @IsActive, CategoryID = @CategoryID WHERE MenuItemID = @MenuItemID";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Name", item.Name);
-                    command.Parameters.AddWithValue("@Price", item.Price);
-                    command.Parameters.AddWithValue("@Stock", item.Stock);
-                    command.Parameters.AddWithValue("@IsActive", item.IsActive);
-                    command.Parameters.AddWithValue("@CategoryID", item.CategoryID);
-                    command.Parameters.AddWithValue("@MenuItemID", item.MenuItemID);
+                using SqlCommand command = new SqlCommand(query, connection);
 
-                    command.ExecuteNonQuery();
+                command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)item.Name ?? DBNull.Value;
+                command.Parameters.Add("@Price", SqlDbType.Decimal).Value = item.Price;
+                command.Parameters.Add("@Stock", SqlDbType.Int).Value = item.Stock;
+                command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = item.IsActive;
+                command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = item.CategoryID;
+                command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = item.MenuItemID;
+
+                int rowsAffected = command.ExecuteNonQuery();
+                if (rowsAffected == 0)
+                {
+                    throw new Exception("Update failed: Menu item not found.");
                 }
+            }
+            catch (SqlException ex) when (ex.Number == 2627)
+            {
+                throw new InvalidOperationException("Another menu item with this name already exists.");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while updating the menu item: {ex.Message}", ex);
             }
         }
 
         public void SetMenuItemActive(int id, bool active)
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
+                using SqlConnection connection = new SqlConnection(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE MenuItems SET IsActive = @IsActive WHERE MenuItemID = @MenuItemID";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@IsActive", active);
-                    command.Parameters.AddWithValue("@MenuItemID", id);
+                using SqlCommand command = new SqlCommand(query, connection);
 
-                    command.ExecuteNonQuery();
+                command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
+                command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = id;
+
+                int rowsAffected = command.ExecuteNonQuery();
+                if (rowsAffected == 0)
+                {
+                    throw new Exception("Update failed: Menu item not found.");
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while altering menu item activity: {ex.Message}", ex);
             }
         }
 
         public void ChangeStock(int id, int newStock)
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
+                using SqlConnection connection = new SqlConnection(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE MenuItems SET Stock = @Stock WHERE MenuItemID = @MenuItemID";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Stock", newStock);
-                    command.Parameters.AddWithValue("@MenuItemID", id);
+                using SqlCommand command = new SqlCommand(query, connection);
 
-                    command.ExecuteNonQuery();
+                command.Parameters.Add("@Stock", SqlDbType.Int).Value = newStock;
+                command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = id;
+
+                int rowsAffected = command.ExecuteNonQuery();
+                if (rowsAffected == 0)
+                {
+                    throw new Exception("Update failed: Menu item not found.");
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while updating the stock: {ex.Message}", ex);
             }
         }
     }

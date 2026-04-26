@@ -28,10 +28,26 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Create(Employee employee)
         {
+            if (_employeeService.GetEmployees().Any(e => e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase)))
+            {
+                ModelState.AddModelError("Username", "This username is already taken.");
+            }
+
             if (ModelState.IsValid)
             {
-                _employeeService.AddEmployee(employee);
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    _employeeService.AddEmployee(employee);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ModelState.AddModelError("Username", ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
+                }
             }
             return View(employee);
         }
@@ -47,10 +63,26 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Edit(Employee employee)
         {
+            if (_employeeService.GetEmployees().Any(e => e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase) && e.EmployeeID != employee.EmployeeID))
+            {
+                ModelState.AddModelError("Username", "This username is already taken by another employee.");
+            }
+
             if (ModelState.IsValid)
             {
-                _employeeService.UpdateEmployee(employee);
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    _employeeService.UpdateEmployee(employee);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    ModelState.AddModelError("Username", ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
+                }
             }
             return View(employee);
         }
