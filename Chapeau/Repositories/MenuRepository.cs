@@ -8,15 +8,10 @@ using System.Data;
 
 namespace Chapeau.Repositories
 {
-    public class MenuRepository
+    public class MenuRepository(IConfiguration configuration)
     {
-        private readonly string _connectionString;
-
-        public MenuRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL") 
+        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
                                 ?? throw new Exception("Database connection string is missing.");
-        }
 
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
         {
@@ -24,7 +19,7 @@ namespace Chapeau.Repositories
 
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "SELECT MenuItemID, Name, Price, Stock, IsActive, CategoryID FROM MenuItems WHERE 1=1";
@@ -33,7 +28,7 @@ namespace Chapeau.Repositories
                     query += " AND CategoryID = @CategoryID";
                 }
 
-                using SqlCommand command = new SqlCommand(query, connection);
+                using SqlCommand command = new(query, connection);
                 if (categoryId.HasValue)
                 {
                     command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = categoryId.Value;
@@ -54,12 +49,13 @@ namespace Chapeau.Repositories
                         var menuItem = new MenuItem
                         {
                             MenuItemID = reader.GetInt32(menuItemIdOrdinal),
-                            Name = !reader.IsDBNull(nameOrdinal) ? reader.GetString(nameOrdinal) : null,
+                            Name = !reader.IsDBNull(nameOrdinal) ? reader.GetString(nameOrdinal) : string.Empty,
                             Price = reader.GetDecimal(priceOrdinal),
                             Stock = reader.GetInt32(stockOrdinal),
                             IsActive = reader.GetBoolean(isActiveOrdinal),
                             CategoryID = reader.GetInt32(categoryIdOrdinal)
                         };
+
                         menuItems.Add(menuItem);
                     }
                 }
@@ -76,11 +72,11 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "INSERT INTO MenuItems (Name, Price, Stock, IsActive, CategoryID) VALUES (@Name, @Price, @Stock, @IsActive, @CategoryID)";
-                using SqlCommand command = new SqlCommand(query, connection);
+                using SqlCommand command = new (query, connection);
 
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)item.Name ?? DBNull.Value;
                 command.Parameters.Add("@Price", SqlDbType.Decimal).Value = item.Price;
@@ -104,12 +100,11 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE MenuItems SET Name = @Name, Price = @Price, Stock = @Stock, IsActive = @IsActive, CategoryID = @CategoryID WHERE MenuItemID = @MenuItemID";
-                using SqlCommand command = new SqlCommand(query, connection);
-
+                using SqlCommand command = new(query, connection);
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)item.Name ?? DBNull.Value;
                 command.Parameters.Add("@Price", SqlDbType.Decimal).Value = item.Price;
                 command.Parameters.Add("@Stock", SqlDbType.Int).Value = item.Stock;
@@ -137,11 +132,11 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE MenuItems SET IsActive = @IsActive WHERE MenuItemID = @MenuItemID";
-                using SqlCommand command = new SqlCommand(query, connection);
+                using SqlCommand command = new(query, connection);
 
                 command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
                 command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = id;
@@ -162,11 +157,11 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE MenuItems SET Stock = @Stock WHERE MenuItemID = @MenuItemID";
-                using SqlCommand command = new SqlCommand(query, connection);
+                using SqlCommand command = new(query, connection);
 
                 command.Parameters.Add("@Stock", SqlDbType.Int).Value = newStock;
                 command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = id;

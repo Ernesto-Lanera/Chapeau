@@ -4,14 +4,9 @@ using Chapeau.Repositories;
 
 namespace Chapeau.Services
 {
-    public class CategoryService
+    public class CategoryService(CategoryRepository categoryRepository)
     {
-        private readonly CategoryRepository _categoryRepository;
-
-        public CategoryService(CategoryRepository categoryRepository)
-        {
-            _categoryRepository = categoryRepository;
-        }
+        private readonly CategoryRepository _categoryRepository = categoryRepository;
 
         public List<Category> GetCategories()
         {

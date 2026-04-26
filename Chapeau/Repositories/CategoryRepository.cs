@@ -6,16 +6,10 @@ using Chapeau.Models;
 
 namespace Chapeau.Repositories
 {
-    public class CategoryRepository
+    public class CategoryRepository(IConfiguration configuration)
     {
-        private readonly string _connectionString;
-
-        public CategoryRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
                                 ?? throw new Exception("Database connection string is missing.");
-
-        }
 
         public List<Category> GetCategories()
         {
@@ -41,7 +35,7 @@ namespace Chapeau.Repositories
                         categories.Add(new Category
                         {
                             CategoryID = reader.GetInt32(idOrdinal),
-                            Name = !reader.IsDBNull(nameOrdinal) ? reader.GetString(nameOrdinal) : null,
+                            Name = !reader.IsDBNull(nameOrdinal) ? reader.GetString(nameOrdinal) : string.Empty,
                             MenuCardID = reader.GetInt32(menuCardIdOrdinal)
                         });
                     }

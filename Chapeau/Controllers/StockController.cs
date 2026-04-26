@@ -3,14 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    public class StockController : Controller
+    public class StockController(MenuService menuService) : Controller
     {
-        private readonly MenuService _menuService;
-
-        public StockController(MenuService menuService)
-        {
-            _menuService = menuService;
-        }
+        private readonly MenuService _menuService = menuService;
 
         public IActionResult Index(int? cardId, int? categoryId)
         {

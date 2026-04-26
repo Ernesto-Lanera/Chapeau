@@ -4,14 +4,9 @@ using Chapeau.Repositories;
 
 namespace Chapeau.Services
 {
-    public class MenuService
+    public class MenuService(MenuRepository menuRepository)
     {
-        private readonly MenuRepository _menuRepository;
-
-        public MenuService(MenuRepository menuRepository)
-        {
-            _menuRepository = menuRepository;
-        }
+        private readonly MenuRepository _menuRepository = menuRepository;
 
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
         {

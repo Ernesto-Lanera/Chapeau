@@ -4,14 +4,9 @@ using Chapeau.Repositories;
 
 namespace Chapeau.Services
 {
-    public class EmployeeService
+    public class EmployeeService(EmployeeRepository employeeRepository)
     {
-        private readonly EmployeeRepository _employeeRepository;
-
-        public EmployeeService(EmployeeRepository employeeRepository)
-        {
-            _employeeRepository = employeeRepository;
-        }
+        private readonly EmployeeRepository _employeeRepository = employeeRepository;
 
         public List<Employee> GetEmployees()
         {

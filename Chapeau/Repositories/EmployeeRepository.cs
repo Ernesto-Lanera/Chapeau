@@ -8,15 +8,10 @@ namespace Chapeau.Repositories
 {
     using System.Data;
 
-    public class EmployeeRepository
+    public class EmployeeRepository(IConfiguration configuration)
     {
-        private readonly string _connectionString;
-
-        public EmployeeRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
                                 ?? throw new Exception("Database connection string is missing.");
-        }
 
         public List<Employee> GetEmployees()
         {
@@ -24,11 +19,11 @@ namespace Chapeau.Repositories
 
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "SELECT EmployeeID, Name, Username, PasswordHash, Role, IsActive FROM Employees";
-                using SqlCommand command = new SqlCommand(query, connection);
+                using SqlCommand command = new (query, connection);
                 using SqlDataReader reader = command.ExecuteReader();
 
                 if (reader.HasRows)
@@ -78,11 +73,11 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "INSERT INTO Employees (Name, Username, PasswordHash, Role, IsActive) VALUES (@Name, @Username, @PasswordHash, @Role, @IsActive)";
-                using SqlCommand command = new SqlCommand(query, connection);
+                using SqlCommand command = new(query, connection);
 
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)employee.Name ?? DBNull.Value;
                 command.Parameters.Add("@Username", SqlDbType.NVarChar, 50).Value = (object)employee.Username ?? DBNull.Value;
@@ -106,11 +101,11 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE Employees SET Name = @Name, Username = @Username, PasswordHash = @PasswordHash, Role = @Role, IsActive = @IsActive WHERE EmployeeID = @EmployeeID";
-                using SqlCommand command = new SqlCommand(query, connection);
+                using SqlCommand command = new(query, connection);
 
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)employee.Name ?? DBNull.Value;
                 command.Parameters.Add("@Username", SqlDbType.NVarChar, 50).Value = (object)employee.Username ?? DBNull.Value;
@@ -140,12 +135,11 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(_connectionString);
+                using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
                 string query = "UPDATE Employees SET IsActive = @IsActive WHERE EmployeeID = @EmployeeID";
-                using SqlCommand command = new SqlCommand(query, connection);
-
+                using SqlCommand command = new(query, connection);
                 command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
                 command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = id;
 

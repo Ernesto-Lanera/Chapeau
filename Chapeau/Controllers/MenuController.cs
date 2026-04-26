@@ -5,16 +5,10 @@ using Chapeau.Models;
 
 namespace Chapeau.Controllers
 {
-    public class MenuController : Controller
+    public class MenuController(MenuService menuService, CategoryService categoryService) : Controller
     {
-        private readonly MenuService _menuService;
-        private readonly CategoryService _categoryService;
-
-        public MenuController(MenuService menuService, CategoryService categoryService)
-        {
-            _menuService = menuService;
-            _categoryService = categoryService; 
-        }
+        private readonly MenuService _menuService = menuService;
+        private readonly CategoryService _categoryService = categoryService;
 
         public IActionResult Index(int? cardId, int? categoryId)
         {
@@ -27,7 +21,7 @@ namespace Chapeau.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            var categories = _categoryService.GetCategories(); 
+            var categories = _categoryService.GetCategories();
             ViewBag.Categories = new SelectList(categories, "CategoryID", "Name");
             return View();
         }
@@ -35,7 +29,8 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Create(MenuItem item)
         {
-            if (_menuService.GetMenuItems(null, null).Any(m => m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
+            if (_menuService.GetMenuItems(null, null).Any(m =>
+                    m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 ModelState.AddModelError("Name", "A menu item with this name already exists.");
             }
@@ -51,7 +46,7 @@ namespace Chapeau.Controllers
                 {
                     ModelState.AddModelError("Name", ex.Message);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
                 }
@@ -65,24 +60,31 @@ namespace Chapeau.Controllers
                 }
             }
 
-            ViewBag.Categories = _categoryService.GetCategories();
+            ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
             return View(item);
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            var item = _menuService.GetMenuItems(null, null).FirstOrDefault(m => m.MenuItemID == id);
-            if (item == null) return NotFound();
+            var item = _menuService.GetMenuItems(null, null)
+                .FirstOrDefault(m => m.MenuItemID == id);
 
-            ViewBag.Categories = _categoryService.GetCategories();
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
             return View(item);
         }
 
         [HttpPost]
         public IActionResult Edit(MenuItem item)
         {
-            if (_menuService.GetMenuItems(null, null).Any(m => m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase) && m.MenuItemID != item.MenuItemID))
+            if (_menuService.GetMenuItems(null, null).Any(m =>
+                    m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)
+                    && m.MenuItemID != item.MenuItemID))
             {
                 ModelState.AddModelError("Name", "Another menu item with this name already exists.");
             }
@@ -98,13 +100,13 @@ namespace Chapeau.Controllers
                 {
                     ModelState.AddModelError("Name", ex.Message);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
                 }
             }
 
-            ViewBag.Categories = _categoryService.GetCategories();
+            ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
             return View(item);
         }
 

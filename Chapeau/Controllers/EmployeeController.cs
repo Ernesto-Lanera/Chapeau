@@ -4,14 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    public class EmployeeController : Controller
+    public class EmployeeController(EmployeeService employeeService) : Controller
     {
-        private readonly EmployeeService _employeeService;
-
-        public EmployeeController(EmployeeService employeeService)
-        {
-            _employeeService = employeeService;
-        }
+        private readonly EmployeeService _employeeService = employeeService;
 
         public IActionResult Index()
         {
@@ -28,7 +23,8 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Create(Employee employee)
         {
-            if (_employeeService.GetEmployees().Any(e => e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase)))
+            if (_employeeService.GetEmployees().Any(e =>
+                    e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase)))
             {
                 ModelState.AddModelError("Username", "This username is already taken.");
             }
@@ -44,7 +40,7 @@ namespace Chapeau.Controllers
                 {
                     ModelState.AddModelError("Username", ex.Message);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
                 }
@@ -55,15 +51,23 @@ namespace Chapeau.Controllers
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            var employee = _employeeService.GetEmployees().FirstOrDefault(e => e.EmployeeID == id);
-            if (employee == null) return NotFound();
+            var employee = _employeeService.GetEmployees()
+                .FirstOrDefault(e => e.EmployeeID == id);
+
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
             return View(employee);
         }
 
         [HttpPost]
         public IActionResult Edit(Employee employee)
         {
-            if (_employeeService.GetEmployees().Any(e => e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase) && e.EmployeeID != employee.EmployeeID))
+            if (_employeeService.GetEmployees().Any(e =>
+                    e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase)
+                    && e.EmployeeID != employee.EmployeeID))
             {
                 ModelState.AddModelError("Username", "This username is already taken by another employee.");
             }
@@ -79,7 +83,7 @@ namespace Chapeau.Controllers
                 {
                     ModelState.AddModelError("Username", ex.Message);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
                 }

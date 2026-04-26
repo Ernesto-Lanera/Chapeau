@@ -9,16 +9,10 @@ using Microsoft.AspNetCore.Diagnostics;
 
 namespace Chapeau.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(IConfiguration configuration, EmployeeService employeeService) : Controller
     {
-        private readonly IConfiguration _configuration;
-        private readonly EmployeeService _employeeService;
-
-        public HomeController(IConfiguration configuration, EmployeeService employeeService)
-        {
-            _configuration = configuration;
-            _employeeService = employeeService;
-        }
+        private readonly IConfiguration _configuration = configuration;
+        private readonly EmployeeService _employeeService = employeeService;
 
         public IActionResult Index()
         {
@@ -28,7 +22,7 @@ namespace Chapeau.Controllers
                 string connectionString = _configuration.GetConnectionString("ChapeauDatabaseSQL") 
                     ?? throw new Exception("Database connection string is missing.");
 
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                using SqlConnection connection = new (connectionString);
                 {
                     connection.Open();
                     ViewBag.DbStatus = "Verbonden met de Azure SQL Database!";
