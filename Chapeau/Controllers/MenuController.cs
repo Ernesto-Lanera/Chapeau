@@ -29,10 +29,27 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Create(MenuItem item)
         {
+            // Check for duplicate name (case-insensitive)
             if (_menuService.GetMenuItems(null, null).Any(m =>
                     m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 ModelState.AddModelError("Name", "A menu item with this name already exists.");
+            }
+
+            // Additional server-side validation
+            if (item.Price < 0)
+            {
+                ModelState.AddModelError("Price", "Price cannot be negative.");
+            }
+
+            if (item.Stock < 0)
+            {
+                ModelState.AddModelError("Stock", "Stock cannot be negative.");
+            }
+
+            if (item.CategoryID <= 0)
+            {
+                ModelState.AddModelError("CategoryID", "Please select a valid category.");
             }
 
             if (ModelState.IsValid)
@@ -52,14 +69,7 @@ namespace Chapeau.Controllers
                 }
             }
 
-            foreach (var state in ModelState)
-            {
-                foreach (var error in state.Value.Errors)
-                {
-                    Console.WriteLine($"Error in {state.Key}: {error.ErrorMessage}");
-                }
-            }
-
+            // Repopulate categories for form re-display
             ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
             return View(item);
         }
@@ -82,11 +92,28 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Edit(MenuItem item)
         {
+            // Check for duplicate name (case-insensitive, excluding current item)
             if (_menuService.GetMenuItems(null, null).Any(m =>
                     m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)
                     && m.MenuItemID != item.MenuItemID))
             {
                 ModelState.AddModelError("Name", "Another menu item with this name already exists.");
+            }
+
+            // Additional server-side validation
+            if (item.Price < 0)
+            {
+                ModelState.AddModelError("Price", "Price cannot be negative.");
+            }
+
+            if (item.Stock < 0)
+            {
+                ModelState.AddModelError("Stock", "Stock cannot be negative.");
+            }
+
+            if (item.CategoryID <= 0)
+            {
+                ModelState.AddModelError("CategoryID", "Please select a valid category.");
             }
 
             if (ModelState.IsValid)
@@ -106,6 +133,7 @@ namespace Chapeau.Controllers
                 }
             }
 
+            // Repopulate categories for form re-display
             ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
             return View(item);
         }

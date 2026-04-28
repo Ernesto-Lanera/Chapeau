@@ -14,12 +14,12 @@
     </div>
     <div class="form-group mb-3">
         <label>Price</label>
-        <input type="number" step="any" name="Price" value="@Model.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" required />
+        <input type="number" step="any" name="Price" value="@Model.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" min="0" required />
         @Html.ValidationMessageFor(m => m.Price, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>Stock</label>
-        <input type="number" name="Stock" value="@Model.Stock" class="form-control" required />
+        <input type="number" name="Stock" value="@Model.Stock" class="form-control" min="0" required />
         @Html.ValidationMessageFor(m => m.Stock, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
