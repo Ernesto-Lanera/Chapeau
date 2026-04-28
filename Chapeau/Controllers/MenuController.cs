@@ -13,8 +13,12 @@ namespace Chapeau.Controllers
         public IActionResult Index(int? cardId, int? categoryId)
         {
             var menuItems = _menuService.GetMenuItems(cardId, categoryId);
+            var categories = _categoryService.GetCategories();
+
             ViewBag.SelectedCardId = cardId;
             ViewBag.SelectedCategoryId = categoryId;
+            ViewBag.Categories = categories;
+
             return View(menuItems);
         }
 

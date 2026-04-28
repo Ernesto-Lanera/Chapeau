@@ -7,9 +7,12 @@
         <label for="categoryFilter" class="form-label">Filter by Category:</label>
         <select id="categoryFilter" class="form-select">
             <option value="all">All Categories</option>
-            @foreach (var category in Model.Select(m => m.CategoryID).Distinct())
-            {
-                <option value="@category">Category @category</option>
+            @{
+                var categories = (System.Collections.Generic.IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
+                foreach (var category in categories)
+                {
+                    <option value="@category.CategoryID">@category.Name</option>
+                }
             }
         </select>
     </div>

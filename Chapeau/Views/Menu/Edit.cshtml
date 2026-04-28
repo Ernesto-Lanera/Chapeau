@@ -24,11 +24,22 @@
     </div>
     <div class="form-group mb-3">
         <label>Category</label>
-        <select name="CategoryID" class="form-control" required>
-            <option value="">-- Select Category --</option>
+        <select name="CategoryID" class="form-select" required>
+            @{
+                var categories = (System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categories;
+                var selectedCategory = categories?.FirstOrDefault(c => c.Selected);
+                if (selectedCategory != null)
+                {
+                    <option value="@selectedCategory.Value" selected="selected">@selectedCategory.Text</option>
+                }
+            }
+            <option value="">-- Select a Category --</option>
             @foreach(var category in ViewBag.Categories)
             {
-                <option value="@category.Value" selected="@(category.Selected)">@category.Text</option>
+                if (!category.Selected)
+                {
+                    <option value="@category.Value">@category.Text</option>
+                }
             }
         </select>
         @Html.ValidationMessageFor(m => m.CategoryID, "", new { @class = "text-danger" })
