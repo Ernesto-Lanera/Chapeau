@@ -21,6 +21,8 @@ namespace Chapeau.Models
         [Range(1, int.MaxValue, ErrorMessage = "Category is required")]
         public int CategoryID { get; set; }
 
+        public Category? Category { get; set; }
+
         public string StockStatus
         {
             get
