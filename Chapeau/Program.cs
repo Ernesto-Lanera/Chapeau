@@ -1,3 +1,6 @@
+using Chapeau.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 namespace Chapeau
 {
     public class Program
@@ -8,6 +11,18 @@ namespace Chapeau
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
+            // Add authentication services
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.LogoutPath = "/Account/Logout";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                    options.SlidingExpiration = true;
+                });
 
             var app = builder.Build();
 
