@@ -1,0 +1,66 @@
+@model IEnumerable<Chapeau.Models.MenuItem>
+
+<h2>Stock Management</h2>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="categoryFilter" class="form-label">Filter by Category:</label>
+        <select id="categoryFilter" class="form-select">
+            <option value="all">All Categories</option>
+            @{
+                var categories = (System.Collections.Generic.IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
+                foreach (var category in categories)
+                {
+                    <option value="@category.CategoryID">@category.Name</option>
+                }
+            }
+        </select>
+    </div>
+</div>
+
+<table class="table" id="stockTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Current Stock</th>
+            <th>Status</th>
+            <th>Change Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr class="stock-row" data-category="@item.CategoryID" style="background-color: @(item.Stock == 0 ? "#ffcccc" : (item.Stock <= 10 ? "#ffffcc" : "transparent"))">
+                <td>@item.Name</td>
+                <td>@item.Stock</td>
+                <td>@item.StockStatus</td>
+                <td>
+                    <form method="post" action="@Url.Action("Update")" style="display:inline;">
+                        <input type="hidden" name="id" value="@item.MenuItemID" />
+                        <input type="number" name="newStock" value="@item.Stock" min="0" style="width: 60px;" class="form-control d-inline-block w-auto" />
+                        <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        document.getElementById('categoryFilter').addEventListener('change', function () {
+            var selectedCategory = this.value;
+            var rows = document.querySelectorAll('.stock-row');
+
+            rows.forEach(function (row) {
+                var rowCategory = row.getAttribute('data-category');
+
+                if (selectedCategory === 'all' || rowCategory === selectedCategory) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+}

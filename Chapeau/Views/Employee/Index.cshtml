@@ -1,0 +1,38 @@
+@model IEnumerable<Chapeau.Models.Employee>
+
+<h2>Employee Management</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Username</th>
+            <th>Active</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var emp in Model)
+        {
+            <tr>
+                <td>@emp.Name</td>
+                <td>@emp.Role</td>
+                <td>@emp.Username</td>
+                <td>@(emp.IsActive ? "Yes" : "No")</td>
+                <td>
+                    <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", new { id = emp.EmployeeID })">Edit</a> |
+                    <form method="post" action="@Url.Action("ToggleActive")" style="display:inline;">
+                        <input type="hidden" name="id" value="@emp.EmployeeID" />
+                        <input type="hidden" name="active" value="@(emp.IsActive ? "false" : "true")" />
+                        <button type="submit" class="btn btn-sm @(emp.IsActive ? "btn-danger" : "btn-success")">
+                            @(emp.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a class="btn btn-primary" href="@Url.Action("Create")">Add New Employee</a>
