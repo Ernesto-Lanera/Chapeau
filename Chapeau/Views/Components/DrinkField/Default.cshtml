@@ -1,0 +1,15 @@
+﻿@model Someren.Models.Drink
+
+<p>
+    Drink: @Model.DrinkName
+    Price: @Model.Price
+    Alcoholic:@if (Model.Alcoholic)
+    {
+        <span>✅</span>
+    }
+    else
+    {
+
+        <span>❌</span>
+    }
+</p>

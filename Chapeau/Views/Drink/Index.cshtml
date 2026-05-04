@@ -1,0 +1,58 @@
+﻿@model List<Someren.Models.Drink>
+
+@{
+    ViewData["Title"] = "Drinks";
+}
+
+@if (TempData["AlertMessage"] != null)
+{
+    <div class="alert @TempData["AlertType"] alert-dismissible fade show" role="alert">
+        <strong>Notification:</strong> @TempData["AlertMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="display-3">Drinks</h1>
+    <button class="btn btn-primary" onclick="location.href='/Drink/Create'">
+        Add new Drink <i class="bi bi-plus-circle-fill"></i>
+    </button>
+</div>
+
+<div>
+    <input type="text" id="drinkSearch" onkeyup="filterTable('drinkSearch', '#drinkTable' )" placeholder="Search by Drink Name..." class="form-control d-inline-block w-90" />
+</div>
+
+<hr />
+
+<table class="table table-bordered table-striped" id="drinkTable">
+    <thead>
+        <tr>
+            <th class="col">Name</th>
+            <th class="col">Price</th>
+            <th class="col">Stock</th>
+            <th class="col">Type</th>
+            <th class="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var drink in Model)
+        {
+            <tr>
+                <td>@drink.DrinkName</td>
+                <td>&euro; @drink.Price</td>
+                <td>@drink.Stock</td>
+                <td>@(drink.Alcoholic ? "Alcoholic" : "Non-Alcoholic")</td>
+                <td>
+                    <a class="btn btn-warning" asp-action="Edit" asp-route-id="@drink.DrinkId">
+                        <i class="bi bi-pencil-fill"></i> Edit
+                    </a>
+                    <a class="btn btn-danger" asp-action="Delete" asp-route-id="@drink.DrinkId">
+                        <i class="bi bi-trash3"></i> Delete
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+

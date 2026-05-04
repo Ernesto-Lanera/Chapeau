@@ -1,0 +1,39 @@
+﻿@model Someren.Models.Drink
+@{
+    ViewData["Title"] = "Create Drink";
+}
+
+<h1 class="display-4">Add New Drink</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form action="/Drink/Create" method="post">
+            <div class="form-group py-2">
+                <label for="DrinkName" class="form-label">Drink Name:</label>
+                <input type="text" name="DrinkName" id="DrinkName" class="form-control" required value="@Model?.DrinkName" />
+            </div>
+
+            <div class="form-group py-2">
+                <label for="Price" class="form-label">Price (€):</label>
+                <input type="number" step="0.01" name="Price" id="Price" class="form-control" required value="@Model?.Price" />
+            </div>
+
+            <div class="form-group py-2">
+                <label for="Stock" class="form-label">Stock Quantity:</label>
+                <input type="number" name="Stock" id="Stock" class="form-control" required value="@Model?.Stock" />
+            </div>
+
+            <div class="form-check py-3">
+                <input type="checkbox" name="Alcoholic" id="Alcoholic" class="form-check-input" value="true" @(Model != null && Model.Alcoholic ? "checked" : "") />
+                <label for="Alcoholic" class="form-check-label">Contains Alcohol</label>
+                <input type="hidden" name="Alcoholic" value="false" />
+            </div>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Add Drink <i class="bi bi-plus-circle"></i></button>
+                <a href="/Drink/Index" class="btn btn-secondary ms-2">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
