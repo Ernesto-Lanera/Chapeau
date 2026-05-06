@@ -10,8 +10,11 @@ namespace Chapeau.Models
         [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
         public string Name { get; set; } = "";
 
-        [Range(0, double.MaxValue, ErrorMessage = "Price must be greater than or equal to 0")]
-        public decimal Price { get; set; }
+        [Range(0, double.MaxValue, ErrorMessage = "Purchase Price must be greater than or equal to 0")]
+        public decimal PurchasePrice { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Retail Price must be greater than or equal to 0")]
+        public decimal RetailPrice { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Stock must be greater than or equal to 0")]
         public int Stock { get; set; }

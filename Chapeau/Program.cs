@@ -20,6 +20,7 @@ namespace Chapeau
             builder.Services.AddScoped<Repositories.MenuRepository>();
             builder.Services.AddScoped<Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.CategoryRepository>();
+            builder.Services.AddScoped<Repositories.RoleRepository>();
 
             // Register Services
             builder.Services.AddScoped<Services.MenuService>();

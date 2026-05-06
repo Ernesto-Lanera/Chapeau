@@ -6,8 +6,7 @@
     <thead>
         <tr>
             <th>Name</th>
-            <th>Role</th>
-            <th>Username</th>
+            <th>Role ID</th>
             <th>Active</th>
             <th>Actions</th>
         </tr>
@@ -17,8 +16,7 @@
         {
             <tr>
                 <td>@emp.Name</td>
-                <td>@emp.Role</td>
-                <td>@emp.Username</td>
+                <td>@emp.RoleID</td>
                 <td>@(emp.IsActive ? "Yes" : "No")</td>
                 <td>
                     <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", new { id = emp.EmployeeID })">Edit</a> |

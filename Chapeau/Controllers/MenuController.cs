@@ -41,9 +41,14 @@ namespace Chapeau.Controllers
             }
 
             // Additional server-side validation
-            if (item.Price < 0)
+            if (item.PurchasePrice < 0)
             {
-                ModelState.AddModelError("Price", "Price cannot be negative.");
+                ModelState.AddModelError("PurchasePrice", "Purchase Price cannot be negative.");
+            }
+
+            if (item.RetailPrice < 0)
+            {
+                ModelState.AddModelError("RetailPrice", "Retail Price cannot be negative.");
             }
 
             if (item.Stock < 0)
@@ -105,9 +110,14 @@ namespace Chapeau.Controllers
             }
 
             // Additional server-side validation
-            if (item.Price < 0)
+            if (item.PurchasePrice < 0)
             {
-                ModelState.AddModelError("Price", "Price cannot be negative.");
+                ModelState.AddModelError("PurchasePrice", "Purchase Price cannot be negative.");
+            }
+
+            if (item.RetailPrice < 0)
+            {
+                ModelState.AddModelError("RetailPrice", "Retail Price cannot be negative.");
             }
 
             if (item.Stock < 0)

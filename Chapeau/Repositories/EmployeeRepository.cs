@@ -22,38 +22,26 @@ namespace Chapeau.Repositories
                 using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
-                string query = "SELECT EmployeeID, Name, Username, PasswordHash, Role, IsActive FROM Employees";
+                string query = "SELECT EmployeeID, Name, PasswordHash, RoleID, IsActive FROM Employee";
                 using SqlCommand command = new (query, connection);
                 using SqlDataReader reader = command.ExecuteReader();
 
                 if (reader.HasRows)
                 {
-                    int roleOrdinal = reader.GetOrdinal("Role");
                     int employeeIdOrdinal = reader.GetOrdinal("EmployeeID");
                     int nameOrdinal = reader.GetOrdinal("Name");
-                    int usernameOrdinal = reader.GetOrdinal("Username");
                     int passwordHashOrdinal = reader.GetOrdinal("PasswordHash");
+                    int roleIdOrdinal = reader.GetOrdinal("RoleID");
                     int isActiveOrdinal = reader.GetOrdinal("IsActive");
 
                     while (reader.Read())
                     {
-                        string roleText = !reader.IsDBNull(roleOrdinal) 
-                            ? reader.GetString(roleOrdinal).Trim() 
-                            : "";
-
-                        EmployeeRole role = Enum.TryParse<EmployeeRole>(
-                            roleText,
-                            true,
-                            out EmployeeRole parsedRole
-                        ) ? parsedRole : EmployeeRole.Waiter;
-
                         var employee = new Employee
                         {
                             EmployeeID = reader.GetInt32(employeeIdOrdinal),
                             Name = reader.GetString(nameOrdinal),
-                            Username = reader.GetString(usernameOrdinal),
                             PasswordHash = reader.GetString(passwordHashOrdinal),
-                            Role = role,
+                            RoleID = reader.GetInt32(roleIdOrdinal),
                             IsActive = reader.GetBoolean(isActiveOrdinal)
                         };
 
@@ -76,20 +64,19 @@ namespace Chapeau.Repositories
                 using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
-                string query = "INSERT INTO Employees (Name, Username, PasswordHash, Role, IsActive) VALUES (@Name, @Username, @PasswordHash, @Role, @IsActive)";
+                string query = "INSERT INTO Employee (Name, PasswordHash, RoleID, IsActive) VALUES (@Name, @PasswordHash, @RoleID, @IsActive)";
                 using SqlCommand command = new(query, connection);
 
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)employee.Name ?? DBNull.Value;
-                command.Parameters.Add("@Username", SqlDbType.NVarChar, 50).Value = (object)employee.Username ?? DBNull.Value;
                 command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 255).Value = (object)employee.PasswordHash ?? DBNull.Value;
-                command.Parameters.Add("@Role", SqlDbType.NVarChar, 50).Value = employee.Role.ToString();
+                command.Parameters.Add("@RoleID", SqlDbType.Int).Value = employee.RoleID;
                 command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = employee.IsActive;
 
                 command.ExecuteNonQuery();
             }
             catch (SqlException ex) when (ex.Number == 2627)
             {
-                throw new InvalidOperationException("This username is already taken. Please try another one.");
+                throw new InvalidOperationException("This employee name already exists.");
             }
             catch (Exception ex)
             {
@@ -104,13 +91,12 @@ namespace Chapeau.Repositories
                 using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
-                string query = "UPDATE Employees SET Name = @Name, Username = @Username, PasswordHash = @PasswordHash, Role = @Role, IsActive = @IsActive WHERE EmployeeID = @EmployeeID";
+                string query = "UPDATE Employee SET Name = @Name, PasswordHash = @PasswordHash, RoleID = @RoleID, IsActive = @IsActive WHERE EmployeeID = @EmployeeID";
                 using SqlCommand command = new(query, connection);
 
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = (object)employee.Name ?? DBNull.Value;
-                command.Parameters.Add("@Username", SqlDbType.NVarChar, 50).Value = (object)employee.Username ?? DBNull.Value;
                 command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 255).Value = (object)employee.PasswordHash ?? DBNull.Value;
-                command.Parameters.Add("@Role", SqlDbType.NVarChar, 50).Value = employee.Role.ToString();
+                command.Parameters.Add("@RoleID", SqlDbType.Int).Value = employee.RoleID;
                 command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = employee.IsActive;
                 command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employee.EmployeeID;
 
@@ -123,7 +109,7 @@ namespace Chapeau.Repositories
             }
             catch (SqlException ex) when (ex.Number == 2627)
             {
-                throw new InvalidOperationException("This username is already taken by another employee.");
+                throw new InvalidOperationException("This employee name is already taken by another employee.");
             }
             catch (Exception ex)
             {
@@ -138,7 +124,7 @@ namespace Chapeau.Repositories
                 using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
-                string query = "UPDATE Employees SET IsActive = @IsActive WHERE EmployeeID = @EmployeeID";
+                string query = "UPDATE Employee SET IsActive = @IsActive WHERE EmployeeID = @EmployeeID";
                 using SqlCommand command = new(query, connection);
                 command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
                 command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = id;

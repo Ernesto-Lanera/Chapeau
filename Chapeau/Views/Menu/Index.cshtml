@@ -25,7 +25,8 @@
     <thead>
         <tr>
             <th>Name</th>
-            <th>Price</th>
+            <th>Purchase Price</th>
+            <th>Retail Price</th>
             <th>Stock</th>
             <th>Category ID</th>
             <th>Active</th>
@@ -37,7 +38,8 @@
         {
             <tr class="menu-row" data-category="@item.CategoryID">
                 <td>@item.Name</td>
-                <td>@item.Price</td>
+                <td>@item.PurchasePrice.ToString("F2")</td>
+                <td>@item.RetailPrice.ToString("F2")</td>
                 <td>@item.Stock</td>
                 <td>@item.CategoryID</td>
                                                 <td>@(item.IsActive ? "Yes" : "No")</td>
