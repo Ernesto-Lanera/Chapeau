@@ -8,8 +8,7 @@ namespace Chapeau
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Forceer generieke cultuur voor de hele pipeline (dit lost comma vs punt op in decimaal parsen)
-            var defaultCulture = new CultureInfo("en-US");
+            var defaultCulture = new CultureInfo("nl-NL");
             CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
             CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
@@ -22,6 +21,7 @@ namespace Chapeau
             builder.Services.AddScoped<Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.CategoryRepository>();
             builder.Services.AddScoped<Repositories.RoleRepository>();
+            builder.Services.AddScoped<Repositories.StatusRepository>();
 
             // Register Services
             builder.Services.AddScoped<Services.MenuService>();

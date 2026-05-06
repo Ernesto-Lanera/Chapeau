@@ -210,57 +210,13 @@ namespace Chapeau.Repositories
             }
         }
 
-        // ===== HELPER METHODS =====
-
-        private List<MenuItem> MapMenuItemsFromReader(SqlDataReader reader)
-        {
-            var menuItems = new List<MenuItem>();
-            int menuItemIdOrdinal = reader.GetOrdinal("MenuItemID");
-            int nameOrdinal = reader.GetOrdinal("Name");
-            int priceOrdinal = reader.GetOrdinal("Price");
-            int stockOrdinal = reader.GetOrdinal("Stock");
-            int isActiveOrdinal = reader.GetOrdinal("IsActive");
-            int categoryIdOrdinal = reader.GetOrdinal("CategoryID");
-            int categoryNameOrdinal = reader.GetOrdinal("CategoryName");
-            int menuCardIdOrdinal = reader.GetOrdinal("MenuCardID");
-
-            while (reader.Read())
-                menuItems.Add(MapMenuItemRow(reader, menuItemIdOrdinal, nameOrdinal, priceOrdinal, 
-                    stockOrdinal, isActiveOrdinal, categoryIdOrdinal, categoryNameOrdinal, menuCardIdOrdinal));
-
-            return menuItems;
-        }
-
-        private MenuItem MapMenuItemRow(SqlDataReader reader, int menuItemIdOrdinal, int nameOrdinal, 
-            int priceOrdinal, int stockOrdinal, int isActiveOrdinal, int categoryIdOrdinal, 
-            int categoryNameOrdinal, int menuCardIdOrdinal)
-        {
-            int catId = reader.GetInt32(categoryIdOrdinal);
-            string catName = reader.IsDBNull(categoryNameOrdinal) ? string.Empty : reader.GetString(categoryNameOrdinal);
-            int menuCardId = reader.IsDBNull(menuCardIdOrdinal) ? 0 : reader.GetInt32(menuCardIdOrdinal);
-
-            return new MenuItem
-            {
-                MenuItemID = reader.GetInt32(menuItemIdOrdinal),
-                Name = reader.IsDBNull(nameOrdinal) ? string.Empty : reader.GetString(nameOrdinal),
-                Price = reader.GetDecimal(priceOrdinal),
-                Stock = reader.GetInt32(stockOrdinal),
-                IsActive = reader.GetBoolean(isActiveOrdinal),
-                CategoryID = catId,
-                Category = new Category
-                {
-                    CategoryID = catId,
-                    Name = catName,
-                    MenuCardID = menuCardId
-                }
-            };
-        }
 
         private void AddMenuItemParameters(SqlCommand command, MenuItem item)
         {
             command.Parameters.Add("@Name", SqlDbType.NVarChar, DatabaseConstraints.MenuItemNameMaxLength)
                 .Value = (object?)item.Name ?? DBNull.Value;
-            command.Parameters.Add("@Price", SqlDbType.Decimal).Value = item.Price;
+            command.Parameters.Add("@PurchasePrice", SqlDbType.Decimal).Value = item.PurchasePrice;
+            command.Parameters.Add("@RetailPrice", SqlDbType.Decimal).Value = item.RetailPrice;
             command.Parameters.Add("@Stock", SqlDbType.Int).Value = item.Stock;
             command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = item.IsActive;
             command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = item.CategoryID;

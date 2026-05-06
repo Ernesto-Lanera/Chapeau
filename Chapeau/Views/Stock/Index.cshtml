@@ -1,12 +1,12 @@
 @model IEnumerable<Chapeau.Models.MenuItem>
 
-<h2>Stock Management</h2>
+<h2>Voorraadbeheer</h2>
 
 <div class="row mb-3">
     <div class="col-md-6">
-        <label for="categoryFilter" class="form-label">Filter by Category:</label>
+        <label for="categoryFilter" class="form-label">Filteren op categorie:</label>
         <select id="categoryFilter" class="form-select">
-            <option value="all">All Categories</option>
+            <option value="all">Alle categorieën</option>
             @{
                 var categories = (System.Collections.Generic.IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
                 foreach (var category in categories)
@@ -21,10 +21,10 @@
 <table class="table" id="stockTable">
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Current Stock</th>
+            <th>Naam</th>
+            <th>Huidige voorraad</th>
             <th>Status</th>
-            <th>Change Stock</th>
+            <th>Voorraad wijzigen</th>
         </tr>
     </thead>
     <tbody>
@@ -38,7 +38,7 @@
                     <form method="post" action="@Url.Action("Update")" style="display:inline;">
                         <input type="hidden" name="id" value="@item.MenuItemID" />
                         <input type="number" name="newStock" value="@item.Stock" min="0" style="width: 60px;" class="form-control d-inline-block w-auto" />
-                        <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Bijwerken</button>
                     </form>
                 </td>
             </tr>

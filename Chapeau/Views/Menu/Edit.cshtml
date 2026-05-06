@@ -1,6 +1,6 @@
 @model Chapeau.Models.MenuItem
 
-<h2>Edit Menu Item</h2>
+<h2>Menu-item bewerken</h2>
 
 <form method="post" action="@Url.Action("Edit")">
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -8,27 +8,27 @@
     <input type="hidden" name="MenuItemID" value="@Model.MenuItemID" />
 
     <div class="form-group mb-3">
-        <label>Name</label>
+        <label>Naam</label>
         <input type="text" name="Name" value="@Model.Name" class="form-control" required />
         @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label>Purchase Price</label>
+        <label>Inkoopprijs</label>
         <input type="number" step="any" name="PurchasePrice" value="@Model.PurchasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" min="0" required />
         @Html.ValidationMessageFor(m => m.PurchasePrice, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label>Retail Price</label>
+        <label>Verkoopprijs</label>
         <input type="number" step="any" name="RetailPrice" value="@Model.RetailPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" min="0" required />
         @Html.ValidationMessageFor(m => m.RetailPrice, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label>Stock</label>
+        <label>Voorraad</label>
         <input type="number" name="Stock" value="@Model.Stock" class="form-control" min="0" required />
         @Html.ValidationMessageFor(m => m.Stock, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label>Category</label>
+        <label>Categorie</label>
         <select name="CategoryID" class="form-select" required>
             @{
                 var categories = (System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categories;
@@ -38,7 +38,7 @@
                     <option value="@selectedCategory.Value" selected="selected">@selectedCategory.Text</option>
                 }
             }
-            <option value="">-- Select a Category --</option>
+            <option value="">-- Selecteer een categorie --</option>
             @foreach(var category in ViewBag.Categories)
             {
                 if (!category.Selected)
@@ -51,10 +51,10 @@
     </div>
     <div class="form-group mb-3">
         <label>
-            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") /> Is Active
+            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") /> Actief
         </label>
     </div>
 
-    <button type="submit" class="btn btn-primary">Update</button>
-    <a href="@Url.Action("Index")" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">Bijwerken</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Annuleren</a>
 </form>

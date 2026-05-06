@@ -1,6 +1,6 @@
 @model Chapeau.Models.Employee
 
-<h2>Edit Employee</h2>
+<h2>Medewerker bewerken</h2>
 
 <form method="post" action="@Url.Action("Edit")">
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -8,12 +8,12 @@
     <input type="hidden" name="EmployeeID" value="@Model.EmployeeID" />
 
     <div class="form-group mb-3">
-        <label>Name</label>
+        <label>Naam</label>
         <input type="text" name="Name" value="@Model.Name" class="form-control" required />
         @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label>Role</label>
+        <label>Rol</label>
         <select name="RoleID" class="form-control" required>
             @{
                 var roles = (System.Collections.Generic.IEnumerable<Chapeau.Models.Role>)ViewBag.Roles;
@@ -25,17 +25,16 @@
         </select>
     </div>
     <div class="form-group mb-3">
-        <label>Password</label>
-        <input type="password" name="PasswordHash" class="form-control" placeholder="Leave empty to keep current password" />
-        <small class="form-text text-muted">If you enter a password, it will be hashed and updated. Leave empty to keep the current password.</small>
+        <label>Wachtwoord</label>
+        <input type="password" name="PasswordHash" class="form-control" placeholder="Wachtwoord" />
         @Html.ValidationMessageFor(m => m.PasswordHash, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>
-            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") /> Is Active
+            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") /> Actief
         </label>
     </div>
 
-    <button type="submit" class="btn btn-primary">Update</button>
-    <a href="@Url.Action("Index")" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">Bijwerken</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Annuleren</a>
 </form>

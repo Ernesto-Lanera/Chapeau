@@ -1,19 +1,19 @@
 @model Chapeau.Models.Employee
 
-<h2>Add New Employee</h2>
+<h2>Nieuwe medewerker toevoegen</h2>
 
 <form method="post" action="@Url.Action("Create")">
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
     <div class="form-group mb-3">
-        <label>Name</label>
+        <label>Naam</label>
         <input type="text" name="Name" value="@Model?.Name" class="form-control" required />
         @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label>Role</label>
+        <label>Rol</label>
         <select name="RoleID" class="form-control" required>
-            <option value="">-- Select a Role --</option>
+            <option value="">-- Selecteer een rol --</option>
             @{
                 var roles = (System.Collections.Generic.IEnumerable<Chapeau.Models.Role>)ViewBag.Roles;
                 foreach (var role in roles ?? Enumerable.Empty<Chapeau.Models.Role>())
@@ -24,17 +24,17 @@
         </select>
     </div>
     <div class="form-group mb-3">
-        <label>Password</label>
+        <label>Wachtwoord</label>
         <input type="password" name="PasswordHash" class="form-control" required />
-        <small class="form-text text-muted">Password will be securely hashed before storing in the database.</small>
+        <small class="form-text text-muted">Het wachtwoord wordt veilig gehasht voordat het in de database wordt opgeslagen.</small>
         @Html.ValidationMessageFor(m => m.PasswordHash, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>
-            <input type="checkbox" name="IsActive" value="true" checked="@(Model?.IsActive ?? true)" /> Is Active
+            <input type="checkbox" name="IsActive" value="true" checked="@(Model?.IsActive ?? true)" /> Actief
         </label>
     </div>
 
-    <button type="submit" class="btn btn-success">Save</button>
-    <a href="@Url.Action("Index")" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-success">Opslaan</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Annuleren</a>
 </form>
