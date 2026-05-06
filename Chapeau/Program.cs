@@ -13,8 +13,9 @@ namespace Chapeau
             CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
             CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
-            // Add services to the container.
+            // Add services to the container
             builder.Services.AddControllersWithViews();
+            builder.Services.AddLogging();
 
             // Register Repositories
             builder.Services.AddScoped<Repositories.MenuRepository>();
