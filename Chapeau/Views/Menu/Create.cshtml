@@ -5,18 +5,34 @@
 @if (!ViewData.ModelState.IsValid)
 {
     <div class="alert alert-danger">
+        <strong>Er gaat iets mis</strong>
         <ul>
             @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
             {
-                <li>@error.ErrorMessage</li>
+                if (!string.IsNullOrEmpty(error.ErrorMessage))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
             }
         </ul>
     </div>
 }
 
 <form method="post" action="@Url.Action("Create")">
-    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
+    <div class="form-group mb-3">
+        <label class="form-label">Kaart *</label>
+        <select id="createCardSelect" class="form-select" required>
+            <option value="">Selecteer een kaart</option>
+            @if (ViewBag.MenuCards != null)
+            {
+                foreach(var card in ViewBag.MenuCards)
+                {
+                    <option value="@card.Value">@card.Text</option>
+                }
+            }
+        </select>
+        <small class="text-muted">Kies de kaart waarvoor u het item toevoegt</small>
+    </div>
     <div class="form-group mb-3">
         <label>Naam</label>
         <input type="text" name="Name" value="@Model?.Name" class="form-control" required />
@@ -38,33 +54,93 @@
         @Html.ValidationMessageFor(m => m.Stock, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label asp-for="CategoryID" class="form-label">Categorie</label>
-        <select name="CategoryID" class="form-select" required>
-            @{
-                var categories = (System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categories;
-                var selectedCategory = categories?.FirstOrDefault(c => c.Selected);
-                if (selectedCategory != null)
-                {
-                    <option value="@selectedCategory.Value" selected="selected">@selectedCategory.Text</option>
-                }
-            }
-            <option value="">-- Selecteer een categorie --</option>
-            @foreach(var category in ViewBag.Categories)
+        <label for="createCategorySelect" class="form-label">Categorie</label>
+        <select id="createCategorySelect" name="CategoryID" class="form-select" required>
+            <option value="">Selecteer een categorie</option>
+            @foreach(var category in ViewBag.Categories as IEnumerable<Chapeau.Models.Category> ?? Enumerable.Empty<Chapeau.Models.Category>())
             {
-                if (!category.Selected)
+                if (Model?.CategoryID == category.CategoryID)
                 {
-                    <option value="@category.Value">@category.Text</option>
+                    <option value="@category.CategoryID" data-cardid="@category.MenuCardID" selected>@category.Name</option>
+                }
+                else
+                {
+                    <option value="@category.CategoryID" data-cardid="@category.MenuCardID">@category.Name</option>
                 }
             }
         </select>
-        <span asp-validation-for="CategoryID" class="text-danger"></span>
+        <span class="text-danger">@Html.ValidationMessageFor(m => m.CategoryID)</span>
     </div>
     <div class="form-group mb-3">
         <label>
+            <input type="hidden" name="IsActive" value="false" />
             <input type="checkbox" name="IsActive" value="true" @(Model?.IsActive ?? true ? "checked" : "") /> Actief
         </label>
     </div>
 
+    <input type="hidden" name="PurchasePrice" value="@(Model?.PurchasePrice ?? 0)" />
+
     <button type="submit" class="btn btn-success">Opslaan</button>
     <a href="@Url.Action("Index")" class="btn btn-secondary">Annuleren</a>
 </form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cardSelect = document.getElementById('createCardSelect');
+        const categorySelect = document.getElementById('createCategorySelect');
+
+        if (cardSelect && categorySelect) {
+            function filterCategories() {
+                const selectedCardId = cardSelect.value;
+                const options = categorySelect.querySelectorAll('option');
+
+                // Always show placeholder
+                options.forEach(option => {
+                    if (option.value === '') {
+                        option.style.display = 'block';
+                    } else {
+                        const optionCardId = option.getAttribute('data-cardid');
+                        if (selectedCardId) {
+                            // Show only categories matching the selected card
+                            option.style.display = (optionCardId === selectedCardId) ? 'block' : 'none';
+                        } else {
+                            // Hide all if no card selected
+                            option.style.display = 'none';
+                        }
+                    }
+                });
+
+                // Reset category selection when card changes
+                categorySelect.value = '';
+            }
+
+            cardSelect.addEventListener('change', filterCategories);
+
+            // Validate on form submit
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (!cardSelect.value) {
+                        alert('Selecteer eerst een kaart');
+                        e.preventDefault();
+                        return false;
+                    }
+                    if (!categorySelect.value) {
+                        alert('Selecteer een categorie uit de geselecteerde kaart');
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    // Verify selected category matches selected card
+                    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                    const optionCardId = selectedOption.getAttribute('data-cardid');
+                    if (optionCardId !== cardSelect.value) {
+                        alert('De geselecteerde categorie hoort niet bij de geselecteerde kaart. Kies opnieuw.');
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        }
+    });
+</script>

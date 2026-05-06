@@ -1,36 +1,155 @@
 @model IEnumerable<Chapeau.Models.Employee>
 
-<h2>Medewerkersbeheer</h2>
+@{
+    ViewData["Title"] = "Medewerkersbeheer";
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Naam</th>
-            <th>Rol ID</th>
-            <th>Status</th>
-            <th>Acties</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var emp in Model)
+    string? flashError = TempData["FlashError"] as string;
+    string? flashSuccess = TempData["FlashSuccess"] as string;
+
+    var roles = (IEnumerable<Chapeau.Models.Role>?)ViewBag.Roles ?? Enumerable.Empty<Chapeau.Models.Role>();
+    var roleNameById = roles.ToDictionary(r => r.RoleID, r => r.RoleName);
+
+    string? draftJson = TempData["NewEmployeeDraft"] as string;
+    string draftName = "";
+    int draftRoleId = 1;
+    if (!string.IsNullOrWhiteSpace(draftJson))
+    {
+        try
         {
-            <tr>
-                <td>@emp.Name</td>
-                <td>@emp.RoleID</td>
-                <td>@(emp.IsActive ? "Actief" : "Inactief")</td>
-                <td>
-                    <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", new { id = emp.EmployeeID })">Bewerk</a> |
-                    <form method="post" action="@Url.Action("ToggleActive")" style="display:inline;">
-                        <input type="hidden" name="id" value="@emp.EmployeeID" />
-                        <input type="hidden" name="active" value="@(emp.IsActive ? "false" : "true")" />
-                        <button type="submit" class="btn btn-sm @(emp.IsActive ? "btn-danger" : "btn-success")">
-                            @(emp.IsActive ? "Deactiveer" : "Activeer")
-                        </button>
-                    </form>
-                </td>
-            </tr>
+            using var doc = System.Text.Json.JsonDocument.Parse(draftJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("Name", out var nameEl)) draftName = nameEl.GetString() ?? "";
+            if (root.TryGetProperty("RoleID", out var roleEl) && roleEl.TryGetInt32(out var rid)) draftRoleId = rid;
         }
-    </tbody>
-</table>
+        catch { }
+    }
+}
 
-<a class="btn btn-primary" href="@Url.Action("Create")">Nieuwe medewerker toevoegen</a>
+<div class="page-header">
+    <h2 class="page-title">Medewerkersbeheer</h2>
+    <button type="button" class="btn btn-success" id="toggleNewEmployee">
+        <i class="bi bi-plus-lg me-1"></i>Nieuwe Medewerker
+    </button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(flashSuccess))
+{
+    <div class="alert alert-success flash-alert" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>@flashSuccess
+    </div>
+}
+@if (!string.IsNullOrWhiteSpace(flashError))
+{
+    <div class="alert alert-danger flash-alert" role="alert">
+        <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Er ging iets mis</div>
+        <ul class="mb-0">
+            @foreach (var line in flashError.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                <li>@line</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="card card-soft mb-3 d-none" id="newEmployeeCard">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Nieuwe Medewerker</h5>
+        <form method="post" action="@Url.Action("QuickCreate")" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Naam</label>
+                <input class="form-control" name="Name" value="@draftName" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Wachtwoord/Pincode</label>
+                <input class="form-control" name="PasswordHash" type="password" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Rol</label>
+                <select class="form-select" name="RoleID">
+                    <option value="">Kies rol</option>
+                    @if (!roles.Any())
+                    {
+                        <option value="" disabled>Geen rollen gevonden</option>
+                    }
+                    else
+                    {
+                        @foreach (var role in roles)
+                        {
+                            <option value="@role.RoleID" selected="@(draftRoleId == role.RoleID)">@role.RoleName</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Toevoegen</button>
+                <button type="button" class="btn btn-light" id="cancelNewEmployee">Annuleren</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table app-table align-middle">
+        <thead>
+            <tr>
+                <th>Naam</th>
+                <th>Gebruikersnaam</th>
+                <th>Rol</th>
+                <th>Status</th>
+                <th class="text-end">Acties</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var emp in Model)
+            {
+                var username = (emp.Name ?? "")
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault()?.ToLowerInvariant() ?? "user";
+                username = $"{username}{emp.EmployeeID:000}";
+
+                var statusClass = emp.IsActive ? "status-active" : "status-inactive";
+                var statusText = emp.IsActive ? "Actief" : "Inactief";
+                <tr class="@(emp.IsActive ? "" : "is-inactive")">
+                    <td class="fw-semibold">@emp.Name</td>
+                    <td>@username</td>
+                    <td>@(roleNameById.TryGetValue(emp.RoleID, out var roleName) ? roleName : emp.RoleID.ToString())</td>
+                    <td>
+                        <span class="badge rounded-pill status-badge @statusClass">@statusText</span>
+                    </td>
+                    <td class="text-end">
+                        <a class="icon-btn text-primary" title="Bewerk"
+                           href="@Url.Action("Edit", new { id = emp.EmployeeID })">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <form method="post" action="@Url.Action("ToggleActive")" class="d-inline">
+                            <input type="hidden" name="id" value="@emp.EmployeeID" />
+                            <input type="hidden" name="active" value="@(emp.IsActive ? "false" : "true")" />
+                            <button type="submit" class="icon-btn @(emp.IsActive ? "text-danger" : "text-success")"
+                                    title="@(emp.IsActive ? "Deactiveer" : "Activeer")">
+                                <i class="bi @(emp.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var card = document.getElementById('newEmployeeCard');
+            var toggle = document.getElementById('toggleNewEmployee');
+            var cancel = document.getElementById('cancelNewEmployee');
+
+            toggle.addEventListener('click', function () {
+                card.classList.toggle('d-none');
+            });
+
+            cancel.addEventListener('click', function () {
+                card.classList.add('d-none');
+            });
+        });
+    </script>
+}

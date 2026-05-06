@@ -2,9 +2,23 @@
 
 <h2>Nieuwe medewerker toevoegen</h2>
 
-<form method="post" action="@Url.Action("Create")">
-    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <strong>Er gaat iets mis</strong>
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                if (!string.IsNullOrEmpty(error.ErrorMessage))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            }
+        </ul>
+    </div>
+}
 
+<form method="post" action="@Url.Action("Create")">
     <div class="form-group mb-3">
         <label>Naam</label>
         <input type="text" name="Name" value="@Model?.Name" class="form-control" required />
@@ -12,26 +26,32 @@
     </div>
     <div class="form-group mb-3">
         <label>Rol</label>
-        <select name="RoleID" class="form-control" required>
-            <option value="">-- Selecteer een rol --</option>
+        <select name="RoleID" class="form-select" required>
             @{
                 var roles = (System.Collections.Generic.IEnumerable<Chapeau.Models.Role>)ViewBag.Roles;
                 foreach (var role in roles ?? Enumerable.Empty<Chapeau.Models.Role>())
                 {
-                    <option value="@role.RoleID" selected="@(Model?.RoleID == role.RoleID)">@role.RoleName</option>
+                    if (Model?.RoleID == role.RoleID)
+                    {
+                        <option value="@role.RoleID" selected>@role.RoleName</option>
+                    }
+                    else
+                    {
+                        <option value="@role.RoleID">@role.RoleName</option>
+                    }
                 }
             }
         </select>
+        <span asp-validation-for="RoleID" class="text-danger"></span>
     </div>
     <div class="form-group mb-3">
         <label>Wachtwoord</label>
-        <input type="password" name="PasswordHash" class="form-control" required />
-        <small class="form-text text-muted">Het wachtwoord wordt veilig gehasht voordat het in de database wordt opgeslagen.</small>
+        <input type="password" name="PasswordHash" class="form-control" placeholder="Wachtwoord" required />
         @Html.ValidationMessageFor(m => m.PasswordHash, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
         <label>
-            <input type="checkbox" name="IsActive" value="true" checked="@(Model?.IsActive ?? true)" /> Actief
+            <input type="checkbox" name="IsActive" value="true" @(Model?.IsActive ?? true ? "checked" : "") /> Actief
         </label>
     </div>
 

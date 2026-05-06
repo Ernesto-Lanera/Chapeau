@@ -1,119 +1,287 @@
 @model IEnumerable<Chapeau.Models.MenuItem>
 
-<h2>Menubeheer</h2>
+@{
+    ViewData["Title"] = "Menubeheer";
+    var categories = (IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
+    var genericCategories = categories
+        .Select(c => (c.Name ?? string.Empty).Split(" - ")[0].Trim())
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(name => name)
+        .ToList();
+    var genericCategoryCards = categories
+        .GroupBy(c => (c.Name ?? string.Empty).Split(" - ")[0].Trim(), StringComparer.OrdinalIgnoreCase)
+        .Select(g => new
+        {
+            Name = g.Key,
+            CardIds = string.Join(",", g.Select(x => x.MenuCardID).Distinct().OrderBy(x => x))
+        })
+        .OrderBy(x => x.Name)
+        .ToList();
 
-<div class="row mb-3">
-    <div class="col-md-6">
-        <label for="categoryFilter" class="form-label">Filteren op categorie:</label>
-        <select id="categoryFilter" class="form-select">
-            <option value="all">Alle categorieën</option>
-            @{
-                var categories = (System.Collections.Generic.IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
-                foreach (var category in categories)
-                {
-                    <option value="@category.CategoryID">@category.Name</option>
-                }
-            }
-        </select>
+    var cards = new[]
+    {
+        new { Id = 3, Name = "Dranken" },
+        new { Id = 1, Name = "Lunch" },
+        new { Id = 2, Name = "Diner" }
+    };
+
+    int? selectedCardId = ViewBag.SelectedCardId as int?;
+    int? selectedCategoryId = ViewBag.SelectedCategoryId as int?;
+
+    string? flashError = TempData["FlashError"] as string;
+    string? flashSuccess = TempData["FlashSuccess"] as string;
+
+    string? draftJson = TempData["NewMenuItemDraft"] as string;
+    string draftName = "";
+    string draftRetailPrice = "";
+    string draftStock = "";
+    int draftCategoryId = 0;
+
+    if (!string.IsNullOrWhiteSpace(draftJson))
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(draftJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("Name", out var nameEl)) draftName = nameEl.GetString() ?? "";
+            if (root.TryGetProperty("RetailPrice", out var rpEl)) draftRetailPrice = rpEl.ToString();
+            if (root.TryGetProperty("Stock", out var stockEl)) draftStock = stockEl.ToString();
+            if (root.TryGetProperty("CategoryID", out var catEl) && catEl.TryGetInt32(out var catId)) draftCategoryId = catId;
+        }
+        catch { }
+    }
+}
+
+<div class="page-header">
+    <h2 class="page-title">Menubeheer</h2>
+    <button type="button" class="btn btn-success" id="toggleNewItem">
+        <i class="bi bi-plus-lg me-1"></i>Nieuw item
+    </button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(flashSuccess))
+{
+    <div class="alert alert-success flash-alert" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>@flashSuccess
     </div>
-    <div class="col-md-6 d-flex align-items-end">
-        <a class="btn btn-primary ms-auto" href="@Url.Action("Create")">Nieuw item toevoegen</a>
+}
+@if (!string.IsNullOrWhiteSpace(flashError))
+{
+    <div class="alert alert-danger flash-alert" role="alert">
+        <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Er ging iets mis</div>
+        <ul class="mb-0">
+            @foreach (var line in flashError.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                <li>@line</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="card card-soft mb-3 d-none" id="newItemCard">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Nieuw Menu Item</h5>
+        <form method="post" action="@Url.Action("QuickCreate")" class="row g-3" id="newMenuItemForm">
+            <input type="hidden" name="cardId" value="@selectedCardId" />
+            <input type="hidden" name="categoryId" value="@selectedCategoryId" />
+            <div class="col-md-6">
+                <label class="form-label">Naam</label>
+                <input class="form-control" name="Name" value="@draftName" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Prijs</label>
+                <input class="form-control" name="RetailPrice" type="number" step="0.01" min="0" value="@draftRetailPrice" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Voorraad</label>
+                <input class="form-control" name="Stock" type="number" min="0" value="@draftStock" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Selecteer Categorie</label>
+                <select class="form-select" name="CategoryID" id="newItemCategory">
+                    <option value="0">Selecteer Categorie</option>
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category.CategoryID"
+                                data-cardid="@category.MenuCardID"
+                                selected="@(draftCategoryId == category.CategoryID)">
+                            @category.Name
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Kaart</label>
+                <select class="form-select" id="newItemCardSelect">
+                    @foreach (var card in cards)
+                    {
+                        <option value="@card.Id" selected="@(selectedCardId == card.Id)">@card.Name</option>
+                    }
+                </select>
+            </div>
+            <input type="hidden" name="PurchasePrice" value="0" />
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Toevoegen</button>
+                <button type="button" class="btn btn-light" id="cancelNewItem">Annuleren</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<table class="table" id="menuTable">
-    <thead>
-        <tr>
-            <th>Naam</th>
-            <th>Inkoopprijs</th>
-            <th>Verkoopprijs</th>
-            <th>Voorraad</th>
-            <th>Categorie</th>
-            <th>Actief</th>
-            <th>Acties</th>
-        </tr>
-    </thead>
-    <tbody style="visibility: hidden;" id="menuTableBody">
-        @foreach (var item in Model)
-        {
-            <tr class="menu-row" data-category="@item.CategoryID">
-                <td>@item.Name</td>
-                <td>€ @item.PurchasePrice.ToString("F2")</td>
-                <td>€ @item.RetailPrice.ToString("F2")</td>
-                <td>@item.Stock</td>
-                <td>@(item.Category?.Name ?? "Onbekend")</td>
-                <td>@(item.IsActive ? "Ja" : "Nee")</td>
-                <td>
-                    <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", new { id = item.MenuItemID })">Bewerk</a> |
-                    <form method="post" action="@Url.Action("ToggleActive")" class="d-inline filter-preserving-form">
-                        <input type="hidden" name="id" value="@item.MenuItemID" />
-                        <input type="hidden" name="active" value="@(item.IsActive ? "false" : "true")" />
-                        <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-danger" : "btn-success")" onclick="saveScrollPosition()">
-                            @(item.IsActive ? "Deactiveer" : "Activeer")
-                        </button>
-                    </form>
-                </td>
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <label class="form-label">Kaart</label>
+        <select class="form-select" id="cardFilter">
+            <option value="">Alle kaarten</option>
+            @foreach (var card in cards)
+            {
+                <option value="@card.Id" selected="@(selectedCardId == card.Id)">@card.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Categorie</label>
+        <select class="form-select" id="categoryFilter">
+            <option value="">Alle</option>
+            @foreach (var category in genericCategoryCards)
+            {
+                <option value="@category.Name" data-cards="@category.CardIds">@category.Name</option>
+            }
+        </select>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table app-table align-middle" id="menuTable">
+        <thead>
+            <tr>
+                <th>Naam</th>
+                <th>Prijs</th>
+                <th>Kaart</th>
+                <th>Categorie</th>
+                <th>Status</th>
+                <th class="text-end">Acties</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var statusClass = item.IsActive ? "status-active" : "status-inactive";
+                var statusText = item.IsActive ? "Actief" : "Inactief";
+                var cardName = item.Category?.MenuCardID switch
+                {
+                    1 => "Lunch",
+                    2 => "Diner",
+                    3 => "Drinks",
+                    _ => "-"
+                };
+                var genericCategory = (item.Category?.Name ?? string.Empty).Split(" - ")[0].Trim();
+
+                <tr class="@(item.IsActive ? "" : "is-inactive")"
+                    data-cardid="@(item.Category?.MenuCardID ?? 0)"
+                    data-category="@genericCategory">
+                    <td class="fw-semibold">@item.Name</td>
+                    <td>€ @item.RetailPrice.ToString("F2")</td>
+                    <td>@cardName</td>
+                    <td>@(item.Category?.Name ?? "Onbekend")</td>
+                    <td>
+                        <span class="badge rounded-pill status-badge @statusClass">@statusText</span>
+                    </td>
+                    <td class="text-end">
+                        <a class="icon-btn text-primary" title="Bewerk"
+                           href="@Url.Action("Edit", new { id = item.MenuItemID })">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <form method="post" action="@Url.Action("ToggleActive")" class="d-inline">
+                            <input type="hidden" name="id" value="@item.MenuItemID" />
+                            <input type="hidden" name="active" value="@(item.IsActive ? "false" : "true")" />
+                            <button type="submit" class="icon-btn @(item.IsActive ? "text-danger" : "text-success")"
+                                    title="@(item.IsActive ? "Deactiveer" : "Activeer")">
+                                <i class="bi @(item.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
 @section Scripts {
     <script>
-        function saveScrollPosition() {
-            localStorage.setItem('scrollPosition', window.scrollY);
-        }
+        document.addEventListener("DOMContentLoaded", function () {
+            var newItemCard = document.getElementById('newItemCard');
+            var toggleNewItem = document.getElementById('toggleNewItem');
+            var cancelNewItem = document.getElementById('cancelNewItem');
 
-        (function() {
-            var savedCategory = localStorage.getItem('selectedMenuCategory') || 'all';
-            var dropdown = document.getElementById('categoryFilter');
-
-            if (dropdown) {
-                dropdown.value = savedCategory;
-            }
-
-            var rows = document.querySelectorAll('.menu-row');
-            rows.forEach(function (row) {
-                var rowCategory = row.getAttribute('data-category');
-                if (savedCategory === 'all' || rowCategory === savedCategory) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+            toggleNewItem.addEventListener('click', function () {
+                newItemCard.classList.toggle('d-none');
             });
 
-            var tbody = document.getElementById('menuTableBody');
-            if (tbody) {
-                tbody.style.visibility = 'visible';
-            }
-        })();
-
-        document.addEventListener("DOMContentLoaded", function() {
-            var filterDropdown = document.getElementById('categoryFilter');
-
-            var scrollPos = localStorage.getItem('scrollPosition');
-            if (scrollPos) {
-                window.scrollTo(0, parseInt(scrollPos));
-                localStorage.removeItem('scrollPosition');
-            }
-
-            filterDropdown.addEventListener('change', function () {
-                var selectedCategory = this.value;
-                localStorage.setItem('selectedMenuCategory', selectedCategory);
-                applyFilter(selectedCategory);
+            cancelNewItem.addEventListener('click', function () {
+                newItemCard.classList.add('d-none');
             });
 
-            function applyFilter(selectedCategory) {
-                var rows = document.querySelectorAll('.menu-row');
-                rows.forEach(function (row) {
+            var cardFilter = document.getElementById('cardFilter');
+            var categoryFilter = document.getElementById('categoryFilter');
+            var newItemCardSelect = document.getElementById('newItemCardSelect');
+            var newItemCategory = document.getElementById('newItemCategory');
+            var menuRows = document.querySelectorAll('#menuTable tbody tr');
+
+            function applyTableFilters() {
+                var cardId = cardFilter.value;
+                var categoryName = categoryFilter.value;
+
+                menuRows.forEach(function (row) {
+                    var rowCardId = row.getAttribute('data-cardid');
                     var rowCategory = row.getAttribute('data-category');
-
-                    if (selectedCategory === 'all' || rowCategory === selectedCategory) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
+                    var matchCard = !cardId || rowCardId === cardId;
+                    var matchCategory = !categoryName || rowCategory === categoryName;
+                    row.style.display = (matchCard && matchCategory) ? '' : 'none';
                 });
+            }
+
+            function applyCategoryOptionsByCard() {
+                var selectedCard = cardFilter.value;
+                Array.from(categoryFilter.options).forEach(function (opt, idx) {
+                    if (idx === 0) return;
+                    var cards = (opt.getAttribute('data-cards') || '').split(',');
+                    var visible = !selectedCard || cards.indexOf(selectedCard) !== -1;
+                    opt.hidden = !visible;
+                });
+
+                if (categoryFilter.selectedIndex > 0 && categoryFilter.options[categoryFilter.selectedIndex].hidden) {
+                    categoryFilter.selectedIndex = 0;
+                }
+            }
+
+            cardFilter.addEventListener('change', function () {
+                applyCategoryOptionsByCard();
+                applyTableFilters();
+            });
+            categoryFilter.addEventListener('change', applyTableFilters);
+            applyCategoryOptionsByCard();
+            applyTableFilters();
+
+            function applyNewItemCategoryByCard() {
+                if (!newItemCardSelect || !newItemCategory) return;
+                var selectedCard = newItemCardSelect.value;
+
+                Array.from(newItemCategory.options).forEach(function (opt, idx) {
+                    if (idx === 0) return; // placeholder
+                    var cardId = opt.getAttribute('data-cardid');
+                    opt.hidden = !!selectedCard && cardId !== selectedCard;
+                });
+
+                if (newItemCategory.selectedIndex > 0 && newItemCategory.options[newItemCategory.selectedIndex].hidden) {
+                    newItemCategory.selectedIndex = 0;
+                }
+            }
+
+            if (newItemCardSelect) {
+                newItemCardSelect.addEventListener('change', applyNewItemCategoryByCard);
+                applyNewItemCategoryByCard();
             }
         });
     </script>

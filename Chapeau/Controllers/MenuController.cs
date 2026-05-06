@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Chapeau.Services;
 using Chapeau.Models;
+using System.Text.Json;
 
 namespace Chapeau.Controllers
 {
@@ -9,6 +10,10 @@ namespace Chapeau.Controllers
     {
         private readonly MenuService _menuService = menuService;
         private readonly CategoryService _categoryService = categoryService;
+
+        private const string FlashErrorKey = "FlashError";
+        private const string FlashSuccessKey = "FlashSuccess";
+        private const string NewMenuItemDraftKey = "NewMenuItemDraft";
 
         public IActionResult Index(int? cardId, int? categoryId)
         {
@@ -22,11 +27,87 @@ namespace Chapeau.Controllers
             return View(menuItems);
         }
 
+        [HttpPost]
+        public IActionResult QuickCreate(MenuItem item, int? cardId, int? categoryId)
+        {
+            // Preserve the draft so the inline form can re-render with values.
+            TempData[NewMenuItemDraftKey] = JsonSerializer.Serialize(new
+            {
+                item.Name,
+                item.RetailPrice,
+                item.Stock,
+                item.CategoryID
+            });
+
+            // Check for duplicate name (case-insensitive)
+            if (_menuService.GetMenuItems(null, null).Any(m =>
+                    m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                ModelState.AddModelError(nameof(MenuItem.Name), "Er bestaat al een menu-item met deze naam.");
+            }
+
+            if (item.RetailPrice < 0)
+            {
+                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Prijs kan niet negatief zijn.");
+            }
+
+            if (item.Stock < 0)
+            {
+                ModelState.AddModelError(nameof(MenuItem.Stock), "Voorraad kan niet negatief zijn.");
+            }
+
+            if (item.CategoryID <= 0)
+            {
+                ModelState.AddModelError(nameof(MenuItem.CategoryID), "Kies een geldige categorie.");
+            }
+
+            // Inline create only uses retail price in the UI; keep purchase price safe.
+            if (item.PurchasePrice < 0)
+            {
+                item.PurchasePrice = 0;
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData[FlashErrorKey] = string.Join("\n",
+                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
+            }
+
+            try
+            {
+                _menuService.AddMenuItem(item);
+                TempData[FlashSuccessKey] = "Menu-item toegevoegd.";
+                TempData.Remove(NewMenuItemDraftKey);
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData[FlashErrorKey] = ex.Message;
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
+            }
+            catch
+            {
+                TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
+            }
+        }
+
         [HttpGet]
         public IActionResult Create()
         {
             var categories = _categoryService.GetCategories();
-            ViewBag.Categories = new SelectList(categories, "CategoryID", "Name");
+            ViewBag.Categories = categories;
+
+            // MenuCards (static data)
+            var menuCards = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "1", Text = "Lunch" },
+                new SelectListItem { Value = "2", Text = "Diner" },
+                new SelectListItem { Value = "3", Text = "Dranken" }
+            };
+            ViewBag.MenuCards = menuCards;
+
             return View();
         }
 
@@ -37,28 +118,28 @@ namespace Chapeau.Controllers
             if (_menuService.GetMenuItems(null, null).Any(m =>
                     m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
             {
-                ModelState.AddModelError("Name", "A menu item with this name already exists.");
+                ModelState.AddModelError("Name", "Een menu-item met deze naam bestaat al.");
             }
 
             // Additional server-side validation
             if (item.PurchasePrice < 0)
             {
-                ModelState.AddModelError("PurchasePrice", "Purchase Price cannot be negative.");
+                ModelState.AddModelError("PurchasePrice", "Inkoopprijs kan niet negatief zijn.");
             }
 
             if (item.RetailPrice < 0)
             {
-                ModelState.AddModelError("RetailPrice", "Retail Price cannot be negative.");
+                ModelState.AddModelError("RetailPrice", "Verkoopprijs kan niet negatief zijn.");
             }
 
             if (item.Stock < 0)
             {
-                ModelState.AddModelError("Stock", "Stock cannot be negative.");
+                ModelState.AddModelError("Stock", "Voorraad kan niet negatief zijn.");
             }
 
             if (item.CategoryID <= 0)
             {
-                ModelState.AddModelError("CategoryID", "Please select a valid category.");
+                ModelState.AddModelError("CategoryID", "Selecteer een geldige categorie.");
             }
 
             if (ModelState.IsValid)
@@ -74,12 +155,22 @@ namespace Chapeau.Controllers
                 }
                 catch (Exception)
                 {
-                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
+                    ModelState.AddModelError("", "Er is een onverwachte fout opgetreden bij het opslaan.");
                 }
             }
 
-            // Repopulate categories for form re-display
-            ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
+            // Repopulate categories and menu cards for form re-display
+            var categoriesForReDisplay = _categoryService.GetCategories();
+            ViewBag.Categories = categoriesForReDisplay;
+
+            var menuCardsForReDisplay = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "1", Text = "Lunch" },
+                new SelectListItem { Value = "2", Text = "Diner" },
+                new SelectListItem { Value = "3", Text = "Dranken" }
+            };
+            ViewBag.MenuCards = menuCardsForReDisplay;
+
             return View(item);
         }
 
@@ -94,7 +185,9 @@ namespace Chapeau.Controllers
                 return NotFound();
             }
 
-            ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
+            var categories = _categoryService.GetCategories();
+            ViewBag.Categories = categories;
+
             return View(item);
         }
 
@@ -106,28 +199,28 @@ namespace Chapeau.Controllers
                     m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)
                     && m.MenuItemID != item.MenuItemID))
             {
-                ModelState.AddModelError("Name", "Another menu item with this name already exists.");
+                ModelState.AddModelError("Name", "Een ander menu-item met deze naam bestaat al.");
             }
 
             // Additional server-side validation
             if (item.PurchasePrice < 0)
             {
-                ModelState.AddModelError("PurchasePrice", "Purchase Price cannot be negative.");
+                ModelState.AddModelError("PurchasePrice", "Inkoopprijs kan niet negatief zijn.");
             }
 
             if (item.RetailPrice < 0)
             {
-                ModelState.AddModelError("RetailPrice", "Retail Price cannot be negative.");
+                ModelState.AddModelError("RetailPrice", "Verkoopprijs kan niet negatief zijn.");
             }
 
             if (item.Stock < 0)
             {
-                ModelState.AddModelError("Stock", "Stock cannot be negative.");
+                ModelState.AddModelError("Stock", "Voorraad kan niet negatief zijn.");
             }
 
             if (item.CategoryID <= 0)
             {
-                ModelState.AddModelError("CategoryID", "Please select a valid category.");
+                ModelState.AddModelError("CategoryID", "Selecteer een geldige categorie.");
             }
 
             if (ModelState.IsValid)
@@ -143,19 +236,29 @@ namespace Chapeau.Controllers
                 }
                 catch (Exception)
                 {
-                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
+                    ModelState.AddModelError("", "Er is een onverwachte fout opgetreden bij het opslaan.");
                 }
             }
 
             // Repopulate categories for form re-display
-            ViewBag.Categories = new SelectList(_categoryService.GetCategories(), "CategoryID", "Name", item.CategoryID);
+            var categoriesForReDisplay = _categoryService.GetCategories();
+            ViewBag.Categories = categoriesForReDisplay;
+
             return View(item);
         }
 
         [HttpPost]
         public IActionResult ToggleActive(int id, bool active)
         {
-            _menuService.SetMenuItemActive(id, active);
+            try
+            {
+                _menuService.SetMenuItemActive(id, active);
+                TempData[FlashSuccessKey] = active ? "Menu-item geactiveerd." : "Menu-item gedeactiveerd.";
+            }
+            catch
+            {
+                TempData[FlashErrorKey] = "Kon status niet aanpassen. Probeer opnieuw.";
+            }
             return RedirectToAction(nameof(Index));
         }
     }

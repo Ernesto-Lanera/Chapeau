@@ -2,10 +2,43 @@
 
 <h2>Menu-item bewerken</h2>
 
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <strong>Er gaat iets mis</strong>
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                if (!string.IsNullOrEmpty(error.ErrorMessage))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            }
+        </ul>
+    </div>
+}
+
 <form method="post" action="@Url.Action("Edit")">
-    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
     <input type="hidden" name="MenuItemID" value="@Model.MenuItemID" />
+
+    <div class="form-group mb-3">
+        <label class="form-label">Kaart *</label>
+        <select id="editCardSelect" class="form-select" required disabled>
+            @if (ViewBag.MenuCards != null && Model.Category != null)
+            {
+                foreach(var card in ViewBag.MenuCards)
+                {
+                    var isSelected = card.Value == Model.Category.MenuCardID.ToString();
+                    if (isSelected)
+                    {
+                        <option value="@card.Value" selected>@card.Text</option>
+                    }
+                }
+            }
+        </select>
+        <small class="text-muted">Kaart kan niet worden gewijzigd (bepaald door huidige categorie)</small>
+    </div>
 
     <div class="form-group mb-3">
         <label>Naam</label>
@@ -28,29 +61,25 @@
         @Html.ValidationMessageFor(m => m.Stock, "", new { @class = "text-danger" })
     </div>
     <div class="form-group mb-3">
-        <label>Categorie</label>
-        <select name="CategoryID" class="form-select" required>
-            @{
-                var categories = (System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categories;
-                var selectedCategory = categories?.FirstOrDefault(c => c.Selected);
-                if (selectedCategory != null)
-                {
-                    <option value="@selectedCategory.Value" selected="selected">@selectedCategory.Text</option>
-                }
-            }
-            <option value="">-- Selecteer een categorie --</option>
-            @foreach(var category in ViewBag.Categories)
+        <label for="editCategorySelect" class="form-label">Categorie</label>
+        <select id="editCategorySelect" name="CategoryID" class="form-select" required>
+            @foreach(var category in ViewBag.Categories as IEnumerable<Chapeau.Models.Category> ?? Enumerable.Empty<Chapeau.Models.Category>())
             {
-                if (!category.Selected)
+                if (Model.CategoryID == category.CategoryID)
                 {
-                    <option value="@category.Value">@category.Text</option>
+                    <option value="@category.CategoryID" data-cardid="@category.MenuCardID" selected>@category.Name</option>
+                }
+                else
+                {
+                    <option value="@category.CategoryID" data-cardid="@category.MenuCardID">@category.Name</option>
                 }
             }
         </select>
-        @Html.ValidationMessageFor(m => m.CategoryID, "", new { @class = "text-danger" })
+        <span class="text-danger">@Html.ValidationMessageFor(m => m.CategoryID)</span>
     </div>
     <div class="form-group mb-3">
         <label>
+            <input type="hidden" name="IsActive" value="false" />
             <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") /> Actief
         </label>
     </div>

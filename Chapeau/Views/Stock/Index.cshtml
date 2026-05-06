@@ -1,65 +1,295 @@
 @model IEnumerable<Chapeau.Models.MenuItem>
 
-<h2>Voorraadbeheer</h2>
+@{
+    ViewData["Title"] = "Voorraadbeheer";
+    var categories = (IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
+    var genericCategories = categories
+        .Select(c => (c.Name ?? string.Empty).Split(" - ")[0].Trim())
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(name => name)
+        .ToList();
+    var genericCategoryCards = categories
+        .GroupBy(c => (c.Name ?? string.Empty).Split(" - ")[0].Trim(), StringComparer.OrdinalIgnoreCase)
+        .Select(g => new
+        {
+            Name = g.Key,
+            CardIds = string.Join(",", g.Select(x => x.MenuCardID).Distinct().OrderBy(x => x))
+        })
+        .OrderBy(x => x.Name)
+        .ToList();
 
-<div class="row mb-3">
-    <div class="col-md-6">
-        <label for="categoryFilter" class="form-label">Filteren op categorie:</label>
-        <select id="categoryFilter" class="form-select">
-            <option value="all">Alle categorieën</option>
-            @{
-                var categories = (System.Collections.Generic.IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
-                foreach (var category in categories)
-                {
-                    <option value="@category.CategoryID">@category.Name</option>
-                }
+    var cards = new[]
+    {
+        new { Id = 3, Name = "Dranken" },
+        new { Id = 1, Name = "Lunch" },
+        new { Id = 2, Name = "Diner" }
+    };
+
+    int? selectedCardId = ViewBag.SelectedCardId as int?;
+    int? selectedCategoryId = ViewBag.SelectedCategoryId as int?;
+
+    var soldOutCount = Model.Count(x => x.Stock == 0);
+    var almostOutCount = Model.Count(x => x.Stock > 0 && x.Stock <= 10);
+
+    string? flashError = TempData["FlashError"] as string;
+    string? flashSuccess = TempData["FlashSuccess"] as string;
+}
+
+<div class="page-header">
+    <h2 class="page-title">Voorraadbeheer</h2>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(flashSuccess))
+{
+    <div class="alert alert-success flash-alert" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>@flashSuccess
+    </div>
+}
+@if (!string.IsNullOrWhiteSpace(flashError))
+{
+    <div class="alert alert-danger flash-alert" role="alert">
+        <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Er ging iets mis</div>
+        <ul class="mb-0">
+            @foreach (var line in flashError.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                <li>@line</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <span class="stock-pill danger" id="soldOutBadge">
+        <i class="bi bi-exclamation-triangle-fill"></i>Uitverkocht: <span id="soldOutCount">@soldOutCount</span> item(s)
+    </span>
+    <span class="stock-pill warn" id="almostOutBadge">
+        <i class="bi bi-exclamation-circle-fill"></i>Bijna op: <span id="almostOutCount">@almostOutCount</span> item(s)
+    </span>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <label class="form-label">Kaart</label>
+        <select class="form-select" id="cardFilter">
+            <option value="">Alle kaarten</option>
+            @foreach (var card in cards)
+            {
+                <option value="@card.Id" selected="@(selectedCardId == card.Id)">@card.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Categorie</label>
+        <select class="form-select" id="categoryFilter">
+            <option value="">Alle</option>
+            @foreach (var category in genericCategoryCards)
+            {
+                <option value="@category.Name" data-cards="@category.CardIds">@category.Name</option>
             }
         </select>
     </div>
 </div>
 
-<table class="table" id="stockTable">
-    <thead>
-        <tr>
-            <th>Naam</th>
-            <th>Huidige voorraad</th>
-            <th>Status</th>
-            <th>Voorraad wijzigen</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr class="stock-row" data-category="@item.CategoryID" style="background-color: @(item.Stock == 0 ? "#ffcccc" : (item.Stock <= 10 ? "#ffffcc" : "transparent"))">
-                <td>@item.Name</td>
-                <td>@item.Stock</td>
-                <td>@item.StockStatus</td>
-                <td>
-                    <form method="post" action="@Url.Action("Update")" style="display:inline;">
-                        <input type="hidden" name="id" value="@item.MenuItemID" />
-                        <input type="number" name="newStock" value="@item.Stock" min="0" style="width: 60px;" class="form-control d-inline-block w-auto" />
-                        <button type="submit" class="btn btn-sm btn-primary">Bijwerken</button>
-                    </form>
-                </td>
+<div class="table-responsive">
+    <table class="table align-middle" id="stockTable">
+        <thead>
+            <tr>
+                <th>Naam</th>
+                <th>Kaart</th>
+                <th>Categorie</th>
+                <th style="width: 110px;">Voorraad</th>
+                <th>Status</th>
+                <th class="text-end">Acties</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var cardName = item.Category?.MenuCardID switch
+                {
+                    1 => "Lunch",
+                    2 => "Diner",
+                    3 => "Drinks",
+                    _ => "-"
+                };
+
+                var pillClass = item.Stock == 0 ? "danger" : (item.Stock <= 10 ? "warn" : "ok");
+                var pillText = item.Stock == 0 ? "Uitverkocht" : (item.Stock <= 10 ? "Bijna op" : "Op voorraad");
+                var pillIcon = item.Stock == 0 ? "bi-exclamation-triangle-fill" : (item.Stock <= 10 ? "bi-exclamation-circle-fill" : "bi-check-circle-fill");
+                var genericCategory = (item.Category?.Name ?? string.Empty).Split(" - ")[0].Trim();
+
+                <tr data-cardid="@(item.Category?.MenuCardID ?? 0)"
+                    data-category="@genericCategory">
+                    <td class="fw-semibold">@item.Name</td>
+                    <td>@cardName</td>
+                    <td>@(item.Category?.Name ?? "Onbekend")</td>
+                    <td>
+                        <input class="form-control form-control-sm stock-current" type="number" min="0" name="stockDisplay" value="@item.Stock" />
+                    </td>
+                    <td>
+                        <span class="stock-pill @pillClass stock-status">
+                            <i class="bi @pillIcon"></i>@pillText
+                        </span>
+                    </td>
+                    <td class="text-end qty-actions">
+                        <form method="post" action="@Url.Action("Update")" class="d-inline stock-form">
+                            <input type="hidden" name="id" value="@item.MenuItemID" />
+                            <input type="hidden" name="newStock" class="stock-new" value="@item.Stock" />
+                            <input type="hidden" name="cardId" value="@selectedCardId" />
+                            <input type="hidden" name="categoryId" value="@selectedCategoryId" />
+                            <button type="submit" class="btn btn-success btn-sm me-1 stock-delta" data-delta="10" title="+10">+10</button>
+                            <button type="submit" class="btn btn-danger btn-sm stock-delta" data-delta="-1" title="-1">-1</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
 @section Scripts {
     <script>
-        document.getElementById('categoryFilter').addEventListener('change', function () {
-            var selectedCategory = this.value;
-            var rows = document.querySelectorAll('.stock-row');
+        document.addEventListener("DOMContentLoaded", function () {
+            var cardFilter = document.getElementById('cardFilter');
+            var categoryFilter = document.getElementById('categoryFilter');
+            var stockRows = document.querySelectorAll('#stockTable tbody tr');
 
-            rows.forEach(function (row) {
-                var rowCategory = row.getAttribute('data-category');
+            function applyTableFilters() {
+                var cardId = cardFilter.value;
+                var categoryName = categoryFilter.value;
 
-                if (selectedCategory === 'all' || rowCategory === selectedCategory) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
+                stockRows.forEach(function (row) {
+                    var rowCardId = row.getAttribute('data-cardid');
+                    var rowCategory = row.getAttribute('data-category');
+                    var matchCard = !cardId || rowCardId === cardId;
+                    var matchCategory = !categoryName || rowCategory === categoryName;
+                    row.style.display = (matchCard && matchCategory) ? '' : 'none';
+                });
+            }
+
+            function applyCategoryOptionsByCard() {
+                var selectedCard = cardFilter.value;
+                Array.from(categoryFilter.options).forEach(function (opt, idx) {
+                    if (idx === 0) return;
+                    var cards = (opt.getAttribute('data-cards') || '').split(',');
+                    var visible = !selectedCard || cards.indexOf(selectedCard) !== -1;
+                    opt.hidden = !visible;
+                });
+
+                if (categoryFilter.selectedIndex > 0 && categoryFilter.options[categoryFilter.selectedIndex].hidden) {
+                    categoryFilter.selectedIndex = 0;
                 }
+            }
+
+            cardFilter.addEventListener('change', function () {
+                applyCategoryOptionsByCard();
+                applyTableFilters();
+            });
+            categoryFilter.addEventListener('change', applyTableFilters);
+            applyCategoryOptionsByCard();
+            applyTableFilters();
+
+            function debounce(fn, waitMs) {
+                var t;
+                return function () {
+                    var args = arguments;
+                    clearTimeout(t);
+                    t = setTimeout(function () { fn.apply(null, args); }, waitMs);
+                };
+            }
+
+            function statusDataFor(stock) {
+                if (stock <= 0) return { cls: 'danger', icon: 'bi-exclamation-triangle-fill', text: 'Uitverkocht' };
+                if (stock <= 10) return { cls: 'warn', icon: 'bi-exclamation-circle-fill', text: 'Bijna op' };
+                return { cls: 'ok', icon: 'bi-check-circle-fill', text: 'Op voorraad' };
+            }
+
+            function recalcTopCounters() {
+                var soldOut = 0;
+                var almostOut = 0;
+                document.querySelectorAll('.stock-current').forEach(function (input) {
+                    var v = parseInt(input.value, 10);
+                    if (isNaN(v) || v < 0) v = 0;
+                    if (v === 0) soldOut++;
+                    else if (v <= 10) almostOut++;
+                });
+                var soldOutEl = document.getElementById('soldOutCount');
+                var almostOutEl = document.getElementById('almostOutCount');
+                if (soldOutEl) soldOutEl.textContent = soldOut;
+                if (almostOutEl) almostOutEl.textContent = almostOut;
+            }
+
+            document.querySelectorAll('.stock-form').forEach(function (form) {
+                var row = form.closest('tr');
+                var currentInput = row.querySelector('.stock-current');
+                var statusPill = row.querySelector('.stock-status');
+                var newStockInput = form.querySelector('.stock-new');
+                var cardId = form.querySelector('input[name="cardId"]')?.value || '';
+                var categoryId = form.querySelector('input[name="categoryId"]')?.value || '';
+
+                function updateStatusUI(stock) {
+                    if (!statusPill) return;
+                    var s = statusDataFor(stock);
+                    statusPill.classList.remove('ok', 'warn', 'danger');
+                    statusPill.classList.add(s.cls);
+                    statusPill.innerHTML = '<i class="bi ' + s.icon + '"></i>' + s.text;
+                }
+
+                function saveStockNow(stock) {
+                    var current = parseInt(currentInput.value, 10);
+                    if (isNaN(current) || current < 0) current = 0;
+                    if (typeof stock === 'number') current = Math.max(0, stock);
+
+                    currentInput.value = current;
+                    newStockInput.value = current;
+
+                    var body = new URLSearchParams();
+                    body.set('id', form.querySelector('input[name="id"]').value);
+                    body.set('newStock', String(current));
+                    if (cardId) body.set('cardId', cardId);
+                    if (categoryId) body.set('categoryId', categoryId);
+
+                    currentInput.classList.remove('is-invalid');
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'fetch'
+                        },
+                        body: body.toString()
+                    }).then(function (res) {
+                        if (!res.ok) {
+                            currentInput.classList.add('is-invalid');
+                            return;
+                        }
+                        updateStatusUI(current);
+                        recalcTopCounters();
+                    }).catch(function () {
+                        currentInput.classList.add('is-invalid');
+                    });
+                }
+
+                // Fast autosave while typing.
+                var autoSave = debounce(function () {
+                    saveStockNow();
+                }, 180);
+
+                currentInput.addEventListener('input', autoSave);
+                currentInput.addEventListener('change', function () { saveStockNow(); });
+                currentInput.addEventListener('blur', function () { saveStockNow(); });
+
+                form.querySelectorAll('.stock-delta').forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        var delta = parseInt(btn.getAttribute('data-delta'), 10) || 0;
+                        var current = parseInt(currentInput.value, 10) || 0;
+                        var next = Math.max(0, current + delta);
+                        saveStockNow(next);
+                    });
+                });
             });
         });
     </script>
