@@ -3,26 +3,66 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Chapeau.Services;
 using Chapeau.Models;
 using System.Text.Json;
+using System.Globalization;
 
 namespace Chapeau.Controllers
 {
-    public class MenuController(MenuService menuService, CategoryService categoryService) : Controller
+    public class MenuController : Controller
     {
-        private readonly MenuService _menuService = menuService;
-        private readonly CategoryService _categoryService = categoryService;
+        private readonly MenuService _menuService;
+        private readonly CategoryService _categoryService;
 
         private const string FlashErrorKey = "FlashError";
         private const string FlashSuccessKey = "FlashSuccess";
         private const string NewMenuItemDraftKey = "NewMenuItemDraft";
 
-        public IActionResult Index(int? cardId, int? categoryId)
+        public MenuController(MenuService menuService, CategoryService categoryService)
+        {
+            _menuService = menuService;
+            _categoryService = categoryService;
+        }
+
+        public IActionResult Index(int? cardId, int? categoryId, int? editId, bool showCreate = false)
         {
             var menuItems = _menuService.GetMenuItems(cardId, categoryId);
-            var categories = _categoryService.GetCategories();
+            var allCategories = _categoryService.GetCategories();
 
             ViewBag.SelectedCardId = cardId;
             ViewBag.SelectedCategoryId = categoryId;
-            ViewBag.Categories = categories;
+
+            ViewBag.AllCategories = allCategories;
+            ViewBag.FilterCategories = allCategories;
+            ViewBag.MenuCards = GetMenuCardSelectList();
+
+            ViewBag.IsEdit = false;
+            ViewBag.ShowCreate = showCreate;
+            ViewBag.SelectedMenuCardId = 0;
+            ViewBag.EditItem = null;
+            ViewBag.Categories = allCategories;
+
+            if (editId.HasValue)
+            {
+                var editItem = _menuService.GetMenuItems(null, null)
+                    .FirstOrDefault(m => m.MenuItemID == editId.Value);
+
+                if (editItem != null)
+                {
+                    var currentCategory = allCategories
+                        .FirstOrDefault(c => c.CategoryID == editItem.CategoryID);
+
+                    int selectedMenuCardId = currentCategory?.MenuCardID ?? 0;
+
+                    var filteredCategories = allCategories
+                        .Where(c => c.MenuCardID == selectedMenuCardId)
+                        .ToList();
+
+                    ViewBag.EditItem = editItem;
+                    ViewBag.IsEdit = true;
+                    ViewBag.ShowCreate = false;
+                    ViewBag.SelectedMenuCardId = selectedMenuCardId;
+                    ViewBag.Categories = filteredCategories;
+                }
+            }
 
             return View(menuItems);
         }
@@ -30,25 +70,329 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult QuickCreate(MenuItem item, int? cardId, int? categoryId)
         {
-            // Preserve the draft so the inline form can re-render with values.
+            int parsedCategoryId = ParseCategoryIdFromForm();
+            int parsedMenuCardId = ParseMenuCardIdFromForm();
+
+            item.CategoryID = parsedCategoryId;
+            item.IsActive = true;
+
+            ModelState.Remove(nameof(MenuItem.CategoryID));
+            ModelState.Remove("CategoryID");
+            ModelState.Remove("CategoryIDSelect");
+
+            ModelState.Remove(nameof(MenuItem.RetailPrice));
+            ModelState.Remove("RetailPrice");
+
+            ModelState.Remove(nameof(MenuItem.Stock));
+            ModelState.Remove("Stock");
+
+            var rawRetailPrice = Request.Form["RetailPrice"].FirstOrDefault();
+
+            if (!TryParseDecimalFlexible(rawRetailPrice, out var parsedRetailPrice))
+            {
+                parsedRetailPrice = 0m;
+                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Vul een geldige prijs in.");
+            }
+
+            item.RetailPrice = parsedRetailPrice;
+
+            var rawStock = Request.Form["Stock"].FirstOrDefault();
+
+            if (!int.TryParse(rawStock, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedStock))
+            {
+                parsedStock = 0;
+                ModelState.AddModelError(nameof(MenuItem.Stock), "Vul een geldige voorraad in.");
+            }
+
+            item.Stock = parsedStock;
+
             TempData[NewMenuItemDraftKey] = JsonSerializer.Serialize(new
             {
                 item.Name,
                 item.RetailPrice,
                 item.Stock,
-                item.CategoryID
+                item.CategoryID,
+                MenuCardID = parsedMenuCardId
             });
 
-            // Check for duplicate name (case-insensitive)
-            if (_menuService.GetMenuItems(null, null).Any(m =>
-                    m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
+            ValidateMenuItemForCreate(item, parsedMenuCardId);
+
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(nameof(MenuItem.Name), "Er bestaat al een menu-item met deze naam.");
+                TempData[FlashErrorKey] = GetModelStateErrors();
+
+                return RedirectToAction(nameof(Index), new
+                {
+                    cardId,
+                    categoryId,
+                    showCreate = true
+                });
             }
 
+            try
+            {
+                _menuService.AddMenuItem(item);
+
+                TempData[FlashSuccessKey] = "Menu-item toegevoegd.";
+                TempData.Remove(NewMenuItemDraftKey);
+
+                return RedirectToAction(nameof(Index), new
+                {
+                    cardId = parsedMenuCardId
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData[FlashErrorKey] = ex.Message;
+
+                return RedirectToAction(nameof(Index), new
+                {
+                    cardId,
+                    categoryId,
+                    showCreate = true
+                });
+            }
+            catch
+            {
+                TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
+
+                return RedirectToAction(nameof(Index), new
+                {
+                    cardId,
+                    categoryId,
+                    showCreate = true
+                });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return RedirectToAction(nameof(Index), new
+            {
+                showCreate = true
+            });
+        }
+
+        [HttpPost]
+        public IActionResult Create(MenuItem item)
+        {
+            ModelState.Remove(nameof(MenuItem.RetailPrice));
+            ModelState.Remove("RetailPrice");
+
+            var rawRetailPrice = Request.Form["RetailPrice"].FirstOrDefault();
+
+            if (!TryParseDecimalFlexible(rawRetailPrice, out var parsedRetailPrice))
+            {
+                parsedRetailPrice = 0m;
+                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Vul een geldige prijs in.");
+            }
+
+            item.RetailPrice = parsedRetailPrice;
+            item.IsActive = true;
+
+            int parsedMenuCardId = ParseMenuCardIdFromForm();
+
+            ValidateMenuItemForCreate(item, parsedMenuCardId);
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _menuService.AddMenuItem(item);
+
+                    TempData[FlashSuccessKey] = $"Menu-item '{item.Name}' is succesvol toegevoegd!";
+
+                    return RedirectToAction(nameof(Index), new
+                    {
+                        cardId = parsedMenuCardId
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    TempData[FlashErrorKey] = ex.Message;
+
+                    return RedirectToAction(nameof(Index), new
+                    {
+                        cardId = parsedMenuCardId,
+                        showCreate = true
+                    });
+                }
+                catch
+                {
+                    TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
+
+                    return RedirectToAction(nameof(Index), new
+                    {
+                        cardId = parsedMenuCardId,
+                        showCreate = true
+                    });
+                }
+            }
+
+            TempData[FlashErrorKey] = GetModelStateErrors();
+
+            return RedirectToAction(nameof(Index), new
+            {
+                cardId = parsedMenuCardId,
+                showCreate = true
+            });
+        }
+
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            return RedirectToAction(nameof(Index), new
+            {
+                editId = id
+            });
+        }
+
+        [HttpPost]
+        public IActionResult Edit(MenuItem item)
+        {
+            ModelState.Remove(nameof(MenuItem.RetailPrice));
+            ModelState.Remove("RetailPrice");
+
+            var rawRetailPrice = Request.Form["RetailPrice"].FirstOrDefault();
+
+            if (!TryParseDecimalFlexible(rawRetailPrice, out var parsedRetailPrice))
+            {
+                parsedRetailPrice = 0m;
+                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Vul een geldige prijs in.");
+            }
+
+            item.RetailPrice = parsedRetailPrice;
+
+            var existingItem = _menuService.GetMenuItems(null, null)
+                .FirstOrDefault(m => m.MenuItemID == item.MenuItemID);
+
+            if (existingItem == null)
+            {
+                TempData[FlashErrorKey] = "Menu-item bestaat niet meer.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            item.IsActive = existingItem.IsActive;
+
+            ValidateMenuItemForEdit(item);
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _menuService.UpdateMenuItem(item);
+
+                    TempData[FlashSuccessKey] = $"Menu-item '{item.Name}' is succesvol bijgewerkt!";
+
+                    return RedirectToAction(nameof(Index), new
+                    {
+                        editId = item.MenuItemID
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    TempData[FlashErrorKey] = ex.Message;
+
+                    return RedirectToAction(nameof(Index), new
+                    {
+                        editId = item.MenuItemID
+                    });
+                }
+                catch
+                {
+                    TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
+
+                    return RedirectToAction(nameof(Index), new
+                    {
+                        editId = item.MenuItemID
+                    });
+                }
+            }
+
+            TempData[FlashErrorKey] = GetModelStateErrors();
+
+            return RedirectToAction(nameof(Index), new
+            {
+                editId = item.MenuItemID
+            });
+        }
+
+        [HttpPost]
+        public IActionResult ToggleActive(int id, bool active, int? cardId, int? categoryId)
+        {
+            try
+            {
+                _menuService.SetMenuItemActive(id, active);
+
+                TempData[FlashSuccessKey] = active
+                    ? "Menu-item geactiveerd."
+                    : "Menu-item gedeactiveerd.";
+            }
+            catch
+            {
+                TempData[FlashErrorKey] = "Kon status niet aanpassen. Probeer opnieuw.";
+            }
+
+            return RedirectToAction(nameof(Index), new
+            {
+                cardId,
+                categoryId
+            });
+        }
+
+        private void ValidateMenuItemForCreate(MenuItem item, int menuCardId)
+        {
+            if (string.IsNullOrWhiteSpace(item.Name))
+            {
+                ModelState.AddModelError(nameof(MenuItem.Name), "Naam is verplicht.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Name))
+            {
+                bool duplicateExists = _menuService.GetMenuItems(null, null)
+                    .Any(m => m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (duplicateExists)
+                {
+                    ModelState.AddModelError(nameof(MenuItem.Name), "Er bestaat al een menu-item met deze naam.");
+                }
+            }
+
+            ValidateBasicMenuItemFields(item);
+            ValidateCategoryForCreate(item.CategoryID, menuCardId);
+        }
+
+        private void ValidateMenuItemForEdit(MenuItem item)
+        {
+            if (string.IsNullOrWhiteSpace(item.Name))
+            {
+                ModelState.AddModelError(nameof(MenuItem.Name), "Naam is verplicht.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Name))
+            {
+                bool duplicateExists = _menuService.GetMenuItems(null, null)
+                    .Any(m =>
+                        m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)
+                        && m.MenuItemID != item.MenuItemID
+                    );
+
+                if (duplicateExists)
+                {
+                    ModelState.AddModelError(nameof(MenuItem.Name), "Een ander menu-item met deze naam bestaat al.");
+                }
+            }
+
+            ValidateBasicMenuItemFields(item);
+            ValidateCategoryForEdit(item);
+        }
+
+        private void ValidateBasicMenuItemFields(MenuItem item)
+        {
             if (item.RetailPrice < 0)
             {
-                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Prijs kan niet negatief zijn.");
+                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Verkoopprijs kan niet negatief zijn.");
             }
 
             if (item.Stock < 0)
@@ -58,208 +402,166 @@ namespace Chapeau.Controllers
 
             if (item.CategoryID <= 0)
             {
+                ModelState.AddModelError(nameof(MenuItem.CategoryID), "Selecteer een geldige categorie.");
+            }
+        }
+
+        private void ValidateCategoryForCreate(int categoryId, int menuCardId)
+        {
+            if (menuCardId is not (1 or 2 or 3))
+            {
+                ModelState.AddModelError("MenuCardID", "Kies een geldige kaart.");
+                return;
+            }
+
+            if (categoryId <= 0)
+            {
+                return;
+            }
+
+            var category = _categoryService.GetCategories()
+                .FirstOrDefault(c => c.CategoryID == categoryId);
+
+            if (category == null)
+            {
                 ModelState.AddModelError(nameof(MenuItem.CategoryID), "Kies een geldige categorie.");
+                return;
             }
 
-            // Inline create only uses retail price in the UI; keep purchase price safe.
-            if (item.PurchasePrice < 0)
+            if (category.MenuCardID != menuCardId)
             {
-                item.PurchasePrice = 0;
-            }
-
-            if (!ModelState.IsValid)
-            {
-                TempData[FlashErrorKey] = string.Join("\n",
-                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
-            }
-
-            try
-            {
-                _menuService.AddMenuItem(item);
-                TempData[FlashSuccessKey] = "Menu-item toegevoegd.";
-                TempData.Remove(NewMenuItemDraftKey);
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
-            }
-            catch (InvalidOperationException ex)
-            {
-                TempData[FlashErrorKey] = ex.Message;
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
-            }
-            catch
-            {
-                TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
+                ModelState.AddModelError(nameof(MenuItem.CategoryID), "Deze categorie hoort niet bij de gekozen kaart.");
             }
         }
 
-        [HttpGet]
-        public IActionResult Create()
+        private void ValidateCategoryForEdit(MenuItem item)
         {
-            var categories = _categoryService.GetCategories();
-            ViewBag.Categories = categories;
+            if (item.CategoryID <= 0)
+            {
+                return;
+            }
 
-            // MenuCards (static data)
-            var menuCards = new List<SelectListItem>
+            var categories = _categoryService.GetCategories();
+
+            var newCategory = categories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
+
+            if (newCategory == null)
+            {
+                ModelState.AddModelError(nameof(MenuItem.CategoryID), "Kies een geldige categorie.");
+                return;
+            }
+
+            var existingItem = _menuService.GetMenuItems(null, null)
+                .FirstOrDefault(m => m.MenuItemID == item.MenuItemID);
+
+            if (existingItem == null)
+            {
+                ModelState.AddModelError("", "Menu-item bestaat niet meer.");
+                return;
+            }
+
+            var oldCategory = categories.FirstOrDefault(c => c.CategoryID == existingItem.CategoryID);
+
+            if (oldCategory == null)
+            {
+                ModelState.AddModelError("", "Huidige categorie van dit menu-item bestaat niet meer.");
+                return;
+            }
+
+            if (newCategory.MenuCardID != oldCategory.MenuCardID)
+            {
+                ModelState.AddModelError(nameof(MenuItem.CategoryID), "Je mag alleen een categorie kiezen binnen dezelfde kaart.");
+            }
+        }
+
+        private static List<SelectListItem> GetMenuCardSelectList()
+        {
+            return new List<SelectListItem>
             {
                 new SelectListItem { Value = "1", Text = "Lunch" },
                 new SelectListItem { Value = "2", Text = "Diner" },
                 new SelectListItem { Value = "3", Text = "Dranken" }
             };
-            ViewBag.MenuCards = menuCards;
-
-            return View();
         }
 
-        [HttpPost]
-        public IActionResult Create(MenuItem item)
+        private int ParseCategoryIdFromForm()
         {
-            // Check for duplicate name (case-insensitive)
-            if (_menuService.GetMenuItems(null, null).Any(m =>
-                    m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
+            var rawCategoryId = Request.Form["CategoryID"].FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(rawCategoryId))
             {
-                ModelState.AddModelError("Name", "Een menu-item met deze naam bestaat al.");
+                rawCategoryId = Request.Form["CategoryIDSelect"].FirstOrDefault();
             }
 
-            // Additional server-side validation
-            if (item.PurchasePrice < 0)
+            if (int.TryParse(rawCategoryId, out var parsedCategoryId))
             {
-                ModelState.AddModelError("PurchasePrice", "Inkoopprijs kan niet negatief zijn.");
+                return parsedCategoryId;
             }
 
-            if (item.RetailPrice < 0)
-            {
-                ModelState.AddModelError("RetailPrice", "Verkoopprijs kan niet negatief zijn.");
-            }
-
-            if (item.Stock < 0)
-            {
-                ModelState.AddModelError("Stock", "Voorraad kan niet negatief zijn.");
-            }
-
-            if (item.CategoryID <= 0)
-            {
-                ModelState.AddModelError("CategoryID", "Selecteer een geldige categorie.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _menuService.AddMenuItem(item);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (InvalidOperationException ex)
-                {
-                    ModelState.AddModelError("Name", ex.Message);
-                }
-                catch (Exception)
-                {
-                    ModelState.AddModelError("", "Er is een onverwachte fout opgetreden bij het opslaan.");
-                }
-            }
-
-            // Repopulate categories and menu cards for form re-display
-            var categoriesForReDisplay = _categoryService.GetCategories();
-            ViewBag.Categories = categoriesForReDisplay;
-
-            var menuCardsForReDisplay = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "1", Text = "Lunch" },
-                new SelectListItem { Value = "2", Text = "Diner" },
-                new SelectListItem { Value = "3", Text = "Dranken" }
-            };
-            ViewBag.MenuCards = menuCardsForReDisplay;
-
-            return View(item);
+            return 0;
         }
 
-        [HttpGet]
-        public IActionResult Edit(int id)
+        private int ParseMenuCardIdFromForm()
         {
-            var item = _menuService.GetMenuItems(null, null)
-                .FirstOrDefault(m => m.MenuItemID == id);
+            var rawMenuCardId = Request.Form["MenuCardID"].FirstOrDefault();
 
-            if (item == null)
+            if (int.TryParse(rawMenuCardId, out var parsedMenuCardId))
             {
-                return NotFound();
+                return parsedMenuCardId;
             }
 
-            var categories = _categoryService.GetCategories();
-            ViewBag.Categories = categories;
-
-            return View(item);
+            return 0;
         }
 
-        [HttpPost]
-        public IActionResult Edit(MenuItem item)
+        private static bool TryParseDecimalFlexible(string? input, out decimal value)
         {
-            // Check for duplicate name (case-insensitive, excluding current item)
-            if (_menuService.GetMenuItems(null, null).Any(m =>
-                    m.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)
-                    && m.MenuItemID != item.MenuItemID))
+            value = 0m;
+
+            if (string.IsNullOrWhiteSpace(input))
             {
-                ModelState.AddModelError("Name", "Een ander menu-item met deze naam bestaat al.");
+                return false;
             }
 
-            // Additional server-side validation
-            if (item.PurchasePrice < 0)
+            var trimmed = input.Trim();
+            var hasDot = trimmed.Contains('.');
+            var hasComma = trimmed.Contains(',');
+
+            if (hasDot && !hasComma)
             {
-                ModelState.AddModelError("PurchasePrice", "Inkoopprijs kan niet negatief zijn.");
+                return decimal.TryParse(trimmed, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
             }
 
-            if (item.RetailPrice < 0)
+            if (hasComma && !hasDot)
             {
-                ModelState.AddModelError("RetailPrice", "Verkoopprijs kan niet negatief zijn.");
+                return decimal.TryParse(trimmed, NumberStyles.Number, CultureInfo.GetCultureInfo("nl-NL"), out value);
             }
 
-            if (item.Stock < 0)
+            if (decimal.TryParse(trimmed, NumberStyles.Number, CultureInfo.GetCultureInfo("nl-NL"), out value))
             {
-                ModelState.AddModelError("Stock", "Voorraad kan niet negatief zijn.");
+                return true;
             }
 
-            if (item.CategoryID <= 0)
+            if (decimal.TryParse(trimmed, NumberStyles.Number, CultureInfo.GetCultureInfo("en-US"), out value))
             {
-                ModelState.AddModelError("CategoryID", "Selecteer een geldige categorie.");
+                return true;
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _menuService.UpdateMenuItem(item);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (InvalidOperationException ex)
-                {
-                    ModelState.AddModelError("Name", ex.Message);
-                }
-                catch (Exception)
-                {
-                    ModelState.AddModelError("", "Er is een onverwachte fout opgetreden bij het opslaan.");
-                }
-            }
+            var normalized = trimmed.Replace(',', '.');
 
-            // Repopulate categories for form re-display
-            var categoriesForReDisplay = _categoryService.GetCategories();
-            ViewBag.Categories = categoriesForReDisplay;
-
-            return View(item);
+            return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
         }
 
-        [HttpPost]
-        public IActionResult ToggleActive(int id, bool active)
+        private string GetModelStateErrors()
         {
-            try
-            {
-                _menuService.SetMenuItemActive(id, active);
-                TempData[FlashSuccessKey] = active ? "Menu-item geactiveerd." : "Menu-item gedeactiveerd.";
-            }
-            catch
-            {
-                TempData[FlashErrorKey] = "Kon status niet aanpassen. Probeer opnieuw.";
-            }
-            return RedirectToAction(nameof(Index));
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .Where(msg => !string.IsNullOrWhiteSpace(msg))
+                .Where(msg => !msg.Contains("The value '' is invalid.", StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .ToList();
+
+            return string.Join("\n", errors);
         }
     }
 }

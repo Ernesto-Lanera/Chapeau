@@ -78,8 +78,8 @@ namespace Chapeau.Services
             if (string.IsNullOrWhiteSpace(item.Name))
                 throw new ArgumentException("Menu item name is required");
 
-            if (item.PurchasePrice < 0 || item.RetailPrice < 0)
-                throw new ArgumentException("Menu item prices cannot be negative");
+            if (item.RetailPrice < 0)
+                throw new ArgumentException("Retail price cannot be negative");
 
             if (item.Stock < 0)
                 throw new ArgumentException("Menu item stock cannot be negative");

@@ -1,155 +1,450 @@
 @model IEnumerable<Chapeau.Models.Employee>
 
 @{
-    ViewData["Title"] = "Medewerkersbeheer";
+    ViewData["Title"] = "MedewerkerBeheer";
 
-    string? flashError = TempData["FlashError"] as string;
-    string? flashSuccess = TempData["FlashSuccess"] as string;
+    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.Role>;
 
-    var roles = (IEnumerable<Chapeau.Models.Role>?)ViewBag.Roles ?? Enumerable.Empty<Chapeau.Models.Role>();
+    if (roles == null)
+    {
+        roles = Enumerable.Empty<Chapeau.Models.Role>();
+    }
+
     var roleNameById = roles.ToDictionary(r => r.RoleID, r => r.RoleName);
+
+    var editEmployee = ViewBag.EditEmployee as Chapeau.Models.Employee;
+
+    bool isEdit = editEmployee != null;
+    bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
+    bool showForm = isEdit || showCreate;
 
     string? draftJson = TempData["NewEmployeeDraft"] as string;
     string draftName = "";
-    int draftRoleId = 1;
+    int draftRoleId = 0;
+
     if (!string.IsNullOrWhiteSpace(draftJson))
     {
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(draftJson);
             var root = doc.RootElement;
-            if (root.TryGetProperty("Name", out var nameEl)) draftName = nameEl.GetString() ?? "";
-            if (root.TryGetProperty("RoleID", out var roleEl) && roleEl.TryGetInt32(out var rid)) draftRoleId = rid;
+
+            if (root.TryGetProperty("Name", out var nameEl))
+            {
+                draftName = nameEl.GetString() ?? "";
+            }
+
+            if (root.TryGetProperty("RoleID", out var roleEl) && roleEl.TryGetInt32(out var rid))
+            {
+                draftRoleId = rid;
+            }
         }
-        catch { }
+        catch
+        {
+        }
     }
 }
 
-<div class="page-header">
-    <h2 class="page-title">Medewerkersbeheer</h2>
-    <button type="button" class="btn btn-success" id="toggleNewEmployee">
-        <i class="bi bi-plus-lg me-1"></i>Nieuwe Medewerker
-    </button>
-</div>
+<style>
+    body {
+        background-color: #f8fafc;
+    }
 
-@if (!string.IsNullOrWhiteSpace(flashSuccess))
-{
-    <div class="alert alert-success flash-alert" role="alert">
-        <i class="bi bi-check-circle-fill me-1"></i>@flashSuccess
+    .page-content {
+        padding: 28px 24px;
+    }
+
+    .page-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 22px;
+    }
+
+    .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+    }
+
+    .btn-new {
+        background-color: #16a34a;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-new:hover {
+            background-color: #15803d;
+            color: white;
+        }
+
+    .btn-close-form {
+        background-color: #6b7280;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-close-form:hover {
+            background-color: #4b5563;
+            color: white;
+        }
+
+    .employee-table-card {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .employee-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: collapse;
+    }
+
+        .employee-table thead {
+            background-color: #f9fafb;
+        }
+
+        .employee-table th {
+            padding: 16px 22px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            text-align: left;
+        }
+
+        .employee-table td {
+            padding: 17px 22px;
+            border-top: 1px solid #f1f5f9;
+            color: #374151;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .employee-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+    .inactive-row td {
+        color: #6b7280;
+        background-color: #f3f4f6;
+    }
+
+    .inactive-row:hover td {
+        background-color: #f3f4f6;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 5px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    .status-inactive {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .action-cell {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .action-icon {
+        border: none;
+        background: transparent;
+        padding: 0;
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .action-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2;
+        }
+
+    .action-edit {
+        color: #2563eb;
+    }
+
+        .action-edit:hover {
+            color: #1d4ed8;
+        }
+
+    .action-active {
+        color: #22c55e;
+    }
+
+        .action-active:hover {
+            color: #16a34a;
+        }
+
+    .action-inactive {
+        color: #ef4444;
+    }
+
+        .action-inactive:hover {
+            color: #dc2626;
+        }
+
+    .inline-action-form {
+        display: inline;
+        margin: 0;
+        padding: 0;
+    }
+
+    .form-card {
+        background-color: #eff6ff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        margin-bottom: 28px;
+        padding: 24px;
+    }
+
+        .form-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #111827;
+        }
+
+    .alert {
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="page-content">
+
+    <div class="page-title-row">
+        <h2 class="page-title">Medewerkers Beheer</h2>
+
+        @if (showCreate)
+        {
+            <a href="@Url.Action("Index", "Employee")"
+                   class="btn-close-form">
+                Sluiten
+            </a>
+        }
+        else
+        {
+            <a href="@Url.Action("Index", "Employee", new { showCreate = true })#employeeForm"
+                   class="btn-new">
+                + Nieuwe Medewerker
+            </a>
+        }
     </div>
-}
-@if (!string.IsNullOrWhiteSpace(flashError))
-{
-    <div class="alert alert-danger flash-alert" role="alert">
-        <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Er ging iets mis</div>
-        <ul class="mb-0">
-            @foreach (var line in flashError.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+
+    @if (TempData["FlashError"] != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Er ging iets mis</strong>
+            <ul>
+                @foreach (var error in TempData["FlashError"].ToString()!.Split('\n'))
+                {
+                    if (!string.IsNullOrWhiteSpace(error))
+                    {
+                        <li>@error</li>
+                    }
+                }
+            </ul>
+        </div>
+    }
+
+    @if (TempData["FlashSuccess"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["FlashSuccess"]
+        </div>
+    }
+
+    @if (showForm)
+    {
+        <div id="employeeForm" class="form-card">
+            @if (isEdit)
             {
-                <li>@line</li>
+                <h3>Medewerker Bewerken</h3>
+
+                ViewBag.IsEdit = true;
+
+                @await Html.PartialAsync("EmployeeForm", editEmployee)
             }
-        </ul>
-    </div>
-}
-
-<div class="card card-soft mb-3 d-none" id="newEmployeeCard">
-    <div class="card-body">
-        <h5 class="card-title mb-3">Nieuwe Medewerker</h5>
-        <form method="post" action="@Url.Action("QuickCreate")" class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Naam</label>
-                <input class="form-control" name="Name" value="@draftName" />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Wachtwoord/Pincode</label>
-                <input class="form-control" name="PasswordHash" type="password" />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Rol</label>
-                <select class="form-select" name="RoleID">
-                    <option value="">Kies rol</option>
-                    @if (!roles.Any())
-                    {
-                        <option value="" disabled>Geen rollen gevonden</option>
-                    }
-                    else
-                    {
-                        @foreach (var role in roles)
-                        {
-                            <option value="@role.RoleID" selected="@(draftRoleId == role.RoleID)">@role.RoleName</option>
-                        }
-                    }
-                </select>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">Toevoegen</button>
-                <button type="button" class="btn btn-light" id="cancelNewEmployee">Annuleren</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="table-responsive">
-    <table class="table app-table align-middle">
-        <thead>
-            <tr>
-                <th>Naam</th>
-                <th>Gebruikersnaam</th>
-                <th>Rol</th>
-                <th>Status</th>
-                <th class="text-end">Acties</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var emp in Model)
+            else
             {
-                var username = (emp.Name ?? "")
-                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    .FirstOrDefault()?.ToLowerInvariant() ?? "user";
-                username = $"{username}{emp.EmployeeID:000}";
+                <h3>Nieuwe Medewerker</h3>
 
-                var statusClass = emp.IsActive ? "status-active" : "status-inactive";
-                var statusText = emp.IsActive ? "Actief" : "Inactief";
-                <tr class="@(emp.IsActive ? "" : "is-inactive")">
-                    <td class="fw-semibold">@emp.Name</td>
-                    <td>@username</td>
-                    <td>@(roleNameById.TryGetValue(emp.RoleID, out var roleName) ? roleName : emp.RoleID.ToString())</td>
-                    <td>
-                        <span class="badge rounded-pill status-badge @statusClass">@statusText</span>
-                    </td>
-                    <td class="text-end">
-                        <a class="icon-btn text-primary" title="Bewerk"
-                           href="@Url.Action("Edit", new { id = emp.EmployeeID })">
-                            <i class="bi bi-pencil-square"></i>
-                        </a>
-                        <form method="post" action="@Url.Action("ToggleActive")" class="d-inline">
-                            <input type="hidden" name="id" value="@emp.EmployeeID" />
-                            <input type="hidden" name="active" value="@(emp.IsActive ? "false" : "true")" />
-                            <button type="submit" class="icon-btn @(emp.IsActive ? "text-danger" : "text-success")"
-                                    title="@(emp.IsActive ? "Deactiveer" : "Activeer")">
-                                <i class="bi @(emp.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
-                            </button>
-                        </form>
-                    </td>
+                ViewBag.IsEdit = false;
+
+                @await Html.PartialAsync("EmployeeForm", new Chapeau.Models.Employee
+                {
+                    Name = draftName,
+                    RoleID = draftRoleId,
+                    IsActive = true
+                })
+            }
+        </div>
+    }
+
+    <div class="employee-table-card">
+        <table class="employee-table">
+            <thead>
+                <tr>
+                    <th>Naam</th>
+                    <th>Gebruikersnaam</th>
+                    <th>Rol</th>
+                    <th>Status</th>
+                    <th>Acties</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+
+            <tbody>
+                @foreach (var employee in Model)
+                {
+                    var usernameBase = (employee.Name ?? "")
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .FirstOrDefault()?.ToLowerInvariant() ?? "user";
+
+                    string username = $"{usernameBase}{employee.EmployeeID:000}";
+
+                    string roleName = roleNameById.TryGetValue(employee.RoleID, out var rn)
+                        ? rn
+                        : employee.RoleID.ToString();
+
+                    string rowClass = employee.IsActive ? "" : "inactive-row";
+
+                    <tr class="@rowClass">
+                        <td>@employee.Name</td>
+                        <td>@username</td>
+                        <td>@roleName</td>
+
+                        <td>
+                            @if (employee.IsActive)
+                            {
+                                <span class="status-badge status-active">Actief</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-inactive">Inactief</span>
+                            }
+                        </td>
+
+                        <td>
+                            <div class="action-cell">
+                                <a href="@Url.Action("Index", "Employee", new { editId = employee.EmployeeID })#employeeForm"
+                                       class="action-icon action-edit"
+                                       title="Bewerken">
+
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M19.5 7.125L16.875 4.5" />
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                    </svg>
+                                </a>
+
+                                <form method="post"
+                                      action="@Url.Action("ToggleActive", "Employee")"
+                                      class="inline-action-form">
+
+                                    <input type="hidden" name="id" value="@employee.EmployeeID" />
+
+                                    @if (employee.IsActive)
+                                    {
+                                        <input type="hidden" name="active" value="false" />
+
+                                        <button type="submit"
+                                                class="action-icon action-inactive"
+                                                title="Deactiveren">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      d="M12 3v9" />
+                                                <path stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
+                                                <path stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      d="M4 4l16 16" />
+                                            </svg>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <input type="hidden" name="active" value="true" />
+
+                                        <button type="submit"
+                                                class="action-icon action-active"
+                                                title="Activeren">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      d="M12 3v9" />
+                                                <path stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
+                                            </svg>
+                                        </button>
+                                    }
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
-@section Scripts {
+@if (showForm)
+{
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            var card = document.getElementById('newEmployeeCard');
-            var toggle = document.getElementById('toggleNewEmployee');
-            var cancel = document.getElementById('cancelNewEmployee');
+            const formCard = document.getElementById("employeeForm");
 
-            toggle.addEventListener('click', function () {
-                card.classList.toggle('d-none');
-            });
-
-            cancel.addEventListener('click', function () {
-                card.classList.add('d-none');
-            });
+            if (formCard) {
+                formCard.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
         });
     </script>
 }

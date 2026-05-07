@@ -26,34 +26,61 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Update(int id, int newStock, int? cardId, int? categoryId)
         {
-            var isAjax = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(Request.Headers["X-Requested-With"], "fetch", StringComparison.OrdinalIgnoreCase)
-                         || Request.Headers.Accept.Any(h => h.Contains("application/json", StringComparison.OrdinalIgnoreCase));
+            bool isAjax =
+                string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Request.Headers["X-Requested-With"], "fetch", StringComparison.OrdinalIgnoreCase)
+                || Request.Headers.Accept.Any(h => h != null && h.Contains("application/json", StringComparison.OrdinalIgnoreCase));
 
             try
             {
+                if (newStock < 0)
+                {
+                    newStock = 0;
+                }
+
                 _menuService.ChangeStock(id, newStock);
+
                 if (isAjax)
-                    return Ok(new { id, newStock });
+                {
+                    return Ok(new
+                    {
+                        id,
+                        newStock
+                    });
+                }
 
                 TempData[FlashSuccessKey] = "Voorraad bijgewerkt.";
             }
             catch (ArgumentException ex)
             {
                 if (isAjax)
-                    return BadRequest(new { error = ex.Message });
+                {
+                    return BadRequest(new
+                    {
+                        error = ex.Message
+                    });
+                }
 
                 TempData[FlashErrorKey] = ex.Message;
             }
             catch
             {
                 if (isAjax)
-                    return StatusCode(500, new { error = "Kon voorraad niet bijwerken. Probeer opnieuw." });
+                {
+                    return StatusCode(500, new
+                    {
+                        error = "Kon voorraad niet bijwerken. Probeer opnieuw."
+                    });
+                }
 
                 TempData[FlashErrorKey] = "Kon voorraad niet bijwerken. Probeer opnieuw.";
             }
 
-            return RedirectToAction(nameof(Index), new { cardId, categoryId });
+            return RedirectToAction(nameof(Index), new
+            {
+                cardId,
+                categoryId
+            });
         }
     }
 }

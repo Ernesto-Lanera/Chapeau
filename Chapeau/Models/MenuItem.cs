@@ -10,10 +10,7 @@ namespace Chapeau.Models
         [StringLength(100, ErrorMessage = "Naam mag niet langer zijn dan 100 karakters")]
         public string Name { get; set; } = "";
 
-        [Range(0, double.MaxValue, ErrorMessage = "Inkoopprijs moet groter dan of gelijk aan 0 zijn")]
-        public decimal PurchasePrice { get; set; }
-
-        [Range(0, double.MaxValue, ErrorMessage = "Verkoopprijs moet groter dan of gelijk aan 0 zijn")]
+        [Range(0, double.MaxValue, ErrorMessage = "Prijs moet groter dan of gelijk aan 0 zijn")]
         public decimal RetailPrice { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Voorraad moet groter dan of gelijk aan 0 zijn")]
