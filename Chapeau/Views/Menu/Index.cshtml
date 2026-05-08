@@ -1,4 +1,5 @@
 @model IEnumerable<Chapeau.Models.MenuItem>
+
 @{
     ViewData["Title"] = "MenuBeheer";
 
@@ -120,6 +121,12 @@
         padding-left: 10px;
     }
 
+        .filter-group select:focus {
+            border-color: #93c5fd;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
     .menu-table-card {
         background-color: white;
         border: 1px solid #e5e7eb;
@@ -239,24 +246,181 @@
         padding: 0;
     }
 
+    .alert {
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    /* Form container */
     .form-card {
         background-color: #eff6ff;
-        border: 1px solid #e5e7eb;
+        border: none;
         border-radius: 10px;
         margin-bottom: 28px;
-        padding: 24px;
+        padding: 28px 30px;
     }
 
         .form-card h3 {
             font-size: 20px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             color: #111827;
         }
 
-    .alert {
-        border-radius: 8px;
-        margin-bottom: 20px;
+    /* Menu form layout */
+    #menuItemEditCreateForm {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px 18px;
+    }
+
+        #menuItemEditCreateForm .form-group {
+            margin-bottom: 0 !important;
+        }
+
+        #menuItemEditCreateForm label {
+            display: none;
+        }
+
+        #menuItemEditCreateForm input.form-control,
+        #menuItemEditCreateForm select.form-select {
+            height: 48px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background-color: #f8fbff;
+            padding: 10px 16px;
+            font-size: 15px;
+            color: #111827;
+            width: 100%;
+        }
+
+            #menuItemEditCreateForm input.form-control::placeholder {
+                color: #6b7280;
+            }
+
+            #menuItemEditCreateForm input.form-control:focus,
+            #menuItemEditCreateForm select.form-select:focus {
+                border-color: #93c5fd;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            }
+
+        /* Kaart */
+        #menuItemEditCreateForm .form-group:nth-of-type(1) {
+            order: 5;
+            grid-column: 1 / 2;
+        }
+
+        /* Naam */
+        #menuItemEditCreateForm .form-group:nth-of-type(2) {
+            order: 1;
+            grid-column: 1 / 2;
+        }
+
+        /* Prijs */
+        #menuItemEditCreateForm .form-group:nth-of-type(3) {
+            order: 2;
+            grid-column: 2 / 3;
+        }
+
+        /* Voorraad */
+        #menuItemEditCreateForm .form-group:nth-of-type(4) {
+            order: 3;
+            grid-column: 1 / 2;
+        }
+
+        /* Categorie */
+        #menuItemEditCreateForm .form-group:nth-of-type(5) {
+            order: 4;
+            grid-column: 2 / 3;
+        }
+
+        #menuItemEditCreateForm small,
+        #menuItemEditCreateForm .text-danger {
+            display: none;
+        }
+
+        /* Form buttons */
+        #menuItemEditCreateForm .form-actions {
+            order: 6;
+            grid-column: 1 / 3;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 2px;
+        }
+
+            #menuItemEditCreateForm .form-actions button[type="submit"] {
+                min-width: 110px;
+                height: 46px;
+                border-radius: 8px;
+                font-weight: 700;
+                background-color: #2563eb;
+                border-color: #2563eb;
+                color: white;
+            }
+
+                #menuItemEditCreateForm .form-actions button[type="submit"]:hover {
+                    background-color: #1d4ed8;
+                    border-color: #1d4ed8;
+                    color: white;
+                }
+
+            #menuItemEditCreateForm .form-actions a.btn-secondary {
+                min-width: 110px;
+                height: 46px;
+                border-radius: 8px;
+                font-weight: 700;
+                background-color: #d1d5db;
+                border-color: #d1d5db;
+                color: #111827;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+            }
+
+                #menuItemEditCreateForm .form-actions a.btn-secondary:hover {
+                    background-color: #c4c9d1;
+                    border-color: #c4c9d1;
+                    color: #111827;
+                }
+
+    @@media (max-width: 768px) {
+        .page-content {
+            padding: 20px 14px;
+        }
+
+        .page-title-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .filter-row {
+            flex-direction: column;
+        }
+
+        .filter-group select {
+            width: 100%;
+        }
+
+        #menuItemEditCreateForm {
+            grid-template-columns: 1fr;
+        }
+
+            #menuItemEditCreateForm .form-group:nth-of-type(1),
+            #menuItemEditCreateForm .form-group:nth-of-type(2),
+            #menuItemEditCreateForm .form-group:nth-of-type(3),
+            #menuItemEditCreateForm .form-group:nth-of-type(4),
+            #menuItemEditCreateForm .form-group:nth-of-type(5) {
+                grid-column: 1 / 2;
+            }
+
+            #menuItemEditCreateForm .form-actions {
+                grid-column: 1 / 2;
+                flex-wrap: wrap;
+            }
     }
 </style>
 
@@ -364,10 +528,10 @@
             }
             else
             {
-                <h3>Nieuw Menu Item Toevoegen</h3>
+                <h3>Nieuw Menu Item</h3>
 
                 ViewBag.IsEdit = false;
-                ViewBag.SelectedMenuCardId = 0;
+                ViewBag.SelectedMenuCardId = 1;
 
                 @await Html.PartialAsync("MenuItemForm", new Chapeau.Models.MenuItem
                 {
@@ -411,7 +575,7 @@
                         }
                         else if (category.MenuCardID == 3)
                         {
-                            cardName = "Drinks";
+                            cardName = "Dranken";
                         }
                     }
 

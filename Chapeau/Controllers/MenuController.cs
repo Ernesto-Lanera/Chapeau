@@ -136,6 +136,7 @@ namespace Chapeau.Controllers
                 TempData[FlashSuccessKey] = "Menu-item toegevoegd.";
                 TempData.Remove(NewMenuItemDraftKey);
 
+                // Succes: form sluiten
                 return RedirectToAction(nameof(Index), new
                 {
                     cardId = parsedMenuCardId
@@ -145,6 +146,7 @@ namespace Chapeau.Controllers
             {
                 TempData[FlashErrorKey] = ex.Message;
 
+                // Fout: form open houden
                 return RedirectToAction(nameof(Index), new
                 {
                     cardId,
@@ -156,6 +158,7 @@ namespace Chapeau.Controllers
             {
                 TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
 
+                // Fout: form open houden
                 return RedirectToAction(nameof(Index), new
                 {
                     cardId,
@@ -203,6 +206,7 @@ namespace Chapeau.Controllers
 
                     TempData[FlashSuccessKey] = $"Menu-item '{item.Name}' is succesvol toegevoegd!";
 
+                    // Succes: form sluiten
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId
@@ -212,6 +216,7 @@ namespace Chapeau.Controllers
                 {
                     TempData[FlashErrorKey] = ex.Message;
 
+                    // Fout: form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId,
@@ -222,6 +227,7 @@ namespace Chapeau.Controllers
                 {
                     TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
 
+                    // Fout: form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId,
@@ -232,6 +238,7 @@ namespace Chapeau.Controllers
 
             TempData[FlashErrorKey] = GetModelStateErrors();
 
+            // Validatiefout: form open houden
             return RedirectToAction(nameof(Index), new
             {
                 cardId = parsedMenuCardId,
@@ -273,6 +280,7 @@ namespace Chapeau.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Status behouden. Actief/inactief gaat via ToggleActive.
             item.IsActive = existingItem.IsActive;
 
             ValidateMenuItemForEdit(item);
@@ -285,15 +293,14 @@ namespace Chapeau.Controllers
 
                     TempData[FlashSuccessKey] = $"Menu-item '{item.Name}' is succesvol bijgewerkt!";
 
-                    return RedirectToAction(nameof(Index), new
-                    {
-                        editId = item.MenuItemID
-                    });
+                    // Succes: form sluiten, dus GEEN editId meegeven
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (InvalidOperationException ex)
                 {
                     TempData[FlashErrorKey] = ex.Message;
 
+                    // Fout: edit-form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         editId = item.MenuItemID
@@ -303,6 +310,7 @@ namespace Chapeau.Controllers
                 {
                     TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
 
+                    // Fout: edit-form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         editId = item.MenuItemID
@@ -312,6 +320,7 @@ namespace Chapeau.Controllers
 
             TempData[FlashErrorKey] = GetModelStateErrors();
 
+            // Validatiefout: edit-form open houden
             return RedirectToAction(nameof(Index), new
             {
                 editId = item.MenuItemID

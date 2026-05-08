@@ -83,12 +83,14 @@ namespace Chapeau.Controllers
                 TempData[FlashSuccessKey] = "Medewerker toegevoegd.";
                 TempData.Remove(NewEmployeeDraftKey);
 
+                // Succes: form sluiten
                 return RedirectToAction(nameof(Index));
             }
             catch (InvalidOperationException ex)
             {
                 TempData[FlashErrorKey] = ex.Message;
 
+                // Fout: form open houden
                 return RedirectToAction(nameof(Index), new
                 {
                     showCreate = true
@@ -98,6 +100,7 @@ namespace Chapeau.Controllers
             {
                 TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
 
+                // Fout: form open houden
                 return RedirectToAction(nameof(Index), new
                 {
                     showCreate = true
@@ -123,6 +126,12 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Edit(Employee employee)
         {
+            // Belangrijk:
+            // PasswordHash is bij edit NIET verplicht.
+            // Dit voorkomt de validation error als je het wachtwoordveld leeg laat.
+            ModelState.Remove(nameof(Employee.PasswordHash));
+            ModelState.Remove("PasswordHash");
+
             var existingEmployee = _employeeService.GetEmployees()
                 .FirstOrDefault(e => e.EmployeeID == employee.EmployeeID);
 
@@ -132,11 +141,10 @@ namespace Chapeau.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Actief/inactief blijft hetzelfde bij edit.
-            // Status aanpassen doe je alleen via de actieknop.
+            // Status behouden. Actief/inactief aanpassen doe je via ToggleActive.
             employee.IsActive = existingEmployee.IsActive;
 
-            // Als wachtwoord leeg is, behoud oud wachtwoord.
+            // Leeg wachtwoord betekent: oude wachtwoord behouden.
             if (string.IsNullOrWhiteSpace(employee.PasswordHash))
             {
                 employee.PasswordHash = existingEmployee.PasswordHash;
@@ -148,6 +156,7 @@ namespace Chapeau.Controllers
             {
                 TempData[FlashErrorKey] = GetModelStateErrors();
 
+                // Validatiefout: edit-form open houden
                 return RedirectToAction(nameof(Index), new
                 {
                     editId = employee.EmployeeID
@@ -160,15 +169,14 @@ namespace Chapeau.Controllers
 
                 TempData[FlashSuccessKey] = "Medewerker bijgewerkt.";
 
-                return RedirectToAction(nameof(Index), new
-                {
-                    editId = employee.EmployeeID
-                });
+                // Succes: form sluiten
+                return RedirectToAction(nameof(Index));
             }
             catch (InvalidOperationException ex)
             {
                 TempData[FlashErrorKey] = ex.Message;
 
+                // Fout: edit-form open houden
                 return RedirectToAction(nameof(Index), new
                 {
                     editId = employee.EmployeeID
@@ -178,6 +186,7 @@ namespace Chapeau.Controllers
             {
                 TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
 
+                // Fout: edit-form open houden
                 return RedirectToAction(nameof(Index), new
                 {
                     editId = employee.EmployeeID

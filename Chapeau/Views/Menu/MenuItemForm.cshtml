@@ -22,14 +22,19 @@
         menuCards = Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
     }
 
-    int selectedMenuCardId = 0;
+    int selectedMenuCardId = 1;
 
     if (ViewBag.SelectedMenuCardId != null)
     {
         selectedMenuCardId = Convert.ToInt32(ViewBag.SelectedMenuCardId);
     }
 
-    if (isEdit && selectedMenuCardId == 0)
+    if (selectedMenuCardId <= 0)
+    {
+        selectedMenuCardId = 1;
+    }
+
+    if (isEdit)
     {
         var currentCategory = categories.FirstOrDefault(c => c.CategoryID == Model.CategoryID);
 
@@ -40,8 +45,7 @@
     }
 
     string formAction = isEdit ? "Edit" : "Create";
-    string buttonText = isEdit ? "Bijwerken" : "Opslaan";
-    string buttonClass = "btn-primary";
+    string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
 }
 
 <form id="menuItemEditCreateForm" method="post" action="@Url.Action(formAction, "Menu")">
@@ -53,13 +57,11 @@
     }
 
     <div class="form-group mb-3">
-        <label class="form-label">Kaart *</label>
+        <label class="form-label">Kaart</label>
 
         @if (isEdit)
         {
             <select id="menuCardSelect" class="form-select" disabled="disabled">
-                <option value="">Selecteer een kaart</option>
-
                 @foreach (var card in menuCards)
                 {
                     if (card.Value == selectedMenuCardId.ToString())
@@ -76,17 +78,18 @@
         else
         {
             <select id="menuCardSelect" name="MenuCardID" class="form-select" required="required">
-                <option value="">Selecteer een kaart</option>
-
                 @foreach (var card in menuCards)
                 {
-                    <option value="@card.Value">@card.Text</option>
+                    if (card.Value == selectedMenuCardId.ToString())
+                    {
+                        <option value="@card.Value" selected="selected">@card.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@card.Value">@card.Text</option>
+                    }
                 }
             </select>
-
-            <small class="text-muted">
-                Kies eerst de kaart waarvoor je het item toevoegt.
-            </small>
         }
     </div>
 
@@ -97,6 +100,7 @@
                name="Name"
                value="@Model.Name"
                class="form-control"
+               placeholder="Naam"
                required="required" />
 
         @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
@@ -107,8 +111,9 @@
 
         <input type="text"
                name="RetailPrice"
-               value="@Model.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))"
+               value="@(Model.RetailPrice > 0 ? Model.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL")) : "")"
                class="form-control"
+               placeholder="Prijs"
                required="required"
                pattern="[0-9,.]+" />
 
@@ -120,8 +125,9 @@
 
         <input type="number"
                name="Stock"
-               value="@Model.Stock"
+               value="@(Model.Stock > 0 ? Model.Stock.ToString() : "")"
                class="form-control"
+               placeholder="Voorraad"
                min="0"
                required="required" />
 
@@ -129,10 +135,10 @@
     </div>
 
     <div class="form-group mb-3">
-        <label for="categorySelect" class="form-label">Categorie *</label>
+        <label for="categorySelect" class="form-label">Categorie</label>
 
         <select id="categorySelect" name="CategoryID" class="form-select" required="required">
-            <option value="">Selecteer een categorie</option>
+            <option value="">Selecteer Categorie</option>
 
             @foreach (var category in categories)
             {
@@ -162,13 +168,15 @@
         <input type="hidden" name="IsActive" value="true" />
     }
 
-    <button type="submit" class="btn @buttonClass">
-        @buttonText
-    </button>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            @buttonText
+        </button>
 
-    <a href="@Url.Action("Index", "Menu")" class="btn btn-secondary">
-        Annuleren
-    </a>
+        <a href="@Url.Action("Index", "Menu")" class="btn btn-secondary">
+            Annuleren
+        </a>
+    </div>
 </form>
 
 <script>
@@ -183,6 +191,7 @@
             }
 
             const selectedCardId = cardSelect.value;
+            let firstVisibleCategory = null;
 
             Array.from(categorySelect.options).forEach(function (option) {
                 if (option.value === '') {
@@ -194,6 +203,10 @@
 
                 if (selectedCardId && optionCardId === selectedCardId) {
                     option.hidden = false;
+
+                    if (firstVisibleCategory === null) {
+                        firstVisibleCategory = option;
+                    }
                 } else {
                     option.hidden = true;
                 }
