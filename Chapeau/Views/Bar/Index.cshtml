@@ -1,0 +1,12 @@
+﻿@model List<Chapeau.ViewModels.OrderViewModel>
+
+<h1>Bar - Running Orders</h1>
+
+<a asp-action="Index">Refresh</a>
+
+<div class="order-list">
+    @foreach (var order in Model)
+    {
+        @await Html.PartialAsync("_OrderView", order)
+    }
+</div>

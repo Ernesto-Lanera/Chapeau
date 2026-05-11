@@ -1,0 +1,12 @@
+﻿@model Chapeau.ViewModels.OrderViewModel
+
+<div class="order-view">
+    <div class="order-view-header">
+        <span class="table-number">Table @Model.TableNumber</span>
+        <span class="order-status">@Model.OrderStatus</span>
+    </div>
+    <div class="order-view-body">
+        <span class="order-time">@Model.OrderDate.ToString("HH:mm")</span>
+        <span class="waiting-time">@Model.WaitingTimeDisplay</span>
+    </div>
+</div>
