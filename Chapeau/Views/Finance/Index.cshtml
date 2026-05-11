@@ -1,40 +1,111 @@
 @{
-    ViewBag.Title = "Financial Overview";
+    ViewData["Title"] = "Financieel Overzicht";
 }
 
-<h2>Financial Overview</h2>
+<div class="page-header">
+    <h2 class="page-title">Financieel Overzicht</h2>
+</div>
 
-<p class="text-muted">
-    <em>This is a placeholder for the Financial Overview. The data for total sales, costs, and tips relies on the Order functionality which will be implemented in Sprint 3.</em>
-</p>
+<div class="card mb-3 finance-period-card">
+    <div class="card-body">
+        <div class="fw-semibold mb-2">Periode Selectie</div>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-primary">Deze Maand</button>
+            <button class="btn btn-sm btn-light">Dit Kwartaal</button>
+            <button class="btn btn-sm btn-light">Dit Jaar</button>
+            <button class="btn btn-sm btn-light"><i class="bi bi-calendar-event me-1"></i>Aangepaste Periode</button>
+        </div>
+    </div>
+</div>
 
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-primary">
-            <div class="card-header">Total Sales</div>
+<div class="row g-3 mb-3">
+    <div class="col-lg-3 col-md-6">
+        <div class="card finance-kpi-card">
             <div class="card-body">
-                <h5 class="card-title">€ 0.00</h5>
-                <p class="card-text">Drinks: € 0.00<br/>Lunch: € 0.00<br/>Dinner: € 0.00</p>
+                <div class="finance-kpi-label">Totaal Omzet Dranken</div>
+                <div class="finance-kpi-value text-primary">EUR 0.00</div>
+                <div class="finance-kpi-sub">0 bestellingen</div>
             </div>
         </div>
     </div>
-
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-success">
-            <div class="card-header">Total Income</div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card finance-kpi-card">
             <div class="card-body">
-                <h5 class="card-title">€ 0.00</h5>
-                <p class="card-text">Drinks: € 0.00<br/>Lunch: € 0.00<br/>Dinner: € 0.00</p>
+                <div class="finance-kpi-label">Totaal Omzet Lunch</div>
+                <div class="finance-kpi-value text-success">EUR 0.00</div>
+                <div class="finance-kpi-sub">0 bestellingen</div>
             </div>
         </div>
     </div>
-
-    <div class="col-md-4 mb-3">
-        <div class="card text-dark bg-warning">
-            <div class="card-header">Total Tips</div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card finance-kpi-card">
             <div class="card-body">
-                <h5 class="card-title">€ 0.00</h5>
-                <p class="card-text">From all orders today</p>
+                <div class="finance-kpi-label">Totaal Omzet Diner</div>
+                <div class="finance-kpi-value text-purple">EUR 0.00</div>
+                <div class="finance-kpi-sub">0 bestellingen</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card finance-kpi-card">
+            <div class="card-body">
+                <div class="finance-kpi-label">Totaal Fooien</div>
+                <div class="finance-kpi-value text-warning">EUR 0.00</div>
+                <div class="finance-kpi-sub">van 0 bestellingen</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body p-0">
+        <div class="p-3 fw-semibold">Omzet per Categorie</div>
+        <div class="table-responsive finance-table-wrap">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Categorie</th>
+                        <th class="text-end">Aantal Verkopen</th>
+                        <th class="text-end">Totaal Inkomsten</th>
+                        <th class="text-end">Gemiddelde per Verkoop</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">Nog geen financiële data beschikbaar.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="fw-semibold mb-2">Omzet Trend</div>
+        <div class="finance-chart">
+            <div class="finance-chart-grid">
+                <div class="finance-chart-col">
+                    <div class="finance-chart-bar" style="height: 42%"></div>
+                    <div class="finance-chart-label">Jan</div>
+                </div>
+                <div class="finance-chart-col">
+                    <div class="finance-chart-bar" style="height: 38%"></div>
+                    <div class="finance-chart-label">Feb</div>
+                </div>
+                <div class="finance-chart-col">
+                    <div class="finance-chart-bar" style="height: 46%"></div>
+                    <div class="finance-chart-label">Mrt</div>
+                </div>
+                <div class="finance-chart-col">
+                    <div class="finance-chart-bar" style="height: 43%"></div>
+                    <div class="finance-chart-label">Apr</div>
+                </div>
+            </div>
+            <div class="finance-chart-legend">
+                <span><i class="bi bi-square-fill text-primary"></i>Dranken</span>
+                <span><i class="bi bi-square-fill text-success"></i>Lunch</span>
+                <span><i class="bi bi-square-fill text-purple"></i>Diner</span>
             </div>
         </div>
     </div>
