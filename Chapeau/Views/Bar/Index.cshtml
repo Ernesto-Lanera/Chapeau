@@ -1,8 +1,13 @@
 ﻿@model List<Chapeau.ViewModels.OrderViewModel>
 
-<h1>Bar - Running Orders</h1>
+@{
+    ViewData["Title"] = "Bar";
+}
 
-<a asp-action="Index">Refresh</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Running Orders</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh ↻</a>
+</div>
 
 <div class="order-list">
     @foreach (var order in Model)
