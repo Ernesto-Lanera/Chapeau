@@ -16,9 +16,9 @@ namespace Chapeau.Services
                 _orderRepository = orderRepository;
             }
             catch (Exception ex)
-                {
+            {
                  throw new Exception("Failed to retrieve running orders from the database: " + ex.Message);
-                }
+            }
         }
 
         public List<Order> GetRunningOrders()
