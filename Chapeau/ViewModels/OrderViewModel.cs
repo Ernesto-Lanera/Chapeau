@@ -15,10 +15,12 @@ namespace Chapeau.ViewModels
         {
             get
             {
-                if (WaitingTime.TotalHours < 1)
-                    return $"{(int)WaitingTime.TotalMinutes} m";
+                if (WaitingTime.TotalMinutes < 1)
+                    return "Just now";
+                else if (WaitingTime.TotalHours < 1)
+                    return $"{(int)WaitingTime.TotalMinutes} min";
                 else
-                    return $"{(int)WaitingTime.TotalHours} hr {WaitingTime.Minutes} m";
+                    return $"{(int)WaitingTime.TotalHours} hr {WaitingTime.Minutes} min";
             }
         }
     }

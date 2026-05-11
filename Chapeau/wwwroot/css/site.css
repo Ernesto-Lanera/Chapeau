@@ -18,8 +18,7 @@ html {
 }
 
 body {
-    margin-bottom: 60px;
-    background-color: #f0eef8;
+  margin-bottom: 60px;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
@@ -29,61 +28,4 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
-}
-
-.table-label {
-    font-size: 12px;
-    color: #888;
-    display: block;
-}
-
-.table-number {
-    font-size: 36px;
-    font-weight: bold;
-    display: block;
-}
-
-.order-time {
-    font-size: 14px;
-    color: #888;
-    display: block;
-}
-
-.waiting-time {
-    font-size: 32px;
-    font-weight: bold;
-    display: block;
-}
-
-.status-badge {
-    font-size: 12px;
-    padding: 4px 10px;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-}
-
-.order-card {
-    min-width: 350px;
-    width: 350px;
-    flex-shrink: 0;
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.order-list {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 20px;
-    padding: 0 12px 20px 12px;
-    height: calc(100vh - 200px);
-    align-items: flex-start;
-}
-
-.order-list-wrapper {
-    margin: 0 -12px;
-    overflow: hidden;
 }

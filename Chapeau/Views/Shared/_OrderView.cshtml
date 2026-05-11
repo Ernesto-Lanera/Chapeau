@@ -1,17 +1,12 @@
 ﻿@model Chapeau.ViewModels.OrderViewModel
 
-<div class="order-card">
-    <div class="d-flex justify-content-between align-items-start mb-3">
-        <div>
-            <span class="table-label">Table</span>
-            <span class="table-number">@Model.TableNumber</span>
-        </div>
-        <div class="text-end">
-            <span class="order-time">@Model.OrderDate.ToString("HH:mm")</span>
-            <span class="waiting-time">@Model.WaitingTimeDisplay</span>
-        </div>
+<div class="order-view">
+    <div class="order-view-header">
+        <span class="table-number">Table @Model.TableNumber</span>
+        <span class="order-status">@Model.OrderStatus</span>
     </div>
-    <div>
-        <span class="status-badge">@Model.OrderStatus</span>
+    <div class="order-view-body">
+        <span class="order-time">@Model.OrderDate.ToString("HH:mm")</span>
+        <span class="waiting-time">@Model.WaitingTimeDisplay</span>
     </div>
 </div>
