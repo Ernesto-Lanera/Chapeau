@@ -75,7 +75,7 @@
                                 @foreach (var part in order.OrderParts)
                                 {
                                     <tr>
-                                        <td>@await Component.InvokeAsync("DrinkField", new { selectedId = part.DrinkId })</td>
+                                        <td>@await Component.InvokeAsync("DrinkField", new { selectedId = part.MenuItemId })</td>
                                         <td>@part.Amount</td>
                                         <td>
                                             <div class="d-flex justify-content-center">

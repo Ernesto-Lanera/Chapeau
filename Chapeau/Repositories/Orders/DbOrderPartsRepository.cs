@@ -18,25 +18,25 @@ namespace Someren.Repositories
         {
             using var connection = new SqlConnection(_connectionString);
             string query = @"
-                            IF EXISTS (SELECT 1 FROM OrderParts WHERE orderid = @OrderId AND drinkid = @DrinkId)
+                            IF EXISTS (SELECT 1 FROM OrderParts WHERE orderid = @OrderId AND MenuItemId = @MenuItemId)
                             BEGIN
                                 UPDATE OrderParts 
                                 SET amount = amount + @Amount 
-                                WHERE orderid = @OrderId AND drinkid = @DrinkId;
+                                WHERE orderid = @OrderId AND MenuItemId = @MenuItemId;
                             END
                             ELSE
                             BEGIN
-                                INSERT INTO OrderParts (orderid, drinkid, amount) 
-                                VALUES (@OrderId, @DrinkId, @Amount);
+                                INSERT INTO OrderParts (orderid, MenuItemId, amount) 
+                                VALUES (@OrderId, @MenuItemId, @Amount);
                             END
 
                             UPDATE Drink 
                             SET Stock = Stock - @Amount 
-                            WHERE DrinkId = @DrinkId;";
+                            WHERE MenuItemId = @MenuItemId;";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@OrderId", orderPart.OrderId);
-            command.Parameters.AddWithValue("@DrinkId", orderPart.DrinkId);
+            command.Parameters.AddWithValue("@MenuItemId", orderPart.MenuItemId);
             command.Parameters.AddWithValue("@Amount", orderPart.Amount);
 
             connection.Open();
@@ -50,7 +50,7 @@ namespace Someren.Repositories
             string query = @"
                 UPDATE Drink 
                 SET Stock = Stock + (SELECT amount FROM OrderParts WHERE orderpartid = @OrderPartId)
-                WHERE DrinkId = (SELECT drinkid FROM OrderParts WHERE orderpartid = @OrderPartId);
+                WHERE MenuItemId = (SELECT MenuItemId FROM OrderParts WHERE orderpartid = @OrderPartId);
 
                 DELETE FROM OrderParts WHERE orderpartid = @OrderPartId;";
 
@@ -67,7 +67,7 @@ namespace Someren.Repositories
             OrderPart? orderPart = null;
             using var connection = new SqlConnection(_connectionString);
 
-            string query = "SELECT orderpartid, orderid, drinkid, amount FROM OrderParts WHERE orderpartid = @Id";
+            string query = "SELECT orderpartid, orderid, MenuItemId, amount FROM OrderParts WHERE orderpartid = @Id";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Id", id);
@@ -87,23 +87,23 @@ namespace Someren.Repositories
         {
             using var connection = new SqlConnection(_connectionString);
             string query = @"
-                            DECLARE @OldDrinkId INT, @OldAmount INT;
-                            SELECT @OldDrinkId = drinkid, @OldAmount = amount 
+                            DECLARE @OldMenuItemId INT, @OldAmount INT;
+                            SELECT @OldMenuItemId = MenuItemId, @OldAmount = amount 
                             FROM OrderParts 
                             WHERE orderpartid = @OrderPartId;
         
-                            UPDATE Drink SET Stock = Stock + @OldAmount WHERE DrinkId = @OldDrinkId;
+                            UPDATE Drink SET Stock = Stock + @OldAmount WHERE MenuItemId = @OldMenuItemId;
         
-                            UPDATE Drink SET Stock = Stock - @Amount WHERE DrinkId = @DrinkId;
+                            UPDATE Drink SET Stock = Stock - @Amount WHERE MenuItemId = @MenuItemId;
         
                             UPDATE OrderParts 
-                            SET orderid = @OrderId, drinkid = @DrinkId, amount = @Amount 
+                            SET orderid = @OrderId, MenuItemId = @MenuItemId, amount = @Amount 
                             WHERE orderpartid = @OrderPartId;";
 
             using var command = new SqlCommand(query, connection);
 
             command.Parameters.AddWithValue("@OrderId", orderPart.OrderId);
-            command.Parameters.AddWithValue("@DrinkId", orderPart.DrinkId);
+            command.Parameters.AddWithValue("@MenuItemId", orderPart.MenuItemId);
             command.Parameters.AddWithValue("@Amount", orderPart.Amount);
             command.Parameters.AddWithValue("@OrderPartId", orderPart.OrderPartId);
 
@@ -115,14 +115,14 @@ namespace Someren.Repositories
         {
             int id = (int)reader["orderpartid"];
             int orderId = (int)reader["orderid"];
-            int drinkId = (int)reader["drinkid"];
+            int MenuItemId = (int)reader["MenuItemId"];
             int amount = (int)reader["amount"];
 
             return new OrderPart
             {
                 OrderPartId = id,
                 OrderId = orderId,
-                DrinkId = drinkId,
+                MenuItemId = MenuItemId,
                 Amount = amount
             };
         }

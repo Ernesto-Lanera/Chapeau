@@ -9,12 +9,14 @@
         public DateTime OrderDate { get; set; }
 
         public List<OrderPart> OrderParts {  get; set; }  
-        
-        public Order(int orderId, List<OrderPart> order, int studentId, DateTime date)
+
+        public string? Note { get; set; } 
+
+        public Order(int orderId, List<OrderPart> order, int tableId, DateTime date)
         {
             OrderId = orderId;
             OrderParts = order;
-            TableId = studentId;
+            TableId = tableId;
             OrderDate = date;
         }
 

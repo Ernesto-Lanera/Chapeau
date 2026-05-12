@@ -12,7 +12,7 @@
             <input type="hidden" name="OrderId" value="@ViewBag.OrderId" />
 
             <div class="form-group py-2">
-                <label for="DrinkId" class="form-label">Select Drink:</label>
+                <label for="MenuItemId" class="form-label">Select Drink:</label>
                 @await Component.InvokeAsync("DrinkDropdown")
             </div>
 
@@ -20,7 +20,7 @@
                 <label for="Amount" class="form-label">Amount (Quantity):</label>
                 @await Component.InvokeAsync("StockAmountInput", new
                 {
-                    drinkId = 0,
+                    MenuItemId = 0,
                     currentAmount = 1
                 })
             </div>
@@ -33,7 +33,7 @@
 </div>
 
 <script>
-    document.getElementById("DrinkId").addEventListener("change", function () {
+    document.getElementById("MenuItemId").addEventListener("change", function () {
         var amountInput = document.getElementById("Amount");
         var stockLabel = document.getElementById("stockLabel");
         

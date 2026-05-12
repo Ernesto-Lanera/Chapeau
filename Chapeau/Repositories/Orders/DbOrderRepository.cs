@@ -37,11 +37,11 @@ namespace Someren.Repositories
                             SET Stock = Stock + OrderTotals.TotalAmount
                              FROM Drink
                             INNER JOIN (
-                                SELECT drinkid, SUM(amount) as TotalAmount
+                                SELECT MenuItemId, SUM(amount) as TotalAmount
                                 FROM OrderParts
                                 WHERE orderid = @OrderId
-                                GROUP BY drinkid
-                            ) OrderTotals ON Drink.DrinkId = OrderTotals.drinkid;
+                                GROUP BY MenuItemId
+                            ) OrderTotals ON Drink.MenuItemId = OrderTotals.MenuItemId;
 
                             DELETE FROM OrderParts WHERE orderid = @OrderId;
                             DELETE FROM Orders WHERE orderid = @OrderId;
@@ -122,7 +122,7 @@ namespace Someren.Repositories
         {
             List<OrderPart> parts = new List<OrderPart>();
             using var connection = new SqlConnection(_connectionString);
-            using var command = new SqlCommand("SELECT orderpartid, orderid, drinkid, amount FROM OrderParts Where orderid = @OrderId ", connection);
+            using var command = new SqlCommand("SELECT orderpartid, orderid, MenuItemId, amount FROM OrderParts Where orderid = @OrderId ", connection);
 
             command.Parameters.AddWithValue("@OrderId", orderId);
             command.Connection.Open();
@@ -138,10 +138,10 @@ namespace Someren.Repositories
         {
             int id = (int)reader["orderpartid"];
             int orderId = (int)reader["orderid"];
-            int drinkId = (int)reader["drinkid"];
+            int MenuItemId = (int)reader["MenuItemId"];
             int amount = (int)reader["amount"];
 
-            return new OrderPart { OrderPartId = id, OrderId = orderId, DrinkId = drinkId, Amount = amount };
+            return new OrderPart { OrderPartId = id, OrderId = orderId, MenuItemId = MenuItemId, Amount = amount };
         }
     }
 }

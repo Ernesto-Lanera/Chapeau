@@ -23,6 +23,8 @@ namespace Chapeau.Models
 
         public Category? Category { get; set; }
 
+        public string? ImagePath { get; set; }
+
         public string StockStatus
         {
             get

@@ -23,12 +23,14 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
+                       
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle text-dark" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Management
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="managementDropdown">
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Menu" asp-action="Index">Manage Menu</a></li>
+                               
+                                <li><a class="dropdown-item" asp-area="" asp-controller="MangeMenu" asp-action="Index">Manage Menu</a></li>
                                 <li><a class="dropdown-item" asp-area="" asp-controller="Employee" asp-action="Index">Manage Employees</a></li>
                                 <li><a class="dropdown-item" asp-area="" asp-controller="Stock" asp-action="Index">Manage Stock</a></li>
                                 <li><hr class="dropdown-divider"></li>
@@ -37,6 +39,9 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Menu" asp-action="Index">Menu Items</a>
                         </li>
                     </ul>
                 </div>

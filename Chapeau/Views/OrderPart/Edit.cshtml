@@ -14,8 +14,8 @@
             <input type="hidden" name="OrderId" value="@Model?.OrderId" />
 
             <div class="form-group py-2">
-                <label for="DrinkId" class="form-label">Select Drink:</label>
-                @await Component.InvokeAsync("DrinkDropdown", new { selectedId = Model?.DrinkId })
+                <label for="MenuItemId" class="form-label">Select Drink:</label>
+                @await Component.InvokeAsync("DrinkDropdown", new { selectedId = Model?.MenuItemId })
             </div>
 
             <div class="form-group py-2">
