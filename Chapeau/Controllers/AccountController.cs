@@ -3,17 +3,18 @@ using Chapeau.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Chapeau.Controllers
 {
     public class AccountController : Controller
     {
         private readonly IAuthService _authService;
+        private readonly IClaimsService _claimsService;
 
-        public AccountController(IAuthService authService)
+        public AccountController(IAuthService authService, IClaimsService claimsService)
         {
             _authService = authService;
+            _claimsService = claimsService;
         }
 
         [HttpGet]
@@ -43,15 +44,9 @@ namespace Chapeau.Controllers
 
             if (employee != null)
             {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, employee.EmployeeID.ToString()),
-                    new Claim(ClaimTypes.Name, employee.Username),
-                    new Claim(ClaimTypes.GivenName, employee.Name),
-                    new Claim(ClaimTypes.Role, employee.Role)
-                };
+                // Create claims principal using the ClaimsService
+                var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
 
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = model.RememberMe,
@@ -60,7 +55,7 @@ namespace Chapeau.Controllers
 
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
+                    claimsPrincipal,
                     authProperties);
 
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))

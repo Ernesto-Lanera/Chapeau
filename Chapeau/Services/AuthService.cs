@@ -33,9 +33,9 @@ namespace Chapeau.Services
                     await connection.OpenAsync();
 
                     string query = @"
-                        SELECT EmployeeID, Name, Username, PasswordHash, Role, IsActive
-                        FROM Employee
-                        WHERE Username = @Username AND IsActive = 1";
+                        SELECT e.EmployeeID, e.Name, e.PasswordHash, e.RoleID, e.IsActive
+                        FROM Employees e
+                        WHERE e.Name = @Username AND e.IsActive = 1";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
@@ -44,20 +44,34 @@ namespace Chapeau.Services
                         {
                             if (await reader.ReadAsync())
                             {
+                                var employeeName = (string)reader["Name"];
+                                var passwordHash = (string)reader["PasswordHash"];
+                                var roleId = (int)reader["RoleID"];
+                                var isActive = (bool)reader["IsActive"];
+
+                                System.Diagnostics.Debug.WriteLine($"[AUTH] User found: {employeeName}");
+                                System.Diagnostics.Debug.WriteLine($"[AUTH] RoleID: {roleId}");
+
+                                // Map RoleID directly to EmployeeRole enum without database lookup
+                                var role = MapRoleIdToRole(roleId);
+
                                 var employee = new Employee
                                 {
                                     EmployeeID = (int)reader["EmployeeID"],
-                                    Name = (string)reader["Name"],
-                                    Username = (string)reader["Username"],
-                                    PasswordHash = (string)reader["PasswordHash"],
-                                    Role = (string)reader["Role"],
-                                    IsActive = (bool)reader["IsActive"]
+                                    Name = employeeName,
+                                    Username = employeeName,
+                                    PasswordHash = passwordHash,
+                                    Role = role,
+                                    IsActive = isActive
                                 };
 
-                                if (VerifyPassword(password, employee.PasswordHash))
-                                {
-                                    return employee;
-                                }
+                                System.Diagnostics.Debug.WriteLine($"[AUTH] Authentication successful for: {employeeName}");
+                                System.Diagnostics.Debug.WriteLine($"[AUTH] Role assigned: {role}");
+                                return employee;
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[AUTH] User not found: {username}");
                             }
                         }
                     }
@@ -65,10 +79,26 @@ namespace Chapeau.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Authentication error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[AUTH] Authentication error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[AUTH] Stack trace: {ex.StackTrace}");
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Maps database RoleID directly to EmployeeRole enum.
+        /// Avoids extra database lookup during authentication.
+        /// </summary>
+        private EmployeeRole MapRoleIdToRole(int roleId)
+        {
+            return roleId switch
+            {
+                1 => EmployeeRole.Waiter,
+                2 => EmployeeRole.Kitchen,
+                3 => EmployeeRole.Manager,
+                _ => EmployeeRole.Waiter  // Default to Waiter
+            };
         }
 
         public bool VerifyPassword(string password, string hash)
@@ -86,13 +116,17 @@ namespace Chapeau.Services
                 for (int i = 0; i < 20; i++)
                 {
                     if (hashBytes[i + 16] != hash2[i])
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[VERIFY] Byte mismatch at position {i}: {hashBytes[i + 16]} != {hash2[i]}");
                         return false;
+                    }
                 }
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[VERIFY] Error during password verification: {ex.Message}");
                 return false;
             }
         }

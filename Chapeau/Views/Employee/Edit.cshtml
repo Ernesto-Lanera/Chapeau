@@ -18,7 +18,6 @@
             <option value="Manager" selected="@(Model.Role == Chapeau.Models.EmployeeRole.Manager)">Manager</option>
             <option value="Waiter" selected="@(Model.Role == Chapeau.Models.EmployeeRole.Waiter)">Waiter</option>
             <option value="Kitchen" selected="@(Model.Role == Chapeau.Models.EmployeeRole.Kitchen)">Kitchen</option>
-            <option value="Bartender" selected="@(Model.Role == Chapeau.Models.EmployeeRole.Bartender)">Bartender</option>
         </select>
         @Html.ValidationMessageFor(m => m.Role, "", new { @class = "text-danger" })
     </div>

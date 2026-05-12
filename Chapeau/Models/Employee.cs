@@ -4,8 +4,7 @@ namespace Chapeau.Models
     {
         Manager,
         Waiter,
-        Kitchen,
-        Bartender
+        Kitchen
     }
 
     public class Employee
