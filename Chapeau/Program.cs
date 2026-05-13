@@ -10,8 +10,7 @@ namespace Chapeau
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Forceer generieke cultuur voor de hele pipeline (dit lost comma vs punt op in decimaal parsen)
-            var defaultCulture = new CultureInfo("en-US");
+            var defaultCulture = new CultureInfo("nl-NL");
             CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
             CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
@@ -21,16 +20,17 @@ namespace Chapeau
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddLogging();
 
-            // Register Repositories
-            builder.Services.AddScoped<Repositories.MenuRepository>();
-            builder.Services.AddScoped<Repositories.EmployeeRepository>();
-            builder.Services.AddScoped<Repositories.CategoryRepository>();
-            builder.Services.AddScoped<Repositories.StatusRepository>();
+            // Register Repositories with Interfaces
+            builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
+            builder.Services.AddScoped<Repositories.Employee.IEmployeeRepository, Repositories.Employee.EmployeeRepository>();
+            builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
+            builder.Services.AddScoped<Repositories.Role.IRoleRepository, Repositories.Role.RoleRepository>();
 
             // Register Services
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.EmployeeService>();
             builder.Services.AddScoped<Services.CategoryService>();
+            builder.Services.AddScoped<Services.ImageService>();
 
             var app = builder.Build();
 
@@ -46,6 +46,7 @@ namespace Chapeau
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
 
             app.UseAuthorization();
