@@ -1,0 +1,17 @@
+﻿@model List<Chapeau.ViewModels.OrderViewModel>
+
+@{
+    ViewData["Title"] = "Bar";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Running Orders</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh ↻</a>
+</div>
+
+<div class="order-list">
+    @foreach (var order in Model)
+    {
+        @await Html.PartialAsync("_OrderView", order)
+    }
+</div>
