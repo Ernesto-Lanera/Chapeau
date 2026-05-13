@@ -111,7 +111,7 @@ namespace Chapeau.Controllers
                     {
                         command.CommandText = @"
                             SELECT e.EmployeeID, e.Name, e.RoleID, e.IsActive
-                            FROM Employees e
+                            FROM Employee e
                             ORDER BY e.Name";
 
                         using (var reader = command.ExecuteReader())

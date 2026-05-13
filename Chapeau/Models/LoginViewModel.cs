@@ -4,8 +4,8 @@ namespace Chapeau.Models
 {
     public class LoginViewModel
     {
-        [Required(ErrorMessage = "Username is required")]
-        public string Username { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Employee name is required")]
+        public string Name { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]

@@ -40,7 +40,7 @@ namespace Chapeau.Controllers
                 return View(model);
             }
 
-            var employee = await _authService.AuthenticateAsync(model.Username, model.Password);
+            var employee = await _authService.AuthenticateAsync(model.Name, model.Password);
 
             if (employee != null)
             {
@@ -66,7 +66,7 @@ namespace Chapeau.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            ModelState.AddModelError(string.Empty, "Invalid username or password");
+            ModelState.AddModelError(string.Empty, "Invalid name or password");
             return View(model);
         }
 

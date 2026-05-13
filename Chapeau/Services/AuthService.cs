@@ -34,7 +34,7 @@ namespace Chapeau.Services
 
                     string query = @"
                         SELECT e.EmployeeID, e.Name, e.PasswordHash, e.RoleID, e.IsActive
-                        FROM Employees e
+                        FROM Employee e
                         WHERE e.Name = @Username AND e.IsActive = 1";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
@@ -44,34 +44,32 @@ namespace Chapeau.Services
                         {
                             if (await reader.ReadAsync())
                             {
+                                var employeeID = (int)reader["EmployeeID"];
                                 var employeeName = (string)reader["Name"];
                                 var passwordHash = (string)reader["PasswordHash"];
                                 var roleId = (int)reader["RoleID"];
                                 var isActive = (bool)reader["IsActive"];
 
-                                System.Diagnostics.Debug.WriteLine($"[AUTH] User found: {employeeName}");
-                                System.Diagnostics.Debug.WriteLine($"[AUTH] RoleID: {roleId}");
+                                // Verify password
+                                bool passwordValid = VerifyPassword(password, passwordHash);
 
-                                // Map RoleID directly to EmployeeRole enum without database lookup
-                                var role = MapRoleIdToRole(roleId);
-
-                                var employee = new Employee
+                                if (passwordValid)
                                 {
-                                    EmployeeID = (int)reader["EmployeeID"],
-                                    Name = employeeName,
-                                    Username = employeeName,
-                                    PasswordHash = passwordHash,
-                                    Role = role,
-                                    IsActive = isActive
-                                };
+                                    // Map RoleID directly to EmployeeRole enum without database lookup
+                                    var role = MapRoleIdToRole(roleId);
 
-                                System.Diagnostics.Debug.WriteLine($"[AUTH] Authentication successful for: {employeeName}");
-                                System.Diagnostics.Debug.WriteLine($"[AUTH] Role assigned: {role}");
-                                return employee;
-                            }
-                            else
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[AUTH] User not found: {username}");
+                                    var employee = new Employee
+                                    {
+                                        EmployeeID = employeeID,
+                                        Name = employeeName,
+                                        Username = employeeName,
+                                        PasswordHash = passwordHash,
+                                        Role = role,
+                                        IsActive = isActive
+                                    };
+
+                                    return employee;
+                                }
                             }
                         }
                     }
@@ -117,7 +115,6 @@ namespace Chapeau.Services
                 {
                     if (hashBytes[i + 16] != hash2[i])
                     {
-                        System.Diagnostics.Debug.WriteLine($"[VERIFY] Byte mismatch at position {i}: {hashBytes[i + 16]} != {hash2[i]}");
                         return false;
                     }
                 }

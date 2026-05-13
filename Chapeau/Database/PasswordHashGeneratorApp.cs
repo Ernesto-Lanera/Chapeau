@@ -9,52 +9,52 @@ namespace Chapeau.Database
     /// </summary>
     public class PasswordHashGenerator
     {
-        public static void GenerateTestUserHashes()
-        {
-            Console.WriteLine("=== Test User Password Hash Generator ===\n");
-            Console.WriteLine("This generates hashes using PBKDF2-SHA256 with 10,000 iterations.\n");
+        //public static void GenerateTestUserHashes()
+        //{
+        //    Console.WriteLine("=== Test User Password Hash Generator ===\n");
+        //    Console.WriteLine("This generates hashes using PBKDF2-SHA256 with 10,000 iterations.\n");
 
-            var testUsers = new[]
-            {
-                new { Name = "John Waiter", Password = "waiter123", RoleID = 1 },
-                new { Name = "Jane Chef", Password = "chef123", RoleID = 2 },
-                new { Name = "Bob Manager", Password = "manager123", RoleID = 3 }
-            };
+        //    var testUsers = new[]
+        //    {
+        //        new { Name = "John Waiter", Password = "waiter123", RoleID = 1 },
+        //        new { Name = "Jane Chef", Password = "chef123", RoleID = 2 },
+        //        new { Name = "Bob Manager", Password = "manager123", RoleID = 3 }
+        //    };
 
-            Console.WriteLine("=== Copy this SQL into your database ===\n");
-            Console.WriteLine("-- Ensure Roles are inserted first!");
-            Console.WriteLine("-- DELETE FROM Employees; -- If you want to clear existing test data");
-            Console.WriteLine();
-            Console.WriteLine("INSERT INTO Employees (Name, PasswordHash, RoleID, IsActive)");
-            Console.WriteLine("VALUES");
+        //    Console.WriteLine("=== Copy this SQL into your database ===\n");
+        //    Console.WriteLine("-- Ensure Roles are inserted first!");
+        //    Console.WriteLine("-- DELETE FROM Employees; -- If you want to clear existing test data");
+        //    Console.WriteLine();
+        //    Console.WriteLine("INSERT INTO Employees (Name, PasswordHash, RoleID, IsActive)");
+        //    Console.WriteLine("VALUES");
 
-            for (int i = 0; i < testUsers.Length; i++)
-            {
-                var user = testUsers[i];
-                var hash = HashPassword(user.Password);
+        //    for (int i = 0; i < testUsers.Length; i++)
+        //    {
+        //        var user = testUsers[i];
+        //        var hash = HashPassword(user.Password);
 
-                string comma = i < testUsers.Length - 1 ? "," : ";";
-                Console.WriteLine($"('{user.Name}', '{hash}', {user.RoleID}, 1){comma}");
-            }
+        //        string comma = i < testUsers.Length - 1 ? "," : ";";
+        //        Console.WriteLine($"('{user.Name}', '{hash}', {user.RoleID}, 1){comma}");
+        //    }
 
-            Console.WriteLine();
-            Console.WriteLine("=== Test Credentials ===");
-            Console.WriteLine("Use the employee NAME as the username in the login form:\n");
+        //    Console.WriteLine();
+        //    Console.WriteLine("=== Test Credentials ===");
+        //    Console.WriteLine("Use the employee NAME as the username in the login form:\n");
 
-            foreach (var user in testUsers)
-            {
-                Console.WriteLine($"Username: {user.Name}");
-                Console.WriteLine($"Password: {user.Password}");
-                Console.WriteLine($"Role: {(user.RoleID == 1 ? "Waiter" : user.RoleID == 2 ? "Kitchen" : "Manager")}");
-                Console.WriteLine();
-            }
+        //    foreach (var user in testUsers)
+        //    {
+        //        Console.WriteLine($"Username: {user.Name}");
+        //        Console.WriteLine($"Password: {user.Password}");
+        //        Console.WriteLine($"Role: {(user.RoleID == 1 ? "Waiter" : user.RoleID == 2 ? "Kitchen" : "Manager")}");
+        //        Console.WriteLine();
+        //    }
 
-            // Test verification
-            Console.WriteLine("=== Verification Test ===");
-            var testHash = HashPassword("waiter123");
-            bool verified = VerifyPassword("waiter123", testHash);
-            Console.WriteLine($"Hash verification test: {(verified ? "✓ PASSED" : "✗ FAILED")}");
-        }
+        //    // Test verification
+        //    Console.WriteLine("=== Verification Test ===");
+        //    var testHash = HashPassword("waiter123");
+        //    bool verified = VerifyPassword("waiter123", testHash);
+        //    Console.WriteLine($"Hash verification test: {(verified ? "✓ PASSED" : "✗ FAILED")}");
+        //}
 
         public static string HashPassword(string password)
         {
