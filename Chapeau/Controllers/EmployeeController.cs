@@ -51,20 +51,15 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Create(Employee employee)
         {
-            ValidateEmployeeForCreate(employee);
-
             if (!ModelState.IsValid)
             {
-                TempData[FlashErrorKey] = GetModelStateErrors();
+                TempData[FlashErrorKey] = "Gegevens ongeldig. Probeer opnieuw.";
                 return RedirectToAction(nameof(Index), new { showCreate = true });
             }
 
             try
             {
-                employee.IsActive = true;
-
                 _employeeService.AddEmployee(employee);
-
                 TempData[FlashSuccessKey] = "Medewerker succesvol toegevoegd.";
             }
             catch (Exception ex)
@@ -79,37 +74,15 @@ namespace Chapeau.Controllers
         [HttpPost]
         public IActionResult Update(Employee employee)
         {
-            var existingEmployee = _employeeService.GetEmployees()
-                .FirstOrDefault(e => e.EmployeeID == employee.EmployeeID);
-
-            if (existingEmployee == null)
-            {
-                TempData[FlashErrorKey] = "Medewerker niet gevonden.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            ModelState.Remove(nameof(Employee.PasswordHash));
-            ModelState.Remove("PasswordHash");
-
-            ValidateEmployeeForUpdate(employee);
-
             if (!ModelState.IsValid)
             {
-                TempData[FlashErrorKey] = GetModelStateErrors();
+                TempData[FlashErrorKey] = "Gegevens ongeldig. Probeer opnieuw.";
                 return RedirectToAction(nameof(Index), new { editId = employee.EmployeeID });
             }
 
             try
             {
-                if (string.IsNullOrWhiteSpace(employee.PasswordHash))
-                {
-                    employee.PasswordHash = existingEmployee.PasswordHash;
-                }
-
-                employee.IsActive = existingEmployee.IsActive;
-
                 _employeeService.UpdateEmployee(employee);
-
                 TempData[FlashSuccessKey] = "Medewerker succesvol bijgewerkt.";
             }
             catch (Exception ex)
@@ -127,70 +100,12 @@ namespace Chapeau.Controllers
             try
             {
                 _employeeService.SetEmployeeActive(id, active);
-
-                TempData[FlashSuccessKey] = active
-                    ? "Medewerker succesvol geactiveerd."
-                    : "Medewerker succesvol gedeactiveerd.";
+                return Ok(new { success = true });
             }
             catch (Exception ex)
             {
-                TempData[FlashErrorKey] = $"Fout bij aanpassen status: {ex.Message}";
+                return BadRequest(new { success = false, error = ex.Message });
             }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        private void ValidateEmployeeForCreate(Employee employee)
-        {
-            if (string.IsNullOrWhiteSpace(employee.Name))
-            {
-                ModelState.AddModelError(nameof(Employee.Name), "Naam is verplicht.");
-            }
-
-            if (string.IsNullOrWhiteSpace(employee.PasswordHash))
-            {
-                ModelState.AddModelError(nameof(Employee.PasswordHash), "Wachtwoord/pincode is verplicht.");
-            }
-
-            if (employee.RoleID <= 0)
-            {
-                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
-            }
-        }
-
-        private void ValidateEmployeeForUpdate(Employee employee)
-        {
-            if (employee.EmployeeID <= 0)
-            {
-                ModelState.AddModelError(nameof(Employee.EmployeeID), "Ongeldige medewerker.");
-            }
-
-            if (string.IsNullOrWhiteSpace(employee.Name))
-            {
-                ModelState.AddModelError(nameof(Employee.Name), "Naam is verplicht.");
-            }
-
-            if (employee.RoleID <= 0)
-            {
-                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
-            }
-        }
-
-        private string GetModelStateErrors()
-        {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .Where(message => !string.IsNullOrWhiteSpace(message))
-                .Distinct()
-                .ToList();
-
-            if (!errors.Any())
-            {
-                return "Gegevens ongeldig. Probeer opnieuw.";
-            }
-
-            return string.Join("\n", errors);
         }
 
         private List<Role> GetRolesSafe()

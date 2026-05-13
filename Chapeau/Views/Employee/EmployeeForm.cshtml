@@ -15,20 +15,16 @@
         roles = Enumerable.Empty<Chapeau.Models.Role>();
     }
 
-    string formAction = isEdit ? "Update" : "Create";
+    string formAction = isEdit ? "Edit" : "Create";
     string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
     string buttonClass = "btn-primary";
 }
 
 <form method="post" action="@Url.Action(formAction, "Employee")">
+
     @if (isEdit)
     {
         <input type="hidden" name="EmployeeID" value="@Model.EmployeeID" />
-        <input type="hidden" name="IsActive" value="@Model.IsActive.ToString().ToLower()" />
-    }
-    else
-    {
-        <input type="hidden" name="IsActive" value="true" />
     }
 
     <div class="row g-3">
@@ -48,17 +44,15 @@
             {
                 <input type="password"
                        name="PasswordHash"
-                       value=""
                        class="form-control"
-                       placeholder="Nieuw wachtwoord/pincode, leeg laten = behouden" />
+                       placeholder="Nieuw wachtwoord/Pincode" />
             }
             else
             {
                 <input type="password"
                        name="PasswordHash"
-                       value=""
                        class="form-control"
-                       placeholder="Wachtwoord/pincode"
+                       placeholder="Wachtwoord/Pincode"
                        required="required" />
             }
 
@@ -84,6 +78,11 @@
 
             @Html.ValidationMessageFor(m => m.RoleID, "", new { @class = "text-danger" })
         </div>
+
+        @if (!isEdit)
+        {
+            <input type="hidden" name="IsActive" value="true" />
+        }
 
         <div class="col-12">
             <button type="submit" class="btn @buttonClass">

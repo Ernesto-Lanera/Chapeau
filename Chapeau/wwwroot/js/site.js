@@ -1,4 +1,12 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
+<<<<<<< HEAD
+﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
+// for details on configuring this project to bundle and minify static web assets.
+
+// Write your JavaScript code.
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Auto-dismiss all alerts/popups after 3.5 seconds.
+  // Exclusions: alerts marked with data-autodismiss="false"
   var alerts = document.querySelectorAll(".alert:not([data-autodismiss='false'])");
   function fadeRemove(el) {
     try {
@@ -9,15 +17,20 @@
         if (el && el.parentNode) el.parentNode.removeChild(el);
       }, 260);
     } catch {
+      // ignore
     }
   }
+=======
+﻿// =========================
+// Chapeau Toast Popup
+// =========================
+>>>>>>> parent of 9c2d454 (Revert "popup beter gemaakt en de bewerk positief gefixt")
 
-  if (alerts.length) {
-    setTimeout(function () {
-      alerts.forEach(fadeRemove);
-    }, 3500);
-  }
+function closeToast() {
+    const toast = document.getElementById("toastMessage");
 
+<<<<<<< HEAD
+  // Toasts for AJAX updates
   window.showToast = function (message, type) {
     var toastHost = document.getElementById("toastHost");
     if (!toastHost) {
@@ -31,20 +44,74 @@
       toastHost.style.flexDirection = "column";
       toastHost.style.gap = "8px";
       document.body.appendChild(toastHost);
+=======
+    if (!toast) {
+        return;
+>>>>>>> parent of 9c2d454 (Revert "popup beter gemaakt en de bewerk positief gefixt")
     }
 
-    var el = document.createElement("div");
-    el.className = "alert flash-alert " + (type === "error" ? "alert-danger" : "alert-success");
-    el.setAttribute("role", "alert");
-    el.style.margin = "0";
-    el.style.minWidth = "260px";
-    el.style.maxWidth = "360px";
-    el.style.opacity = "1";
-    el.textContent = message;
-    toastHost.appendChild(el);
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(30px)";
 
     setTimeout(function () {
-      fadeRemove(el);
-    }, 3500);
-  };
+        toast.remove();
+    }, 250);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const toast = document.getElementById("toastMessage");
+
+    if (toast) {
+        setTimeout(function () {
+            closeToast();
+        }, 3500);
+    }
+});
+
+const chapeauScrollStorageKey = "chapeau-scroll-position";
+
+function saveChapeauScrollPosition() {
+    sessionStorage.setItem(chapeauScrollStorageKey, window.scrollY.toString());
+}
+
+function restoreChapeauScrollPosition() {
+    const savedPosition = sessionStorage.getItem(chapeauScrollStorageKey);
+
+    if (savedPosition === null) {
+        return;
+    }
+
+    const position = parseInt(savedPosition, 10);
+
+    if (!isNaN(position)) {
+        window.scrollTo({
+            top: position,
+            left: 0,
+            behavior: "auto"
+        });
+    }
+
+    sessionStorage.removeItem(chapeauScrollStorageKey);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    restoreChapeauScrollPosition();
+
+    document.querySelectorAll("form").forEach(function (form) {
+        form.addEventListener("submit", function () {
+            saveChapeauScrollPosition();
+        });
+    });
+
+    document.querySelectorAll(".preserve-scroll").forEach(function (element) {
+        element.addEventListener("click", function () {
+            saveChapeauScrollPosition();
+        });
+    });
+
+    document.querySelectorAll(".preserve-scroll-form").forEach(function (form) {
+        form.addEventListener("submit", function () {
+            saveChapeauScrollPosition();
+        });
+    });
 });
