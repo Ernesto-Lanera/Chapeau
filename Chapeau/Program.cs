@@ -1,3 +1,5 @@
+using Chapeau.Repositories;
+using Chapeau.Services;
 using System.Globalization;
 
 namespace Chapeau
@@ -15,6 +17,8 @@ namespace Chapeau
 
             // Add services to the container
             builder.Services.AddControllersWithViews();
+            builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddLogging();
 
             // Register Repositories
