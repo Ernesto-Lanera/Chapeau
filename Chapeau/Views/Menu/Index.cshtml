@@ -51,6 +51,27 @@
     {
         formCategories = Enumerable.Empty<Chapeau.Models.Category>();
     }
+
+    string GetMenuCardName(int menuCardId)
+    {
+        return menuCardId switch
+        {
+            1 => "Lunch",
+            2 => "Diner",
+            3 => "Dranken",
+            _ => "Onbekend"
+        };
+    }
+
+    string GetCategoryDisplayName(Chapeau.Models.Category category)
+    {
+        if (category.MenuCardID == 1 || category.MenuCardID == 2)
+        {
+            return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
+        }
+
+        return category.Name;
+    }
 }
 
 <style>
@@ -86,10 +107,10 @@
         text-decoration: none;
     }
 
-        .btn-new:hover {
-            background-color: #15803d;
-            color: white;
-        }
+    .btn-new:hover {
+        background-color: #15803d;
+        color: white;
+    }
 
     .btn-close-form {
         background-color: #6b7280;
@@ -101,15 +122,17 @@
         text-decoration: none;
     }
 
-        .btn-close-form:hover {
-            background-color: #4b5563;
-            color: white;
-        }
+    .btn-close-form:hover {
+        background-color: #4b5563;
+        color: white;
+    }
 
     .filter-row {
         display: flex;
         gap: 14px;
         margin-bottom: 22px;
+        align-items: end;
+        flex-wrap: wrap;
     }
 
     .filter-group label {
@@ -121,7 +144,6 @@
     }
 
     .filter-group select {
-        width: 140px;
         height: 38px;
         border: 1px solid #d1d5db;
         border-radius: 7px;
@@ -130,11 +152,21 @@
         padding-left: 10px;
     }
 
-        .filter-group select:focus {
-            border-color: #93c5fd;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-        }
+    .filter-group select[name="cardId"] {
+        width: 140px;
+    }
+
+    .filter-group select[name="categoryId"] {
+        width: 330px;
+        max-width: 100%;
+        text-overflow: ellipsis;
+    }
+
+    .filter-group select:focus {
+        border-color: #93c5fd;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
 
     .menu-table-card {
         background-color: white;
@@ -149,29 +181,29 @@
         border-collapse: collapse;
     }
 
-        .menu-table thead {
-            background-color: #f9fafb;
-        }
+    .menu-table thead {
+        background-color: #f9fafb;
+    }
 
-        .menu-table th {
-            padding: 16px 22px;
-            font-size: 14px;
-            font-weight: 700;
-            color: #111827;
-            text-align: left;
-        }
+    .menu-table th {
+        padding: 16px 22px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #111827;
+        text-align: left;
+    }
 
-        .menu-table td {
-            padding: 17px 22px;
-            border-top: 1px solid #f1f5f9;
-            color: #374151;
-            font-size: 14px;
-            vertical-align: middle;
-        }
+    .menu-table td {
+        padding: 17px 22px;
+        border-top: 1px solid #f1f5f9;
+        color: #374151;
+        font-size: 14px;
+        vertical-align: middle;
+    }
 
-        .menu-table tbody tr:hover {
-            background-color: #f9fafb;
-        }
+    .menu-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
 
     .inactive-row td {
         color: #6b7280;
@@ -219,35 +251,35 @@
         justify-content: center;
     }
 
-        .action-icon svg {
-            width: 18px;
-            height: 18px;
-            stroke-width: 2;
-        }
+    .action-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+    }
 
     .action-edit {
         color: #2563eb;
     }
 
-        .action-edit:hover {
-            color: #1d4ed8;
-        }
+    .action-edit:hover {
+        color: #1d4ed8;
+    }
 
     .action-active {
         color: #22c55e;
     }
 
-        .action-active:hover {
-            color: #16a34a;
-        }
+    .action-active:hover {
+        color: #16a34a;
+    }
 
     .action-inactive {
         color: #ef4444;
     }
 
-        .action-inactive:hover {
-            color: #dc2626;
-        }
+    .action-inactive:hover {
+        color: #dc2626;
+    }
 
     .inline-action-form {
         display: inline;
@@ -273,13 +305,13 @@
         border-radius: 10px;
     }
 
-        .inline-edit-card h3,
-        .form-card h3 {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 18px;
-            color: #111827;
-        }
+    .inline-edit-card h3,
+    .form-card h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        color: #111827;
+    }
 
     .menu-item-form {
         display: grid;
@@ -287,86 +319,86 @@
         gap: 18px;
     }
 
-        .menu-item-form .form-group {
-            margin-bottom: 0 !important;
-        }
+    .menu-item-form .form-group {
+        margin-bottom: 0 !important;
+    }
 
-        .menu-item-form input.form-control,
-        .menu-item-form select.form-select {
-            height: 48px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            background-color: #f8fbff;
-            padding: 10px 16px;
-            font-size: 15px;
-            color: #111827;
-            width: 100%;
-        }
+    .menu-item-form input.form-control,
+    .menu-item-form select.form-select {
+        height: 48px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        background-color: #f8fbff;
+        padding: 10px 16px;
+        font-size: 15px;
+        color: #111827;
+        width: 100%;
+    }
 
-            .menu-item-form input.form-control::placeholder {
-                color: #6b7280;
-            }
+    .menu-item-form input.form-control::placeholder {
+        color: #6b7280;
+    }
 
-            .menu-item-form input.form-control:focus,
-            .menu-item-form select.form-select:focus {
-                border-color: #93c5fd;
-                outline: none;
-                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-            }
+    .menu-item-form input.form-control:focus,
+    .menu-item-form select.form-select:focus {
+        border-color: #93c5fd;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
 
-        .menu-item-form .form-actions {
-            grid-column: 1 / 3;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-top: 12px;
-        }
+    .menu-item-form .form-actions {
+        grid-column: 1 / 3;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 12px;
+    }
 
-            .menu-item-form .form-actions button[type="submit"] {
-                min-width: 110px;
-                height: 46px;
-                border-radius: 8px;
-                font-weight: 700;
-                background-color: #2563eb;
-                border-color: #2563eb;
-                color: white;
-            }
+    .menu-item-form .form-actions button[type="submit"] {
+        min-width: 110px;
+        height: 46px;
+        border-radius: 8px;
+        font-weight: 700;
+        background-color: #2563eb;
+        border-color: #2563eb;
+        color: white;
+    }
 
-                .menu-item-form .form-actions button[type="submit"]:hover {
-                    background-color: #1d4ed8;
-                    border-color: #1d4ed8;
-                    color: white;
-                }
+    .menu-item-form .form-actions button[type="submit"]:hover {
+        background-color: #1d4ed8;
+        border-color: #1d4ed8;
+        color: white;
+    }
 
-            .menu-item-form .form-actions a.btn-secondary {
-                min-width: 110px;
-                height: 46px;
-                border-radius: 8px;
-                font-weight: 700;
-                background-color: #d1d5db;
-                border-color: #d1d5db;
-                color: #111827;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                text-decoration: none;
-            }
+    .menu-item-form .form-actions a.btn-secondary {
+        min-width: 110px;
+        height: 46px;
+        border-radius: 8px;
+        font-weight: 700;
+        background-color: #d1d5db;
+        border-color: #d1d5db;
+        color: #111827;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
 
-                .menu-item-form .form-actions a.btn-secondary:hover {
-                    background-color: #c4c9d1;
-                    border-color: #c4c9d1;
-                    color: #111827;
-                }
+    .menu-item-form .form-actions a.btn-secondary:hover {
+        background-color: #c4c9d1;
+        border-color: #c4c9d1;
+        color: #111827;
+    }
 
     @@media (max-width: 768px) {
         .menu-item-form {
             grid-template-columns: 1fr;
         }
 
-            .menu-item-form .form-actions {
-                grid-column: 1 / 2;
-                flex-wrap: wrap;
-            }
+        .menu-item-form .form-actions {
+            grid-column: 1 / 2;
+            flex-wrap: wrap;
+        }
     }
 </style>
 
@@ -377,14 +409,14 @@
         @if (showCreate)
         {
             <a href="@Url.Action("Index", "ManageMenu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
-                   class="btn-close-form preserve-scroll">
+               class="btn-close-form preserve-scroll">
                 Sluiten
             </a>
         }
         else
         {
             <a href="@Url.Action("Index", "ManageMenu", new { showCreate = true, cardId = selectedCardId, categoryId = selectedCategoryId })"
-                   class="btn-new preserve-scroll">
+               class="btn-new preserve-scroll">
                 + Nieuw Item
             </a>
         }
@@ -424,11 +456,15 @@
                         {
                             if (selectedCategoryId.HasValue && selectedCategoryId.Value == category.CategoryID)
                             {
-                                <option value="@category.CategoryID" selected="selected">@category.Name</option>
+                                <option value="@category.CategoryID" selected="selected">
+                                    @GetCategoryDisplayName(category)
+                                </option>
                             }
                             else
                             {
-                                <option value="@category.CategoryID">@category.Name</option>
+                                <option value="@category.CategoryID">
+                                    @GetCategoryDisplayName(category)
+                                </option>
                             }
                         }
                     }
@@ -501,7 +537,7 @@
                         {
                             <option value="@category.CategoryID"
                                     data-cardid="@category.MenuCardID">
-                                @category.Name
+                                @GetCategoryDisplayName(category)
                             </option>
                         }
                     </select>
@@ -525,7 +561,7 @@
                     </button>
 
                     <a href="@Url.Action("Index", "ManageMenu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
-                           class="btn btn-secondary preserve-scroll">
+                       class="btn btn-secondary preserve-scroll">
                         Annuleren
                     </a>
                 </div>
@@ -550,28 +586,8 @@
                 @foreach (var item in Model)
                 {
                     var category = tableCategories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
-                    string categoryName = category?.Name ?? "-";
-                    string cardName = "-";
-
-                    if (category != null)
-                    {
-                        switch (category.MenuCardID)
-                        {
-                            case 1:
-                                cardName = "Lunch";
-                                break;
-                            case 2:
-                                cardName = "Diner";
-                                break;
-                            case 3:
-                                cardName = "Dranken";
-                                break;
-                            default:
-                                cardName = "-";
-                                break;
-                        }
-                    }
-
+                    string categoryName = category != null ? GetCategoryDisplayName(category) : "-";
+                    string cardName = category != null ? GetMenuCardName(category.MenuCardID) : "-";
                     string rowClass = item.IsActive ? "" : "inactive-row";
 
                     <tr class="@rowClass">
@@ -594,8 +610,8 @@
                         <td>
                             <div class="action-cell">
                                 <a href="@Url.Action("Index", "ManageMenu", new { editId = item.MenuItemID, cardId = selectedCardId, categoryId = selectedCategoryId })"
-                                       class="action-icon action-edit preserve-scroll"
-                                       title="Bewerken">
+                                   class="action-icon action-edit preserve-scroll"
+                                   title="Bewerken">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          fill="none"
                                          viewBox="0 0 24 24"
@@ -737,13 +753,13 @@
                                                     if (editItem.CategoryID == editCategory.CategoryID)
                                                     {
                                                         <option value="@editCategory.CategoryID" selected="selected">
-                                                            @editCategory.Name
+                                                            @GetCategoryDisplayName(editCategory)
                                                         </option>
                                                     }
                                                     else
                                                     {
                                                         <option value="@editCategory.CategoryID">
-                                                            @editCategory.Name
+                                                            @GetCategoryDisplayName(editCategory)
                                                         </option>
                                                     }
                                                 }
@@ -779,7 +795,7 @@
                                             </button>
 
                                             <a href="@Url.Action("Index", "ManageMenu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
-                                                   class="btn btn-secondary preserve-scroll">
+                                               class="btn btn-secondary preserve-scroll">
                                                 Annuleren
                                             </a>
                                         </div>

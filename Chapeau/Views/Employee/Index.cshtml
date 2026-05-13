@@ -327,7 +327,6 @@
 </style>
 
 <div class="page-content">
-
     <div class="page-title-row">
         <h2 class="page-title">Medewerkers Beheer</h2>
 
@@ -349,39 +348,14 @@
 
     @if (showCreate)
     {
-<<<<<<< HEAD
-        <div class="alert alert-danger">
-            <strong>Er ging iets mis</strong>
-            <ul>
-                @foreach (var error in TempData["FlashError"].ToString()!.Split('\n'))
-                {
-                    if (!string.IsNullOrWhiteSpace(error))
-                    {
-                        <li>@error</li>
-                    }
-                }
-            </ul>
-        </div>
-    }
-=======
         <div class="form-card">
             <h3>Nieuwe Medewerker</h3>
->>>>>>> parent of 9c2d454 (Revert "popup beter gemaakt en de bewerk positief gefixt")
 
             <form method="post"
                   action="@Url.Action("Create", "Employee")"
                   class="employee-form preserve-scroll-form">
 
-<<<<<<< HEAD
-    @if (showForm)
-    {
-        <div id="employeeForm" class="form-card">
-            @if (isEdit)
-            {
-                <h3>Medewerker Bewerken</h3>
-=======
                 @Html.AntiForgeryToken()
->>>>>>> parent of 9c2d454 (Revert "popup beter gemaakt en de bewerk positief gefixt")
 
                 <div class="form-group">
                     <input type="text"
@@ -480,7 +454,6 @@
                                 <a href="@Url.Action("Index", "Employee", new { editId = employee.EmployeeID })"
                                        class="action-icon action-edit preserve-scroll"
                                        title="Bewerken">
-
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          fill="none"
                                          viewBox="0 0 24 24"
@@ -498,15 +471,10 @@
                                 </a>
 
                                 <form method="post"
-<<<<<<< HEAD
-                                      action="@Url.Action("ToggleActive", "Employee")"
-                                      class="inline-action-form">
-=======
                                       action="@Url.Action("SetActive", "Employee")"
                                       class="inline-action-form preserve-scroll-form">
 
                                     @Html.AntiForgeryToken()
->>>>>>> parent of 9c2d454 (Revert "popup beter gemaakt en de bewerk positief gefixt")
 
                                     <input type="hidden" name="id" value="@employee.EmployeeID" />
 
