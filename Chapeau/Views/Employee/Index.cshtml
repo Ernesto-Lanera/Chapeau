@@ -239,6 +239,7 @@
 </style>
 
 <div class="page-content">
+
     <div class="page-title-row">
         <h2 class="page-title">Medewerkers Beheer</h2>
 
@@ -263,7 +264,7 @@
         <div class="alert alert-danger">
             <strong>Er ging iets mis</strong>
             <ul>
-                @foreach (var error in TempData["FlashError"]!.ToString()!.Split('\n'))
+                @foreach (var error in TempData["FlashError"].ToString()!.Split('\n'))
                 {
                     if (!string.IsNullOrWhiteSpace(error))
                     {
@@ -284,7 +285,7 @@
     @if (showForm)
     {
         <div id="employeeForm" class="form-card">
-            @if (isEdit && editEmployee != null)
+            @if (isEdit)
             {
                 <h3>Medewerker Bewerken</h3>
 
@@ -356,6 +357,7 @@
                                 <a href="@Url.Action("Index", "Employee", new { editId = employee.EmployeeID })#employeeForm"
                                        class="action-icon action-edit"
                                        title="Bewerken">
+
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          fill="none"
                                          viewBox="0 0 24 24"
@@ -373,7 +375,7 @@
                                 </a>
 
                                 <form method="post"
-                                      action="@Url.Action("SetActive", "Employee")"
+                                      action="@Url.Action("ToggleActive", "Employee")"
                                       class="inline-action-form">
 
                                     <input type="hidden" name="id" value="@employee.EmployeeID" />

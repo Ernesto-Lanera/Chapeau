@@ -55,15 +55,12 @@
 
     string formAction = isEdit ? "Edit" : "Create";
     string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
-    string searchValue = ViewBag.Search as string ?? "";
 }
 
 <form id="menuItemEditCreateForm"
       method="post"
       action="@Url.Action(formAction, "ManageMenu")"
       enctype="multipart/form-data">
-
-    <input type="hidden" name="search" value="@searchValue" />
 
     @if (isEdit)
     {
@@ -233,7 +230,7 @@
             @buttonText
         </button>
 
-        <a href="@Url.Action("Index", "ManageMenu", new { search = searchValue })" class="btn btn-secondary">
+        <a href="@Url.Action("Index", "ManageMenu")" class="btn btn-secondary">
             Annuleren
         </a>
     </div>

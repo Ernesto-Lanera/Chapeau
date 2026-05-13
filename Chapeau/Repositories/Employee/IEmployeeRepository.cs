@@ -9,6 +9,7 @@ namespace Chapeau.Repositories.Employee
         Chapeau.Models.Employee? GetEmployeeById(int id);
         void AddEmployee(Chapeau.Models.Employee employee);
         void UpdateEmployee(Chapeau.Models.Employee employee);
+        void DeleteEmployee(int id);
         void SetEmployeeActive(int id, bool active);
     }
 }
