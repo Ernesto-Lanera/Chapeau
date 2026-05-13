@@ -1,11 +1,4 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
-
-document.addEventListener("DOMContentLoaded", function () {
-  // Auto-dismiss all alerts/popups after 3.5 seconds.
-  // Exclusions: alerts marked with data-autodismiss="false"
+﻿document.addEventListener("DOMContentLoaded", function () {
   var alerts = document.querySelectorAll(".alert:not([data-autodismiss='false'])");
   function fadeRemove(el) {
     try {
@@ -16,7 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (el && el.parentNode) el.parentNode.removeChild(el);
       }, 260);
     } catch {
-      // ignore
     }
   }
 
@@ -26,7 +18,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 3500);
   }
 
-  // Toasts for AJAX updates
   window.showToast = function (message, type) {
     var toastHost = document.getElementById("toastHost");
     if (!toastHost) {

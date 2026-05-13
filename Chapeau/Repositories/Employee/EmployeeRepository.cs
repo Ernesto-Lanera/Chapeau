@@ -141,30 +141,6 @@ namespace Chapeau.Repositories.Employee
             }
         }
 
-        public void DeleteEmployee(int id)
-        {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-
-                string query = "DELETE FROM Employee WHERE EmployeeID = @EmployeeID";
-                using SqlCommand command = new(query, connection);
-                command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = id;
-
-                int rowsAffected = command.ExecuteNonQuery();
-
-                if (rowsAffected == 0)
-                {
-                    throw new Exception("Delete failed: Employee not found.");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while deleting the employee: {ex.Message}", ex);
-            }
-        }
-
         public void SetEmployeeActive(int id, bool active)
         {
             try

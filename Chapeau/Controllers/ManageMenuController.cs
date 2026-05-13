@@ -25,16 +25,53 @@ namespace Chapeau.Controllers
             _imageService = imageService;
         }
 
-        public IActionResult Index(int? cardId, int? categoryId, int? editId, bool showCreate = false)
+        public IActionResult Index(
+            int? cardId,
+            int? categoryId,
+            int? editId,
+            bool showCreate = false,
+            string? search = null)
         {
-            var menuItems = _menuService.GetMenuItems(cardId, categoryId);
             var allCategories = _categoryService.GetCategories();
+
+            if (cardId.HasValue && categoryId.HasValue)
+            {
+                var selectedCategory = allCategories
+                    .FirstOrDefault(c => c.CategoryID == categoryId.Value);
+
+                if (selectedCategory == null || selectedCategory.MenuCardID != cardId.Value)
+                {
+                    categoryId = null;
+                }
+            }
+
+            var menuItems = _menuService.GetMenuItems(cardId, categoryId);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string searchTerm = search.Trim();
+
+                menuItems = menuItems
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Name)
+                                && m.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            var filterCategories = allCategories;
+
+            if (cardId.HasValue)
+            {
+                filterCategories = allCategories
+                    .Where(c => c.MenuCardID == cardId.Value)
+                    .ToList();
+            }
 
             ViewBag.SelectedCardId = cardId;
             ViewBag.SelectedCategoryId = categoryId;
+            ViewBag.Search = search ?? "";
 
             ViewBag.AllCategories = allCategories;
-            ViewBag.FilterCategories = allCategories;
+            ViewBag.FilterCategories = filterCategories;
             ViewBag.MenuCards = GetMenuCardSelectList();
 
             ViewBag.IsEdit = false;
@@ -71,7 +108,7 @@ namespace Chapeau.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(MenuItem item, IFormFile? imageFile)
+        public async Task<IActionResult> Create(MenuItem item, IFormFile? imageFile, string? search = null)
         {
             ModelState.Remove(nameof(MenuItem.RetailPrice));
             ModelState.Remove("RetailPrice");
@@ -115,7 +152,8 @@ namespace Chapeau.Controllers
 
                     return RedirectToAction(nameof(Index), new
                     {
-                        cardId = parsedMenuCardId
+                        cardId = parsedMenuCardId,
+                        search
                     });
                 }
                 catch (InvalidOperationException ex)
@@ -125,7 +163,8 @@ namespace Chapeau.Controllers
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId,
-                        showCreate = true
+                        showCreate = true,
+                        search
                     });
                 }
                 catch
@@ -135,7 +174,8 @@ namespace Chapeau.Controllers
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId,
-                        showCreate = true
+                        showCreate = true,
+                        search
                     });
                 }
             }
@@ -145,12 +185,13 @@ namespace Chapeau.Controllers
             return RedirectToAction(nameof(Index), new
             {
                 cardId = parsedMenuCardId,
-                showCreate = true
+                showCreate = true,
+                search
             });
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(MenuItem item, IFormFile? imageFile)
+        public async Task<IActionResult> Edit(MenuItem item, IFormFile? imageFile, string? search = null)
         {
             ModelState.Remove(nameof(MenuItem.RetailPrice));
             ModelState.Remove("RetailPrice");
@@ -171,7 +212,7 @@ namespace Chapeau.Controllers
             if (existingItem == null)
             {
                 TempData[FlashErrorKey] = "Menu-item bestaat niet meer.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { search });
             }
 
             item.IsActive = existingItem.IsActive;
@@ -204,7 +245,7 @@ namespace Chapeau.Controllers
 
                     TempData[FlashSuccessKey] = $"Menu-item '{item.Name}' is succesvol bijgewerkt!";
 
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToAction(nameof(Index), new { search });
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -212,7 +253,8 @@ namespace Chapeau.Controllers
 
                     return RedirectToAction(nameof(Index), new
                     {
-                        editId = item.MenuItemID
+                        editId = item.MenuItemID,
+                        search
                     });
                 }
                 catch
@@ -221,7 +263,8 @@ namespace Chapeau.Controllers
 
                     return RedirectToAction(nameof(Index), new
                     {
-                        editId = item.MenuItemID
+                        editId = item.MenuItemID,
+                        search
                     });
                 }
             }
@@ -230,12 +273,13 @@ namespace Chapeau.Controllers
 
             return RedirectToAction(nameof(Index), new
             {
-                editId = item.MenuItemID
+                editId = item.MenuItemID,
+                search
             });
         }
 
         [HttpPost]
-        public IActionResult ToggleActive(int id, bool active, int? cardId, int? categoryId)
+        public IActionResult ToggleActive(int id, bool active, int? cardId, int? categoryId, string? search = null)
         {
             try
             {
@@ -253,7 +297,8 @@ namespace Chapeau.Controllers
             return RedirectToAction(nameof(Index), new
             {
                 cardId,
-                categoryId
+                categoryId,
+                search
             });
         }
 
