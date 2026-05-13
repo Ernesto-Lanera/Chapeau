@@ -1,0 +1,118 @@
+@model IEnumerable<Chapeau.Models.MenuItem>
+
+<h2>Menu Management</h2>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="categoryFilter" class="form-label">Filter by Category:</label>
+        <select id="categoryFilter" class="form-select">
+            <option value="all">All Categories</option>
+            @{
+                var categories = (System.Collections.Generic.IEnumerable<Chapeau.Models.Category>)ViewBag.Categories;
+                foreach (var category in categories)
+                {
+                    <option value="@category.CategoryID">@category.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+        <a class="btn btn-primary ms-auto" href="@Url.Action("Create")">Add New Menu Item</a>
+    </div>
+</div>
+
+<table class="table" id="menuTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Category</th>
+            <th>Active</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody style="visibility: hidden;" id="menuTableBody">
+        @foreach (var item in Model)
+        {
+            <tr class="menu-row" data-category="@item.CategoryID">
+                <td>@item.Name</td>
+                <td>@item.Price</td>
+                <td>@item.Stock</td>
+                <td>@(item.Category?.Name ?? "Unknown")</td>
+                <td>@(item.IsActive ? "Yes" : "No")</td>
+                <td>
+                    <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", new { id = item.MenuItemID })">Edit</a> |
+                    <form method="post" action="@Url.Action("ToggleActive")" class="d-inline filter-preserving-form">
+                        <input type="hidden" name="id" value="@item.MenuItemID" />
+                        <input type="hidden" name="active" value="@(item.IsActive ? "false" : "true")" />
+                        <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-danger" : "btn-success")" onclick="saveScrollPosition()">
+                            @(item.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        function saveScrollPosition() {
+            localStorage.setItem('scrollPosition', window.scrollY);
+        }
+
+        (function() {
+            var savedCategory = localStorage.getItem('selectedMenuCategory') || 'all';
+            var dropdown = document.getElementById('categoryFilter');
+
+            if (dropdown) {
+                dropdown.value = savedCategory;
+            }
+
+            var rows = document.querySelectorAll('.menu-row');
+            rows.forEach(function (row) {
+                var rowCategory = row.getAttribute('data-category');
+                if (savedCategory === 'all' || rowCategory === savedCategory) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            var tbody = document.getElementById('menuTableBody');
+            if (tbody) {
+                tbody.style.visibility = 'visible';
+            }
+        })();
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var filterDropdown = document.getElementById('categoryFilter');
+
+            var scrollPos = localStorage.getItem('scrollPosition');
+            if (scrollPos) {
+                window.scrollTo(0, parseInt(scrollPos));
+                localStorage.removeItem('scrollPosition');
+            }
+
+            filterDropdown.addEventListener('change', function () {
+                var selectedCategory = this.value;
+                localStorage.setItem('selectedMenuCategory', selectedCategory);
+                applyFilter(selectedCategory);
+            });
+
+            function applyFilter(selectedCategory) {
+                var rows = document.querySelectorAll('.menu-row');
+                rows.forEach(function (row) {
+                    var rowCategory = row.getAttribute('data-category');
+
+                    if (selectedCategory === 'all' || rowCategory === selectedCategory) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+}

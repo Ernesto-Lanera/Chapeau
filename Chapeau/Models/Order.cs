@@ -10,7 +10,7 @@
 
         public List<OrderPart> OrderParts {  get; set; }  
 
-        public string? Note { get; set; } 
+        public string? Comment { get; set; } 
 
         public Order(int orderId, List<OrderPart> order, int tableId, DateTime date)
         {
