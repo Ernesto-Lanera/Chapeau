@@ -23,7 +23,7 @@ namespace Someren.Controllers
 
         
         [HttpPost]
-        public IActionResult Create(OrderPart orderPart)
+        public IActionResult Create(OrderItem orderPart)
         {
             _orderPartRepository.Add(orderPart);
 
@@ -37,7 +37,7 @@ namespace Someren.Controllers
         public IActionResult Edit(int id)
         {
 
-            OrderPart orderPart = _orderPartRepository.GetById(id);
+            OrderItem orderPart = _orderPartRepository.GetById(id);
 
             if (orderPart == null)
             {
@@ -48,7 +48,7 @@ namespace Someren.Controllers
         }
 
         [HttpPost]
-        public IActionResult Edit(OrderPart orderPart)
+        public IActionResult Edit(OrderItem orderPart)
         {
             // Save the changes to the database
             _orderPartRepository.Update(orderPart);
@@ -64,7 +64,7 @@ namespace Someren.Controllers
         [HttpGet]
         public IActionResult Delete(int id)
         {
-            OrderPart orderPart = _orderPartRepository.GetById(id);
+            OrderItem orderPart = _orderPartRepository.GetById(id);
 
             if (orderPart == null)
             {
@@ -75,7 +75,7 @@ namespace Someren.Controllers
         }
 
         [HttpPost]
-        public IActionResult Delete(OrderPart orderPart)
+        public IActionResult Delete(OrderItem orderPart)
         {
             _orderPartRepository.Delete(orderPart);
 

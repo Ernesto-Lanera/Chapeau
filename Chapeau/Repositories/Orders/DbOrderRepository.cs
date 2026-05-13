@@ -113,14 +113,14 @@ namespace Someren.Repositories
             int id = (int)reader["orderid"];
             int tableId = (int)reader["tableId"];
             DateTime orderDate = (DateTime)reader["orderdate"];
-            List<OrderPart> orderParts = FillOrderParts(id);
+            List<OrderItem> orderParts = FillOrderParts(id);
 
             return new Order { OrderId = id, TableId = tableId, OrderDate = orderDate, OrderParts = orderParts };
         }
 
-        private List<OrderPart> FillOrderParts(int orderId)
+        private List<OrderItem> FillOrderParts(int orderId)
         {
-            List<OrderPart> parts = new List<OrderPart>();
+            List<OrderItem> parts = new List<OrderItem>();
             using var connection = new SqlConnection(_connectionString);
             using var command = new SqlCommand("SELECT orderpartid, orderid, MenuItemId, amount FROM OrderParts Where orderid = @OrderId ", connection);
 
@@ -134,14 +134,14 @@ namespace Someren.Repositories
             return parts;
         }
 
-        private OrderPart ReadOrderPart(SqlDataReader reader)
+        private OrderItem ReadOrderPart(SqlDataReader reader)
         {
             int id = (int)reader["orderpartid"];
             int orderId = (int)reader["orderid"];
             int MenuItemId = (int)reader["MenuItemId"];
             int amount = (int)reader["amount"];
 
-            return new OrderPart { OrderPartId = id, OrderId = orderId, MenuItemId = MenuItemId, Amount = amount };
+            return new OrderItem { OrderPartId = id, OrderId = orderId, MenuItemId = MenuItemId, Amount = amount };
         }
     }
 }

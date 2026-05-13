@@ -5,14 +5,15 @@
         public int OrderId { get; set; }
 
         public int TableId { get; set; }
+         
+        public int TableNumber { get; set; }
 
         public DateTime OrderDate { get; set; }
 
-        public List<OrderPart> OrderParts {  get; set; }  
+        public List<OrderItem> OrderParts {  get; set; }  
 
-        public string? Comment { get; set; } 
 
-        public Order(int orderId, List<OrderPart> order, int tableId, DateTime date)
+        public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
         {
             OrderId = orderId;
             OrderParts = order;

@@ -14,7 +14,7 @@ namespace Someren.Repositories
                 ?? throw new ArgumentNullException("Database connection string is missing!");
         }
 
-        public void Add(OrderPart orderPart)
+        public void Add(OrderItem orderPart)
         {
             using var connection = new SqlConnection(_connectionString);
             string query = @"
@@ -43,7 +43,7 @@ namespace Someren.Repositories
             int nrOfRowsAffected = command.ExecuteNonQuery();
         }
 
-        public void Delete(OrderPart orderPart)
+        public void Delete(OrderItem orderPart)
         {
             using var connection = new SqlConnection(_connectionString);
 
@@ -62,9 +62,9 @@ namespace Someren.Repositories
             if (nrOfRowsAffected == 0) throw new InvalidOperationException($"No OrderParts found to delete with ID {orderPart.OrderPartId}!");
         }
 
-        public OrderPart? GetById(int? id)
+        public OrderItem? GetById(int? id)
         {
-            OrderPart? orderPart = null;
+            OrderItem? orderPart = null;
             using var connection = new SqlConnection(_connectionString);
 
             string query = "SELECT orderpartid, orderid, MenuItemId, amount FROM OrderParts WHERE orderpartid = @Id";
@@ -83,7 +83,7 @@ namespace Someren.Repositories
             return orderPart;
         }
 
-        public void Update(OrderPart orderPart)
+        public void Update(OrderItem orderPart)
         {
             using var connection = new SqlConnection(_connectionString);
             string query = @"
@@ -111,14 +111,14 @@ namespace Someren.Repositories
             command.ExecuteNonQuery();
         }
 
-        private OrderPart ReadOrderPart(SqlDataReader reader)
+        private OrderItem ReadOrderPart(SqlDataReader reader)
         {
             int id = (int)reader["orderpartid"];
             int orderId = (int)reader["orderid"];
             int MenuItemId = (int)reader["MenuItemId"];
             int amount = (int)reader["amount"];
 
-            return new OrderPart
+            return new OrderItem
             {
                 OrderPartId = id,
                 OrderId = orderId,

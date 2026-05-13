@@ -1,12 +1,25 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Chapeau.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    public class MenuController : Controller
+    public class MenuController(MenuService menuService, CategoryService categoryService) : Controller
     {
-        public IActionResult Index()
+        private readonly MenuService _menuService = menuService;
+        private readonly CategoryService _categoryService = categoryService;
+
+        public IActionResult Index(int? cardId, int? categoryId)
         {
-            return View();
+            var menuItems = _menuService.GetMenuItems(cardId, categoryId);
+            var categories = _categoryService.GetCategories();
+
+            ViewBag.SelectedCardId = cardId;
+            ViewBag.SelectedCategoryId = categoryId;
+            ViewBag.Categories = categories;
+
+            return View(menuItems);
         }
+
     }
 }
+

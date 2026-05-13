@@ -1,6 +1,6 @@
 ﻿namespace Someren.Models
 {
-    public class OrderPart
+    public class OrderItem
     {
         public int OrderPartId { get; set; }
 
@@ -10,7 +10,9 @@
 
         public int OrderId { get; set; }
 
-        public OrderPart(int orderPartId,  int menuItemId, int amount,int orderId)
+        public string? Comment { get; set; }
+
+        public OrderItem(int orderPartId,  int menuItemId, int amount,int orderId)
         {
             OrderPartId = orderPartId;
             MenuItemId = menuItemId;
@@ -18,7 +20,7 @@
             OrderId = orderId;
         }
 
-        public OrderPart() { }
+        public OrderItem() { }
 
         
     }
