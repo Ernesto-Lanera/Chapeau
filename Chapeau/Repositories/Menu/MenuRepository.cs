@@ -6,10 +6,11 @@ using Chapeau.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using CategoryModel = Chapeau.Models.Category;
 
-namespace Chapeau.Repositories
+namespace Chapeau.Repositories.Menu
 {
-    public class MenuRepository(IConfiguration configuration, ILogger<MenuRepository> logger)
+    public class MenuRepository(IConfiguration configuration, ILogger<MenuRepository> logger) : IMenuRepository
     {
         private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
             ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
@@ -29,10 +30,11 @@ namespace Chapeau.Repositories
                     SELECT 
                         m.MenuItemID,
                         m.Name,
-                        m.RetailPrice,
+                        m.Price,
                         m.Stock,
                         m.IsActive,
                         m.CategoryID,
+                        m.ImagePath,
                         c.Name AS CategoryName,
                         c.MenuCardID
                     FROM MenuItems m
@@ -67,12 +69,13 @@ namespace Chapeau.Repositories
 
                 int menuItemIdOrdinal = reader.GetOrdinal("MenuItemID");
                 int nameOrdinal = reader.GetOrdinal("Name");
-                int retailPriceOrdinal = reader.GetOrdinal("RetailPrice");
+                int priceOrdinal = reader.GetOrdinal("Price");
                 int stockOrdinal = reader.GetOrdinal("Stock");
                 int isActiveOrdinal = reader.GetOrdinal("IsActive");
                 int categoryIdOrdinal = reader.GetOrdinal("CategoryID");
                 int categoryNameOrdinal = reader.GetOrdinal("CategoryName");
                 int menuCardIdOrdinal = reader.GetOrdinal("MenuCardID");
+                int imagePathOrdinal = reader.GetOrdinal("ImagePath");
 
                 while (reader.Read())
                 {
@@ -84,11 +87,12 @@ namespace Chapeau.Repositories
                     {
                         MenuItemID = reader.GetInt32(menuItemIdOrdinal),
                         Name = reader.IsDBNull(nameOrdinal) ? string.Empty : reader.GetString(nameOrdinal),
-                        RetailPrice = reader.GetDecimal(retailPriceOrdinal),
+                        RetailPrice = reader.GetDecimal(priceOrdinal),
                         Stock = reader.GetInt32(stockOrdinal),
                         IsActive = reader.GetBoolean(isActiveOrdinal),
                         CategoryID = categoryIdValue,
-                        Category = new Category
+                        ImagePath = reader.IsDBNull(imagePathOrdinal) ? null : reader.GetString(imagePathOrdinal),
+                        Category = new CategoryModel
                         {
                             CategoryID = categoryIdValue,
                             Name = reader.IsDBNull(categoryNameOrdinal) ? string.Empty : reader.GetString(categoryNameOrdinal),
@@ -117,23 +121,25 @@ namespace Chapeau.Repositories
 
                 string query = @"
                     INSERT INTO MenuItems 
-                        (Name, RetailPrice, Stock, IsActive, CategoryID) 
+                        (Name, Price, Stock, IsActive, CategoryID, ImagePath) 
                     VALUES 
-                        (@Name, @RetailPrice, @Stock, @IsActive, @CategoryID)";
+                        (@Name, @Price, @Stock, @IsActive, @CategoryID, @ImagePath)";
 
                 using SqlCommand command = new(query, connection);
 
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value =
                     string.IsNullOrWhiteSpace(item.Name) ? DBNull.Value : item.Name;
 
-                var retailPriceParameter = command.Parameters.Add("@RetailPrice", SqlDbType.Decimal);
-                retailPriceParameter.Precision = 10;
-                retailPriceParameter.Scale = 2;
-                retailPriceParameter.Value = item.RetailPrice;
+                var priceParameter = command.Parameters.Add("@Price", SqlDbType.Decimal);
+                priceParameter.Precision = 10;
+                priceParameter.Scale = 2;
+                priceParameter.Value = item.RetailPrice;
 
                 command.Parameters.Add("@Stock", SqlDbType.Int).Value = item.Stock;
                 command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = item.IsActive;
                 command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = item.CategoryID;
+                command.Parameters.Add("@ImagePath", SqlDbType.NVarChar, 255).Value =
+                    string.IsNullOrWhiteSpace(item.ImagePath) ? DBNull.Value : item.ImagePath;
 
                 command.ExecuteNonQuery();
 
@@ -167,10 +173,11 @@ namespace Chapeau.Repositories
                     UPDATE MenuItems 
                     SET 
                         Name = @Name,
-                        RetailPrice = @RetailPrice,
+                        Price = @Price,
                         Stock = @Stock,
                         IsActive = @IsActive,
-                        CategoryID = @CategoryID
+                        CategoryID = @CategoryID,
+                        ImagePath = @ImagePath
                     WHERE MenuItemID = @MenuItemID";
 
                 using SqlCommand command = new(query, connection);
@@ -178,14 +185,16 @@ namespace Chapeau.Repositories
                 command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value =
                     string.IsNullOrWhiteSpace(item.Name) ? DBNull.Value : item.Name;
 
-                var retailPriceParameter = command.Parameters.Add("@RetailPrice", SqlDbType.Decimal);
-                retailPriceParameter.Precision = 10;
-                retailPriceParameter.Scale = 2;
-                retailPriceParameter.Value = item.RetailPrice;
+                var priceParameter = command.Parameters.Add("@Price", SqlDbType.Decimal);
+                priceParameter.Precision = 10;
+                priceParameter.Scale = 2;
+                priceParameter.Value = item.RetailPrice;
 
                 command.Parameters.Add("@Stock", SqlDbType.Int).Value = item.Stock;
                 command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = item.IsActive;
                 command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = item.CategoryID;
+                command.Parameters.Add("@ImagePath", SqlDbType.NVarChar, 255).Value =
+                    string.IsNullOrWhiteSpace(item.ImagePath) ? DBNull.Value : item.ImagePath;
                 command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = item.MenuItemID;
 
                 int rowsAffected = command.ExecuteNonQuery();

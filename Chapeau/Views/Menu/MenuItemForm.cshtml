@@ -22,7 +22,7 @@
         menuCards = Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
     }
 
-    int selectedMenuCardId = 1;
+    int selectedMenuCardId = 0;
 
     if (ViewBag.SelectedMenuCardId != null)
     {
@@ -31,7 +31,16 @@
 
     if (selectedMenuCardId <= 0)
     {
-        selectedMenuCardId = 1;
+        var firstCard = menuCards.FirstOrDefault();
+
+        if (firstCard != null && int.TryParse(firstCard.Value, out int parsedCardId))
+        {
+            selectedMenuCardId = parsedCardId;
+        }
+        else
+        {
+            selectedMenuCardId = 1;
+        }
     }
 
     if (isEdit)
@@ -48,7 +57,10 @@
     string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
 }
 
-<form id="menuItemEditCreateForm" method="post" action="@Url.Action(formAction, "Menu")">
+<form id="menuItemEditCreateForm"
+      method="post"
+      action="@Url.Action(formAction, "ManageMenu")"
+      enctype="multipart/form-data">
 
     @if (isEdit)
     {
@@ -74,10 +86,16 @@
                     }
                 }
             </select>
+
+            <small class="text-muted">
+                De kaart kan niet direct worden gewijzigd. Kies alleen een categorie binnen dezelfde kaart.
+            </small>
         }
         else
         {
             <select id="menuCardSelect" name="MenuCardID" class="form-select" required="required">
+                <option value="">Selecteer kaart</option>
+
                 @foreach (var card in menuCards)
                 {
                     if (card.Value == selectedMenuCardId.ToString())
@@ -94,38 +112,52 @@
     </div>
 
     <div class="form-group mb-3">
-        <label>Naam</label>
+        <label class="form-label">Naam</label>
 
         <input type="text"
                name="Name"
                value="@Model.Name"
                class="form-control"
                placeholder="Naam"
+               maxlength="100"
                required="required" />
 
         @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
     </div>
 
     <div class="form-group mb-3">
-        <label>Prijs</label>
+        <label class="form-label">Prijs</label>
 
-        <input type="text"
-               name="RetailPrice"
-               value="@(Model.RetailPrice > 0 ? Model.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL")) : "")"
-               class="form-control"
-               placeholder="Prijs"
-               required="required"
-               pattern="[0-9,.]+" />
+        @if (Model.RetailPrice > 0)
+        {
+            <input type="text"
+                   name="RetailPrice"
+                   value="@Model.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))"
+                   class="form-control"
+                   placeholder="Prijs, bijvoorbeeld 12,50"
+                   required="required"
+                   pattern="[0-9,.]+" />
+        }
+        else
+        {
+            <input type="text"
+                   name="RetailPrice"
+                   value=""
+                   class="form-control"
+                   placeholder="Prijs, bijvoorbeeld 12,50"
+                   required="required"
+                   pattern="[0-9,.]+" />
+        }
 
         @Html.ValidationMessageFor(m => m.RetailPrice, "", new { @class = "text-danger" })
     </div>
 
     <div class="form-group mb-3">
-        <label>Voorraad</label>
+        <label class="form-label">Voorraad</label>
 
         <input type="number"
                name="Stock"
-               value="@(Model.Stock > 0 ? Model.Stock.ToString() : "")"
+               value="@Model.Stock"
                class="form-control"
                placeholder="Voorraad"
                min="0"
@@ -138,7 +170,7 @@
         <label for="categorySelect" class="form-label">Categorie</label>
 
         <select id="categorySelect" name="CategoryID" class="form-select" required="required">
-            <option value="">Selecteer Categorie</option>
+            <option value="">Selecteer categorie</option>
 
             @foreach (var category in categories)
             {
@@ -163,6 +195,31 @@
         @Html.ValidationMessageFor(m => m.CategoryID, "", new { @class = "text-danger" })
     </div>
 
+    <div class="form-group mb-3">
+        <label for="imageUpload" class="form-label">Afbeelding optioneel</label>
+
+        <input type="file"
+               id="imageUpload"
+               name="imageFile"
+               accept="image/*"
+               class="form-control" />
+
+        @if (isEdit && !string.IsNullOrWhiteSpace(Model.ImagePath))
+        {
+            <div class="mt-2">
+                <img src="@Model.ImagePath"
+                     alt="@Model.Name"
+                     style="max-width: 150px; max-height: 150px; border-radius: 6px;" />
+
+                <div class="small text-muted mt-2">Huidige afbeelding</div>
+            </div>
+        }
+
+        <small class="form-text text-muted">
+            JPG, PNG of WebP. Maximaal 10MB.
+        </small>
+    </div>
+
     @if (!isEdit)
     {
         <input type="hidden" name="IsActive" value="true" />
@@ -173,7 +230,7 @@
             @buttonText
         </button>
 
-        <a href="@Url.Action("Index", "Menu")" class="btn btn-secondary">
+        <a href="@Url.Action("Index", "ManageMenu")" class="btn btn-secondary">
             Annuleren
         </a>
     </div>
@@ -191,7 +248,6 @@
             }
 
             const selectedCardId = cardSelect.value;
-            let firstVisibleCategory = null;
 
             Array.from(categorySelect.options).forEach(function (option) {
                 if (option.value === '') {
@@ -201,15 +257,12 @@
 
                 const optionCardId = option.getAttribute('data-cardid');
 
-                if (selectedCardId && optionCardId === selectedCardId) {
+                if (!selectedCardId) {
                     option.hidden = false;
-
-                    if (firstVisibleCategory === null) {
-                        firstVisibleCategory = option;
-                    }
-                } else {
-                    option.hidden = true;
+                    return;
                 }
+
+                option.hidden = optionCardId !== selectedCardId;
             });
 
             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
@@ -230,15 +283,19 @@
 
         if (form) {
             form.addEventListener('submit', function (e) {
-                if (!categorySelect.value) {
+                if (!categorySelect || !categorySelect.value) {
                     alert('Selecteer een geldige categorie.');
                     e.preventDefault();
                     return false;
                 }
 
+                if (!cardSelect) {
+                    return true;
+                }
+
                 const selectedOption = categorySelect.options[categorySelect.selectedIndex];
 
-                if (selectedOption && cardSelect) {
+                if (selectedOption) {
                     const optionCardId = selectedOption.getAttribute('data-cardid');
 
                     if (optionCardId !== cardSelect.value) {

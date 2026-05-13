@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
     <meta charset="utf-8" />
@@ -27,8 +27,8 @@
                     <div class="collapse navbar-collapse" id="mainNav">
                         <ul class="navbar-nav app-tabs">
                             <li class="nav-item">
-                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Menu" ? "active" : "")"
-                                   asp-area="" asp-controller="Menu" asp-action="Index">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageMenu" ? "active" : "")"
+                                   asp-area="" asp-controller="ManageMenu" asp-action="Index">
                                     <i class="bi bi-tools me-1"></i>Menubeheer
                                 </a>
                             </li>
@@ -73,3 +73,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

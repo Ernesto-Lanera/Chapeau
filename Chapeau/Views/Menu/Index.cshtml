@@ -17,21 +17,18 @@
     }
 
     var tableCategories = ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category>;
-
     if (tableCategories == null)
     {
         tableCategories = Enumerable.Empty<Chapeau.Models.Category>();
     }
 
     var filterCategories = ViewBag.FilterCategories as IEnumerable<Chapeau.Models.Category>;
-
     if (filterCategories == null)
     {
         filterCategories = tableCategories;
     }
 
     var menuCards = ViewBag.MenuCards as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
-
     if (menuCards == null)
     {
         menuCards = Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
@@ -42,6 +39,19 @@
     bool isEdit = editItem != null;
     bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
     bool showForm = isEdit || showCreate;
+
+    int selectedMenuCardId = 0;
+
+    if (ViewBag.SelectedMenuCardId != null)
+    {
+        selectedMenuCardId = Convert.ToInt32(ViewBag.SelectedMenuCardId);
+    }
+
+    var formCategories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category>;
+    if (formCategories == null)
+    {
+        formCategories = Enumerable.Empty<Chapeau.Models.Category>();
+    }
 }
 
 <style>
@@ -251,7 +261,6 @@
         margin-bottom: 20px;
     }
 
-    /* Form container */
     .form-card {
         background-color: #eff6ff;
         border: none;
@@ -267,7 +276,6 @@
             color: #111827;
         }
 
-    /* Menu form layout */
     #menuItemEditCreateForm {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -276,10 +284,6 @@
 
         #menuItemEditCreateForm .form-group {
             margin-bottom: 0 !important;
-        }
-
-        #menuItemEditCreateForm label {
-            display: none;
         }
 
         #menuItemEditCreateForm input.form-control,
@@ -305,49 +309,12 @@
                 box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
             }
 
-        /* Kaart */
-        #menuItemEditCreateForm .form-group:nth-of-type(1) {
-            order: 5;
-            grid-column: 1 / 2;
-        }
-
-        /* Naam */
-        #menuItemEditCreateForm .form-group:nth-of-type(2) {
-            order: 1;
-            grid-column: 1 / 2;
-        }
-
-        /* Prijs */
-        #menuItemEditCreateForm .form-group:nth-of-type(3) {
-            order: 2;
-            grid-column: 2 / 3;
-        }
-
-        /* Voorraad */
-        #menuItemEditCreateForm .form-group:nth-of-type(4) {
-            order: 3;
-            grid-column: 1 / 2;
-        }
-
-        /* Categorie */
-        #menuItemEditCreateForm .form-group:nth-of-type(5) {
-            order: 4;
-            grid-column: 2 / 3;
-        }
-
-        #menuItemEditCreateForm small,
-        #menuItemEditCreateForm .text-danger {
-            display: none;
-        }
-
-        /* Form buttons */
         #menuItemEditCreateForm .form-actions {
-            order: 6;
             grid-column: 1 / 3;
             display: flex;
             align-items: center;
             gap: 14px;
-            margin-top: 2px;
+            margin-top: 12px;
         }
 
             #menuItemEditCreateForm .form-actions button[type="submit"] {
@@ -387,35 +354,9 @@
                 }
 
     @@media (max-width: 768px) {
-        .page-content {
-            padding: 20px 14px;
-        }
-
-        .page-title-row {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-        }
-
-        .filter-row {
-            flex-direction: column;
-        }
-
-        .filter-group select {
-            width: 100%;
-        }
-
         #menuItemEditCreateForm {
             grid-template-columns: 1fr;
         }
-
-            #menuItemEditCreateForm .form-group:nth-of-type(1),
-            #menuItemEditCreateForm .form-group:nth-of-type(2),
-            #menuItemEditCreateForm .form-group:nth-of-type(3),
-            #menuItemEditCreateForm .form-group:nth-of-type(4),
-            #menuItemEditCreateForm .form-group:nth-of-type(5) {
-                grid-column: 1 / 2;
-            }
 
             #menuItemEditCreateForm .form-actions {
                 grid-column: 1 / 2;
@@ -425,20 +366,19 @@
 </style>
 
 <div class="page-content">
-
     <div class="page-title-row">
         <h2 class="page-title">Menu Beheer</h2>
 
         @if (showCreate)
         {
-            <a href="@Url.Action("Index", "Menu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
+            <a href="@Url.Action("Index", "ManageMenu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
                    class="btn-close-form">
                 Sluiten
             </a>
         }
         else
         {
-            <a href="@Url.Action("Index", "Menu", new { showCreate = true, cardId = selectedCardId, categoryId = selectedCategoryId })#menuItemForm"
+            <a href="@Url.Action("Index", "ManageMenu", new { showCreate = true, cardId = selectedCardId, categoryId = selectedCategoryId })#menuItemForm"
                    class="btn-new">
                 + Nieuw Item
             </a>
@@ -450,7 +390,7 @@
         <div class="alert alert-danger">
             <strong>Er ging iets mis</strong>
             <ul>
-                @foreach (var error in TempData["FlashError"].ToString()!.Split('\n'))
+                @foreach (var error in TempData["FlashError"]!.ToString()!.Split('\n'))
                 {
                     if (!string.IsNullOrWhiteSpace(error))
                     {
@@ -468,11 +408,10 @@
         </div>
     }
 
-    <form method="get" action="@Url.Action("Index", "Menu")">
+    <form method="get" action="@Url.Action("Index", "ManageMenu")">
         <div class="filter-row">
             <div class="filter-group">
                 <label>Kaart</label>
-
                 <select name="cardId" onchange="this.form.submit()">
                     <option value="">Alle</option>
 
@@ -492,7 +431,6 @@
 
             <div class="filter-group">
                 <label>Categorie</label>
-
                 <select name="categoryId" onchange="this.form.submit()">
                     <option value="">Alle</option>
 
@@ -521,24 +459,190 @@
             @if (isEdit)
             {
                 <h3>Menu Item Bewerken</h3>
-
-                ViewBag.IsEdit = true;
-
-                @await Html.PartialAsync("MenuItemForm", editItem)
             }
             else
             {
                 <h3>Nieuw Menu Item</h3>
-
-                ViewBag.IsEdit = false;
-                ViewBag.SelectedMenuCardId = 1;
-
-                @await Html.PartialAsync("MenuItemForm", new Chapeau.Models.MenuItem
-                {
-                    IsActive = true,
-                    Stock = 0
-                })
             }
+
+            <form id="menuItemEditCreateForm"
+                  method="post"
+                  action="@Url.Action(isEdit ? "Edit" : "Create", "ManageMenu")"
+                  enctype="multipart/form-data">
+
+                @if (isEdit && editItem != null)
+                {
+                    <input type="hidden" name="MenuItemID" value="@editItem.MenuItemID" />
+                    <input type="hidden" name="MenuCardID" value="@selectedMenuCardId" />
+                }
+
+                <div class="form-group mb-3">
+                    @if (isEdit)
+                    {
+                        <select id="menuCardSelect" name="MenuCardID" class="form-select" disabled="disabled">
+                            @foreach (var card in menuCards)
+                            {
+                                if (card.Value == selectedMenuCardId.ToString())
+                                {
+                                    <option value="@card.Value" selected="selected">@card.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@card.Value">@card.Text</option>
+                                }
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <select id="menuCardSelect" name="MenuCardID" class="form-select" required="required">
+                            <option value="">-- Selecteer kaart --</option>
+
+                            @foreach (var card in menuCards)
+                            {
+                                if (selectedCardId.HasValue && card.Value == selectedCardId.Value.ToString())
+                                {
+                                    <option value="@card.Value" selected="selected">@card.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@card.Value">@card.Text</option>
+                                }
+                            }
+                        </select>
+                    }
+                </div>
+
+                <div class="form-group mb-3">
+                    @if (isEdit && editItem != null)
+                    {
+                        <input type="text"
+                               name="Name"
+                               class="form-control"
+                               placeholder="Naam"
+                               value="@editItem.Name"
+                               required="required" />
+                    }
+                    else
+                    {
+                        <input type="text"
+                               name="Name"
+                               class="form-control"
+                               placeholder="Naam"
+                               value=""
+                               required="required" />
+                    }
+                </div>
+
+                <div class="form-group mb-3">
+                    @if (isEdit && editItem != null && editItem.RetailPrice > 0)
+                    {
+                        <input type="text"
+                               name="RetailPrice"
+                               class="form-control"
+                               placeholder="Prijs (12,50)"
+                               value="@editItem.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))"
+                               required="required" />
+                    }
+                    else
+                    {
+                        <input type="text"
+                               name="RetailPrice"
+                               class="form-control"
+                               placeholder="Prijs (12,50)"
+                               value=""
+                               required="required" />
+                    }
+                </div>
+
+                <div class="form-group mb-3">
+                    @if (isEdit && editItem != null)
+                    {
+                        <input type="number"
+                               name="Stock"
+                               class="form-control"
+                               placeholder="Voorraad"
+                               value="@editItem.Stock"
+                               min="0"
+                               required="required" />
+                    }
+                    else
+                    {
+                        <input type="number"
+                               name="Stock"
+                               class="form-control"
+                               placeholder="Voorraad"
+                               value="0"
+                               min="0"
+                               required="required" />
+                    }
+                </div>
+
+                <div class="form-group mb-3">
+                    <select id="categorySelect" name="CategoryID" class="form-select" required="required">
+                        <option value="">-- Selecteer categorie --</option>
+
+                        @foreach (var category in formCategories)
+                        {
+                            if (isEdit && editItem != null && editItem.CategoryID == category.CategoryID)
+                            {
+                                <option value="@category.CategoryID"
+                                        data-cardid="@category.MenuCardID"
+                                        selected="selected">
+                                    @category.Name
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@category.CategoryID"
+                                        data-cardid="@category.MenuCardID">
+                                    @category.Name
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="imageUpload" class="form-label">Afbeelding optioneel</label>
+
+                    <input type="file"
+                           id="imageUpload"
+                           name="imageFile"
+                           accept="image/*"
+                           class="form-control" />
+
+                    @if (isEdit && editItem != null && !string.IsNullOrEmpty(editItem.ImagePath))
+                    {
+                        <div class="mt-2">
+                            <img src="@editItem.ImagePath"
+                                 alt="@editItem.Name"
+                                 style="max-width: 150px; max-height: 150px; border-radius: 6px;" />
+
+                            <div class="small text-muted mt-2">Huidige afbeelding</div>
+                        </div>
+                    }
+
+                    <small class="form-text text-muted">JPG, PNG, WebP max. 10MB</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        @if (isEdit)
+                        {
+                            <text>Bijwerken</text>
+                        }
+                        else
+                        {
+                            <text>Toevoegen</text>
+                        }
+                    </button>
+
+                    <a href="@Url.Action("Index", "ManageMenu")" class="btn btn-secondary">
+                        Annuleren
+                    </a>
+                </div>
+            </form>
         </div>
     }
 
@@ -559,23 +663,25 @@
                 @foreach (var item in Model)
                 {
                     var category = tableCategories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
-
                     string categoryName = category?.Name ?? "-";
                     string cardName = "-";
 
                     if (category != null)
                     {
-                        if (category.MenuCardID == 1)
+                        switch (category.MenuCardID)
                         {
-                            cardName = "Lunch";
-                        }
-                        else if (category.MenuCardID == 2)
-                        {
-                            cardName = "Diner";
-                        }
-                        else if (category.MenuCardID == 3)
-                        {
-                            cardName = "Dranken";
+                            case 1:
+                                cardName = "Lunch";
+                                break;
+                            case 2:
+                                cardName = "Diner";
+                                break;
+                            case 3:
+                                cardName = "Dranken";
+                                break;
+                            default:
+                                cardName = "-";
+                                break;
                         }
                     }
 
@@ -583,13 +689,8 @@
 
                     <tr class="@rowClass">
                         <td>@item.Name</td>
-
-                        <td>
-                            € @item.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))
-                        </td>
-
+                        <td>€ @item.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))</td>
                         <td>@cardName</td>
-
                         <td>@categoryName</td>
 
                         <td>
@@ -605,10 +706,9 @@
 
                         <td>
                             <div class="action-cell">
-                                <a href="@Url.Action("Index", "Menu", new { editId = item.MenuItemID, cardId = selectedCardId, categoryId = selectedCategoryId })#menuItemForm"
+                                <a href="@Url.Action("Index", "ManageMenu", new { editId = item.MenuItemID, cardId = selectedCardId, categoryId = selectedCategoryId })#menuItemForm"
                                        class="action-icon action-edit"
                                        title="Bewerken">
-
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          fill="none"
                                          viewBox="0 0 24 24"
@@ -626,9 +726,8 @@
                                 </a>
 
                                 <form method="post"
-                                      action="@Url.Action("ToggleActive", "Menu")"
+                                      action="@Url.Action("ToggleActive", "ManageMenu")"
                                       class="inline-action-form">
-
                                     <input type="hidden" name="id" value="@item.MenuItemID" />
                                     <input type="hidden" name="cardId" value="@selectedCardId" />
                                     <input type="hidden" name="categoryId" value="@selectedCategoryId" />
@@ -650,9 +749,6 @@
                                                 <path stroke-linecap="round"
                                                       stroke-linejoin="round"
                                                       d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M4 4l16 16" />
                                             </svg>
                                         </button>
                                     }
@@ -701,3 +797,46 @@
         });
     </script>
 }
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cardSelect = document.getElementById("menuCardSelect");
+        const categorySelect = document.getElementById("categorySelect");
+
+        if (!cardSelect || !categorySelect) {
+            return;
+        }
+
+        function filterCategories() {
+            const selectedCardId = cardSelect.value;
+
+            Array.from(categorySelect.options).forEach(function (option) {
+                if (option.value === "") {
+                    option.hidden = false;
+                    return;
+                }
+
+                const optionCardId = option.getAttribute("data-cardid");
+
+                if (!selectedCardId) {
+                    option.hidden = false;
+                } else {
+                    option.hidden = optionCardId !== selectedCardId;
+                }
+            });
+
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+
+            if (selectedOption && selectedOption.hidden) {
+                categorySelect.value = "";
+            }
+        }
+
+        cardSelect.addEventListener("change", function () {
+            categorySelect.value = "";
+            filterCategories();
+        });
+
+        filterCategories();
+    });
+</script>

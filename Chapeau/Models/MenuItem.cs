@@ -23,6 +23,9 @@ namespace Chapeau.Models
 
         public Category? Category { get; set; }
 
+        [StringLength(255, ErrorMessage = "Afbeeldingspad mag niet langer zijn dan 255 karakters")]
+        public string? ImagePath { get; set; }
+
         public string StockStatus
         {
             get

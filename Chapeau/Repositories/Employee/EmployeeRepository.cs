@@ -4,17 +4,18 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
 using System.Data;
+using EmployeeModel = Chapeau.Models.Employee;
 
-namespace Chapeau.Repositories
+namespace Chapeau.Repositories.Employee
 {
-    public class EmployeeRepository(IConfiguration configuration)
+    public class EmployeeRepository(IConfiguration configuration) : IEmployeeRepository
     {
         private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
                                 ?? throw new Exception("Database connection string is missing.");
 
-        public List<Employee> GetEmployees()
+        public List<EmployeeModel> GetEmployees()
         {
-            var employees = new List<Employee>();
+            var employees = new List<EmployeeModel>();
 
             try
             {
@@ -35,7 +36,7 @@ namespace Chapeau.Repositories
 
                     while (reader.Read())
                     {
-                        var employee = new Employee
+                        var employee = new EmployeeModel
                         {
                             EmployeeID = reader.GetInt32(employeeIdOrdinal),
                             Name = reader.GetString(nameOrdinal),
@@ -56,7 +57,39 @@ namespace Chapeau.Repositories
             return employees;
         }
 
-        public void AddEmployee(Employee employee)
+        public EmployeeModel? GetEmployeeById(int id)
+        {
+            try
+            {
+                using SqlConnection connection = new(_connectionString);
+                connection.Open();
+
+                string query = "SELECT EmployeeID, Name, PasswordHash, RoleID, IsActive FROM Employee WHERE EmployeeID = @EmployeeID";
+                using SqlCommand command = new(query, connection);
+                command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = id;
+                using SqlDataReader reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return new EmployeeModel
+                    {
+                        EmployeeID = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        PasswordHash = reader.GetString(2),
+                        RoleID = reader.GetInt32(3),
+                        IsActive = reader.GetBoolean(4)
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while retrieving the employee: {ex.Message}", ex);
+            }
+        }
+
+        public void AddEmployee(EmployeeModel employee)
         {
             try
             {
@@ -79,7 +112,7 @@ namespace Chapeau.Repositories
             }
         }
 
-        public void UpdateEmployee(Employee employee)
+        public void UpdateEmployee(EmployeeModel employee)
         {
             try
             {
@@ -105,6 +138,30 @@ namespace Chapeau.Repositories
             catch (Exception ex)
             {
                 throw new Exception($"An error occurred while updating the employee: {ex.Message}", ex);
+            }
+        }
+
+        public void DeleteEmployee(int id)
+        {
+            try
+            {
+                using SqlConnection connection = new(_connectionString);
+                connection.Open();
+
+                string query = "DELETE FROM Employee WHERE EmployeeID = @EmployeeID";
+                using SqlCommand command = new(query, connection);
+                command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = id;
+
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected == 0)
+                {
+                    throw new Exception("Delete failed: Employee not found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while deleting the employee: {ex.Message}", ex);
             }
         }
 

@@ -2,24 +2,27 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Chapeau.Services;
 using Chapeau.Models;
-using System.Text.Json;
 using System.Globalization;
 
 namespace Chapeau.Controllers
 {
-    public class MenuController : Controller
+    public class ManageMenuController : Controller
     {
         private readonly MenuService _menuService;
         private readonly CategoryService _categoryService;
+        private readonly ImageService _imageService;
 
         private const string FlashErrorKey = "FlashError";
         private const string FlashSuccessKey = "FlashSuccess";
-        private const string NewMenuItemDraftKey = "NewMenuItemDraft";
 
-        public MenuController(MenuService menuService, CategoryService categoryService)
+        public ManageMenuController(
+            MenuService menuService,
+            CategoryService categoryService,
+            ImageService imageService)
         {
             _menuService = menuService;
             _categoryService = categoryService;
+            _imageService = imageService;
         }
 
         public IActionResult Index(int? cardId, int? categoryId, int? editId, bool showCreate = false)
@@ -36,7 +39,7 @@ namespace Chapeau.Controllers
 
             ViewBag.IsEdit = false;
             ViewBag.ShowCreate = showCreate;
-            ViewBag.SelectedMenuCardId = 0;
+            ViewBag.SelectedMenuCardId = cardId ?? 0;
             ViewBag.EditItem = null;
             ViewBag.Categories = allCategories;
 
@@ -64,121 +67,11 @@ namespace Chapeau.Controllers
                 }
             }
 
-            return View(menuItems);
+            return View("~/Views/Menu/Index.cshtml", menuItems);
         }
 
         [HttpPost]
-        public IActionResult QuickCreate(MenuItem item, int? cardId, int? categoryId)
-        {
-            int parsedCategoryId = ParseCategoryIdFromForm();
-            int parsedMenuCardId = ParseMenuCardIdFromForm();
-
-            item.CategoryID = parsedCategoryId;
-            item.IsActive = true;
-
-            ModelState.Remove(nameof(MenuItem.CategoryID));
-            ModelState.Remove("CategoryID");
-            ModelState.Remove("CategoryIDSelect");
-
-            ModelState.Remove(nameof(MenuItem.RetailPrice));
-            ModelState.Remove("RetailPrice");
-
-            ModelState.Remove(nameof(MenuItem.Stock));
-            ModelState.Remove("Stock");
-
-            var rawRetailPrice = Request.Form["RetailPrice"].FirstOrDefault();
-
-            if (!TryParseDecimalFlexible(rawRetailPrice, out var parsedRetailPrice))
-            {
-                parsedRetailPrice = 0m;
-                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Vul een geldige prijs in.");
-            }
-
-            item.RetailPrice = parsedRetailPrice;
-
-            var rawStock = Request.Form["Stock"].FirstOrDefault();
-
-            if (!int.TryParse(rawStock, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedStock))
-            {
-                parsedStock = 0;
-                ModelState.AddModelError(nameof(MenuItem.Stock), "Vul een geldige voorraad in.");
-            }
-
-            item.Stock = parsedStock;
-
-            TempData[NewMenuItemDraftKey] = JsonSerializer.Serialize(new
-            {
-                item.Name,
-                item.RetailPrice,
-                item.Stock,
-                item.CategoryID,
-                MenuCardID = parsedMenuCardId
-            });
-
-            ValidateMenuItemForCreate(item, parsedMenuCardId);
-
-            if (!ModelState.IsValid)
-            {
-                TempData[FlashErrorKey] = GetModelStateErrors();
-
-                return RedirectToAction(nameof(Index), new
-                {
-                    cardId,
-                    categoryId,
-                    showCreate = true
-                });
-            }
-
-            try
-            {
-                _menuService.AddMenuItem(item);
-
-                TempData[FlashSuccessKey] = "Menu-item toegevoegd.";
-                TempData.Remove(NewMenuItemDraftKey);
-
-                // Succes: form sluiten
-                return RedirectToAction(nameof(Index), new
-                {
-                    cardId = parsedMenuCardId
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                TempData[FlashErrorKey] = ex.Message;
-
-                // Fout: form open houden
-                return RedirectToAction(nameof(Index), new
-                {
-                    cardId,
-                    categoryId,
-                    showCreate = true
-                });
-            }
-            catch
-            {
-                TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
-
-                // Fout: form open houden
-                return RedirectToAction(nameof(Index), new
-                {
-                    cardId,
-                    categoryId,
-                    showCreate = true
-                });
-            }
-        }
-
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return RedirectToAction(nameof(Index), new
-            {
-                showCreate = true
-            });
-        }
-
-        [HttpPost]
-        public IActionResult Create(MenuItem item)
+        public async Task<IActionResult> Create(MenuItem item, IFormFile? imageFile)
         {
             ModelState.Remove(nameof(MenuItem.RetailPrice));
             ModelState.Remove("RetailPrice");
@@ -195,6 +88,20 @@ namespace Chapeau.Controllers
             item.IsActive = true;
 
             int parsedMenuCardId = ParseMenuCardIdFromForm();
+
+            if (imageFile != null)
+            {
+                var (success, path, errorMessage) = await _imageService.UploadImageAsync(imageFile);
+
+                if (!success)
+                {
+                    ModelState.AddModelError("imageFile", errorMessage ?? "Fout bij upload");
+                }
+                else if (!string.IsNullOrWhiteSpace(path))
+                {
+                    item.ImagePath = path;
+                }
+            }
 
             ValidateMenuItemForCreate(item, parsedMenuCardId);
 
@@ -206,7 +113,6 @@ namespace Chapeau.Controllers
 
                     TempData[FlashSuccessKey] = $"Menu-item '{item.Name}' is succesvol toegevoegd!";
 
-                    // Succes: form sluiten
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId
@@ -216,7 +122,6 @@ namespace Chapeau.Controllers
                 {
                     TempData[FlashErrorKey] = ex.Message;
 
-                    // Fout: form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId,
@@ -227,7 +132,6 @@ namespace Chapeau.Controllers
                 {
                     TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
 
-                    // Fout: form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         cardId = parsedMenuCardId,
@@ -238,7 +142,6 @@ namespace Chapeau.Controllers
 
             TempData[FlashErrorKey] = GetModelStateErrors();
 
-            // Validatiefout: form open houden
             return RedirectToAction(nameof(Index), new
             {
                 cardId = parsedMenuCardId,
@@ -246,17 +149,8 @@ namespace Chapeau.Controllers
             });
         }
 
-        [HttpGet]
-        public IActionResult Edit(int id)
-        {
-            return RedirectToAction(nameof(Index), new
-            {
-                editId = id
-            });
-        }
-
         [HttpPost]
-        public IActionResult Edit(MenuItem item)
+        public async Task<IActionResult> Edit(MenuItem item, IFormFile? imageFile)
         {
             ModelState.Remove(nameof(MenuItem.RetailPrice));
             ModelState.Remove("RetailPrice");
@@ -280,8 +174,25 @@ namespace Chapeau.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Status behouden. Actief/inactief gaat via ToggleActive.
             item.IsActive = existingItem.IsActive;
+
+            if (imageFile != null)
+            {
+                var (success, path, errorMessage) = await _imageService.UploadImageAsync(imageFile);
+
+                if (!success)
+                {
+                    ModelState.AddModelError("imageFile", errorMessage ?? "Fout bij upload");
+                }
+                else if (!string.IsNullOrWhiteSpace(path))
+                {
+                    item.ImagePath = path;
+                }
+            }
+            else
+            {
+                item.ImagePath = existingItem.ImagePath;
+            }
 
             ValidateMenuItemForEdit(item);
 
@@ -293,14 +204,12 @@ namespace Chapeau.Controllers
 
                     TempData[FlashSuccessKey] = $"Menu-item '{item.Name}' is succesvol bijgewerkt!";
 
-                    // Succes: form sluiten, dus GEEN editId meegeven
                     return RedirectToAction(nameof(Index));
                 }
                 catch (InvalidOperationException ex)
                 {
                     TempData[FlashErrorKey] = ex.Message;
 
-                    // Fout: edit-form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         editId = item.MenuItemID
@@ -310,7 +219,6 @@ namespace Chapeau.Controllers
                 {
                     TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
 
-                    // Fout: edit-form open houden
                     return RedirectToAction(nameof(Index), new
                     {
                         editId = item.MenuItemID
@@ -320,7 +228,6 @@ namespace Chapeau.Controllers
 
             TempData[FlashErrorKey] = GetModelStateErrors();
 
-            // Validatiefout: edit-form open houden
             return RedirectToAction(nameof(Index), new
             {
                 editId = item.MenuItemID
@@ -401,7 +308,7 @@ namespace Chapeau.Controllers
         {
             if (item.RetailPrice < 0)
             {
-                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Verkoopprijs kan niet negatief zijn.");
+                ModelState.AddModelError(nameof(MenuItem.RetailPrice), "Verkoopsprijs kan niet negatief zijn.");
             }
 
             if (item.Stock < 0)
@@ -493,23 +400,6 @@ namespace Chapeau.Controllers
             };
         }
 
-        private int ParseCategoryIdFromForm()
-        {
-            var rawCategoryId = Request.Form["CategoryID"].FirstOrDefault();
-
-            if (string.IsNullOrWhiteSpace(rawCategoryId))
-            {
-                rawCategoryId = Request.Form["CategoryIDSelect"].FirstOrDefault();
-            }
-
-            if (int.TryParse(rawCategoryId, out var parsedCategoryId))
-            {
-                return parsedCategoryId;
-            }
-
-            return 0;
-        }
-
         private int ParseMenuCardIdFromForm()
         {
             var rawMenuCardId = Request.Form["MenuCardID"].FirstOrDefault();
@@ -532,8 +422,9 @@ namespace Chapeau.Controllers
             }
 
             var trimmed = input.Trim();
-            var hasDot = trimmed.Contains('.');
-            var hasComma = trimmed.Contains(',');
+
+            bool hasDot = trimmed.Contains('.');
+            bool hasComma = trimmed.Contains(',');
 
             if (hasDot && !hasComma)
             {
@@ -555,7 +446,7 @@ namespace Chapeau.Controllers
                 return true;
             }
 
-            var normalized = trimmed.Replace(',', '.');
+            string normalized = trimmed.Replace(',', '.');
 
             return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
         }
