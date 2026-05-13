@@ -1,18 +1,20 @@
-using Chapeau.Models;
+using System;
+using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using Chapeau.Models;
+using System.Data;
 
 namespace Chapeau.Repositories
 {
-    public class RoleRepository
+    public class RoleRepository(IConfiguration configuration)
     {
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<RoleRepository> _logger;
+        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+                                ?? throw new Exception("Database connection string is missing.");
 
-        public RoleRepository(IConfiguration configuration, ILogger<RoleRepository> logger)
+        public List<Role> GetRoles()
         {
-            _configuration = configuration;
-            _logger = logger;
-        }
+            var roles = new List<Role>();
 
         /// <summary>
         /// Gets all permissions for a specific role.
@@ -23,75 +25,36 @@ namespace Chapeau.Repositories
 
             try
             {
-                string connectionString = _configuration.GetConnectionString("ChapeauDatabaseSQL")
-                    ?? throw new InvalidOperationException("Connection string is missing");
+                using SqlConnection connection = new(_connectionString);
+                connection.Open();
 
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName";
+                using SqlCommand command = new(query, connection);
+                using SqlDataReader reader = command.ExecuteReader();
+
+                if (reader.HasRows)
                 {
-                    connection.Open();
+                    int roleIdOrdinal = reader.GetOrdinal("RoleID");
+                    int roleNameOrdinal = reader.GetOrdinal("RoleName");
 
-                    string query = @"
-                        SELECT p.PermissionName
-                        FROM RolePermissions rp
-                        INNER JOIN Permissions p ON rp.PermissionID = p.PermissionID
-                        WHERE rp.RoleID = @RoleID";
-
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    while (reader.Read())
                     {
-                        command.Parameters.AddWithValue("@RoleID", roleId);
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        var role = new Role
                         {
-                            while (reader.Read())
-                            {
-                                permissions.Add((string)reader["PermissionName"]);
-                            }
-                        }
+                            RoleID = reader.GetInt32(roleIdOrdinal),
+                            RoleName = reader.GetString(roleNameOrdinal)
+                        };
+
+                        roles.Add(role);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving permissions for role {RoleId}", roleId);
+                throw new Exception($"An error occurred while retrieving roles: {ex.Message}", ex);
             }
 
-            return permissions;
-        }
-
-        /// <summary>
-        /// Gets the role name for a given role ID.
-        /// </summary>
-        public string GetRoleName(int roleId)
-        {
-            try
-            {
-                string connectionString = _configuration.GetConnectionString("ChapeauDatabaseSQL")
-                    ?? throw new InvalidOperationException("Connection string is missing");
-
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string query = "SELECT RoleName FROM Roles WHERE RoleID = @RoleID";
-
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@RoleID", roleId);
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                return (string)reader["RoleName"];
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving role name for role {RoleId}", roleId);
-            }
-
-            return string.Empty;
+            return roles;
         }
     }
 }

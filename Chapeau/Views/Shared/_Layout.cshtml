@@ -1,71 +1,63 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Chapeau</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Chapeau.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow app-navbar">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Chapeau</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Management
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="managementDropdown">
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Menu" asp-action="Index">Manage Menu</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Employee" asp-action="Index">Manage Employees</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Stock" asp-action="Index">Manage Stock</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Finance" asp-action="Index">Financial Overview</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User?.Identity?.IsAuthenticated ?? false)
-                        {
+                <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center w-100 gap-2 gap-lg-4">
+                    <a class="navbar-brand fw-semibold app-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                        Restaurant Chapeau - Management System
+                    </a>
+
+                    <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                            aria-controls="mainNav" aria-expanded="false" aria-label="Navigatie in-/uitschakelen">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="mainNav">
+                        <ul class="navbar-nav app-tabs">
                             <li class="nav-item">
-                                <span class="nav-link text-dark">
-                                    Welcome, <strong>@User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value</strong>
-                                </span>
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Menu" ? "active" : "")"
+                                   asp-area="" asp-controller="Menu" asp-action="Index">
+                                    <i class="bi bi-tools me-1"></i>Menubeheer
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <form method="post" asp-action="Logout" asp-controller="Account" style="display: inline;">
-                                    <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>
-                                </form>
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employee" ? "active" : "")"
+                                   asp-area="" asp-controller="Employee" asp-action="Index">
+                                    <i class="bi bi-person me-1"></i>Medewerkers
+                                </a>
                             </li>
-                        }
-                        else
-                        {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "active" : "")"
+                                   asp-area="" asp-controller="Stock" asp-action="Index">
+                                    <i class="bi bi-box-seam me-1"></i>Voorraad
+                                </a>
                             </li>
-                        }
-                    </ul>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" ? "active" : "")"
+                                   asp-area="" asp-controller="Finance" asp-action="Index">
+                                    <i class="bi bi-graph-up me-1"></i>Financieel
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="container-fluid app-container">
+        <main role="main" class="pb-4">
             @RenderBody()
         </main>
     </div>
