@@ -16,7 +16,6 @@
 
     bool isEdit = editEmployee != null;
     bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
-    bool showForm = isEdit || showCreate;
 
     string? draftJson = TempData["NewEmployeeDraft"] as string;
     string draftName = "";
@@ -225,16 +224,105 @@
         padding: 24px;
     }
 
-        .form-card h3 {
-            font-size: 20px;
+    .inline-edit-row td {
+        background-color: #eff6ff;
+        padding: 24px;
+    }
+
+    .inline-edit-card {
+        background-color: #eff6ff;
+        border-radius: 10px;
+    }
+
+        .form-card h3,
+        .inline-edit-card h3 {
+            font-size: 18px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             color: #111827;
         }
 
-    .alert {
-        border-radius: 8px;
-        margin-bottom: 20px;
+    .employee-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+
+        .employee-form .form-group {
+            margin-bottom: 0;
+        }
+
+        .employee-form input.form-control,
+        .employee-form select.form-select {
+            height: 48px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background-color: #f8fbff;
+            padding: 10px 16px;
+            font-size: 15px;
+            color: #111827;
+            width: 100%;
+        }
+
+            .employee-form input.form-control:focus,
+            .employee-form select.form-select:focus {
+                border-color: #93c5fd;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            }
+
+        .employee-form .form-actions {
+            grid-column: 1 / 3;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 12px;
+        }
+
+            .employee-form .form-actions button[type="submit"] {
+                min-width: 110px;
+                height: 46px;
+                border-radius: 8px;
+                font-weight: 700;
+                background-color: #2563eb;
+                border-color: #2563eb;
+                color: white;
+            }
+
+                .employee-form .form-actions button[type="submit"]:hover {
+                    background-color: #1d4ed8;
+                    border-color: #1d4ed8;
+                }
+
+            .employee-form .form-actions a.btn-secondary {
+                min-width: 110px;
+                height: 46px;
+                border-radius: 8px;
+                font-weight: 700;
+                background-color: #d1d5db;
+                border-color: #d1d5db;
+                color: #111827;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+            }
+
+                .employee-form .form-actions a.btn-secondary:hover {
+                    background-color: #c4c9d1;
+                    border-color: #c4c9d1;
+                    color: #111827;
+                }
+
+    @@media (max-width: 768px) {
+        .employee-form {
+            grid-template-columns: 1fr;
+        }
+
+            .employee-form .form-actions {
+                grid-column: 1 / 2;
+                flex-wrap: wrap;
+            }
     }
 </style>
 
@@ -245,66 +333,76 @@
         @if (showCreate)
         {
             <a href="@Url.Action("Index", "Employee")"
-                   class="btn-close-form">
+                   class="btn-close-form preserve-scroll">
                 Sluiten
             </a>
         }
         else
         {
-            <a href="@Url.Action("Index", "Employee", new { showCreate = true })#employeeForm"
-                   class="btn-new">
+            <a href="@Url.Action("Index", "Employee", new { showCreate = true })"
+                   class="btn-new preserve-scroll">
                 + Nieuwe Medewerker
             </a>
         }
     </div>
 
-    @if (TempData["FlashError"] != null)
+    @if (showCreate)
     {
-        <div class="alert alert-danger">
-            <strong>Er ging iets mis</strong>
-            <ul>
-                @foreach (var error in TempData["FlashError"]!.ToString()!.Split('\n'))
-                {
-                    if (!string.IsNullOrWhiteSpace(error))
-                    {
-                        <li>@error</li>
-                    }
-                }
-            </ul>
-        </div>
-    }
+        <div class="form-card">
+            <h3>Nieuwe Medewerker</h3>
 
-    @if (TempData["FlashSuccess"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["FlashSuccess"]
-        </div>
-    }
+            <form method="post"
+                  action="@Url.Action("Create", "Employee")"
+                  class="employee-form preserve-scroll-form">
 
-    @if (showForm)
-    {
-        <div id="employeeForm" class="form-card">
-            @if (isEdit && editEmployee != null)
-            {
-                <h3>Medewerker Bewerken</h3>
+                @Html.AntiForgeryToken()
 
-                ViewBag.IsEdit = true;
+                <div class="form-group">
+                    <input type="text"
+                           name="Name"
+                           class="form-control"
+                           placeholder="Naam"
+                           value="@draftName"
+                           required="required" />
+                </div>
 
-                @await Html.PartialAsync("EmployeeForm", editEmployee)
-            }
-            else
-            {
-                <h3>Nieuwe Medewerker</h3>
+                <div class="form-group">
+                    <input type="password"
+                           name="Password"
+                           class="form-control"
+                           placeholder="Wachtwoord"
+                           required="required" />
+                </div>
 
-                ViewBag.IsEdit = false;
+                <div class="form-group">
+                    <select name="RoleID" class="form-select" required="required">
+                        <option value="">-- Selecteer rol --</option>
 
-                @await Html.PartialAsync("EmployeeForm", new Chapeau.Models.Employee
-                {
-                    Name = draftName,
-                    RoleID = draftRoleId,
-                    IsActive = true
-                })
-            }
+                        @foreach (var role in roles)
+                        {
+                            if (draftRoleId == role.RoleID)
+                            {
+                                <option value="@role.RoleID" selected="selected">@role.RoleName</option>
+                            }
+                            else
+                            {
+                                <option value="@role.RoleID">@role.RoleName</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary preserve-scroll">
+                        Toevoegen
+                    </button>
+
+                    <a href="@Url.Action("Index", "Employee")"
+                           class="btn btn-secondary preserve-scroll">
+                        Annuleren
+                    </a>
+                </div>
+            </form>
         </div>
     }
 
@@ -353,8 +451,8 @@
 
                         <td>
                             <div class="action-cell">
-                                <a href="@Url.Action("Index", "Employee", new { editId = employee.EmployeeID })#employeeForm"
-                                       class="action-icon action-edit"
+                                <a href="@Url.Action("Index", "Employee", new { editId = employee.EmployeeID })"
+                                       class="action-icon action-edit preserve-scroll"
                                        title="Bewerken">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          fill="none"
@@ -374,7 +472,9 @@
 
                                 <form method="post"
                                       action="@Url.Action("SetActive", "Employee")"
-                                      class="inline-action-form">
+                                      class="inline-action-form preserve-scroll-form">
+
+                                    @Html.AntiForgeryToken()
 
                                     <input type="hidden" name="id" value="@employee.EmployeeID" />
 
@@ -383,7 +483,7 @@
                                         <input type="hidden" name="active" value="false" />
 
                                         <button type="submit"
-                                                class="action-icon action-inactive"
+                                                class="action-icon action-inactive preserve-scroll"
                                                 title="Deactiveren">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                  fill="none"
@@ -406,7 +506,7 @@
                                         <input type="hidden" name="active" value="true" />
 
                                         <button type="submit"
-                                                class="action-icon action-active"
+                                                class="action-icon action-active preserve-scroll"
                                                 title="Activeren">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                  fill="none"
@@ -425,24 +525,73 @@
                             </div>
                         </td>
                     </tr>
+
+                    @if (isEdit && editEmployee != null && editEmployee.EmployeeID == employee.EmployeeID)
+                    {
+                        <tr class="inline-edit-row">
+                            <td colspan="5">
+                                <div class="inline-edit-card">
+                                    <h3>Medewerker Bewerken</h3>
+
+                                    <form method="post"
+                                          action="@Url.Action("Edit", "Employee")"
+                                          class="employee-form preserve-scroll-form">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden" name="EmployeeID" value="@editEmployee.EmployeeID" />
+
+                                        <div class="form-group">
+                                            <input type="text"
+                                                   name="Name"
+                                                   class="form-control"
+                                                   placeholder="Naam"
+                                                   value="@editEmployee.Name"
+                                                   required="required" />
+                                        </div>
+
+                                        <div class="form-group">
+                                            <input type="password"
+                                                   name="Password"
+                                                   class="form-control"
+                                                   placeholder="Nieuw wachtwoord optioneel" />
+                                        </div>
+
+                                        <div class="form-group">
+                                            <select name="RoleID" class="form-select" required="required">
+                                                <option value="">-- Selecteer rol --</option>
+
+                                                @foreach (var role in roles)
+                                                {
+                                                    if (editEmployee.RoleID == role.RoleID)
+                                                    {
+                                                        <option value="@role.RoleID" selected="selected">@role.RoleName</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@role.RoleID">@role.RoleName</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary preserve-scroll">
+                                                Bijwerken
+                                            </button>
+
+                                            <a href="@Url.Action("Index", "Employee")"
+                                                   class="btn btn-secondary preserve-scroll">
+                                                Annuleren
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
 </div>
-
-@if (showForm)
-{
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const formCard = document.getElementById("employeeForm");
-
-            if (formCard) {
-                formCard.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-            }
-        });
-    </script>
-}
