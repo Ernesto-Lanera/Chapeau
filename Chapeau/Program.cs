@@ -22,11 +22,13 @@ namespace Chapeau
             builder.Services.AddScoped<Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.CategoryRepository>();
             builder.Services.AddScoped<Repositories.StatusRepository>();
+          
 
             // Register Services
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.EmployeeService>();
             builder.Services.AddScoped<Services.CategoryService>();
+         
 
             var app = builder.Build();
 
