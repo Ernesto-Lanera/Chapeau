@@ -14,19 +14,16 @@ namespace Chapeau
             CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
             CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
-            // Add services to the container
             builder.Services.AddControllersWithViews();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddLogging();
 
-            // Register Repositories with Interfaces
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
             builder.Services.AddScoped<Repositories.Employee.IEmployeeRepository, Repositories.Employee.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
             builder.Services.AddScoped<Repositories.Role.IRoleRepository, Repositories.Role.RoleRepository>();
 
-            // Register Services
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.EmployeeService>();
             builder.Services.AddScoped<Services.CategoryService>();
@@ -34,7 +31,6 @@ namespace Chapeau
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");

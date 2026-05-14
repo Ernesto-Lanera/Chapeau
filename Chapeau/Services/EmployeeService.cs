@@ -21,7 +21,6 @@ namespace Chapeau.Services
 
         public void AddEmployee(Employee employee)
         {
-            // Hash the password before storing
             if (!string.IsNullOrWhiteSpace(employee.PasswordHash))
             {
                 employee.PasswordHash = PasswordHasher.HashPassword(employee.PasswordHash);
