@@ -1,0 +1,19 @@
+﻿@if (TempData["FlashSuccess"] != null || TempData["FlashError"] != null)
+{
+    bool isSuccess = TempData["FlashSuccess"] != null;
+
+    string message = isSuccess
+        ? TempData["FlashSuccess"]?.ToString() ?? ""
+        : TempData["FlashError"]?.ToString() ?? "";
+
+    <div id="toastMessage" class="custom-toast @(isSuccess ? "toast-success" : "toast-error")">
+        <div class="toast-content">
+            <strong>@(isSuccess ? "Gelukt" : "Fout")</strong>
+            <span>@message</span>
+        </div>
+
+        <button type="button" class="toast-close" onclick="closeToast()" aria-label="Sluiten">
+            ×
+        </button>
+    </div>
+}

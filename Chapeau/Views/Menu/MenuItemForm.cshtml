@@ -55,12 +55,34 @@
 
     string formAction = isEdit ? "Edit" : "Create";
     string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
+    string searchValue = ViewBag.Search as string ?? "";
+
+    string GetMenuCardName(int menuCardId)
+    {
+        return menuCardId switch
+        {
+            1 => "Lunch",
+            2 => "Diner",
+            3 => "Dranken",
+            _ => "Onbekend"
+        };
+    }
+
+    string GetCategoryDisplayName(Chapeau.Models.Category category)
+    {
+        return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
+    }
 }
 
 <form id="menuItemEditCreateForm"
       method="post"
       action="@Url.Action(formAction, "ManageMenu")"
-      enctype="multipart/form-data">
+      enctype="multipart/form-data"
+      class="preserve-scroll-form">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" name="search" value="@searchValue" />
 
     @if (isEdit)
     {
@@ -179,14 +201,14 @@
                     <option value="@category.CategoryID"
                             data-cardid="@category.MenuCardID"
                             selected="selected">
-                        @category.Name
+                        @GetCategoryDisplayName(category)
                     </option>
                 }
                 else
                 {
                     <option value="@category.CategoryID"
                             data-cardid="@category.MenuCardID">
-                        @category.Name
+                        @GetCategoryDisplayName(category)
                     </option>
                 }
             }
@@ -226,11 +248,12 @@
     }
 
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-primary preserve-scroll">
             @buttonText
         </button>
 
-        <a href="@Url.Action("Index", "ManageMenu")" class="btn btn-secondary">
+        <a href="@Url.Action("Index", "ManageMenu", new { search = searchValue })"
+               class="btn btn-secondary preserve-scroll">
             Annuleren
         </a>
     </div>
