@@ -1,4 +1,6 @@
-﻿namespace Chapeau.Models
+﻿using Chapeau.Emums;
+
+namespace Chapeau.Models
 {
     public class Order
     {
@@ -12,6 +14,9 @@
 
         public List<OrderItem> OrderParts { get; set; }
 
+        public OrderStatus Status { get; set; }
+
+        public Order() { }
 
         public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
         {
@@ -21,13 +26,6 @@
             OrderDate = date;
         }
 
-        public enum OrderStatus
-        {
-            Ordered,
-            BeingPrepared,
-            ReadyToBeServed,
-            Served,
-            Paid
-        }
+       
     }
 }

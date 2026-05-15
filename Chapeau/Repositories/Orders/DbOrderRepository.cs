@@ -1,147 +1,147 @@
-﻿using Microsoft.Data.SqlClient;
-using Someren.Models;
+﻿//using Microsoft.Data.SqlClient;
+//using Chapeau.Models;
 
-namespace Someren.Repositories
-{
-    public class DbOrdersRepository : IOrderRepository
-    {
-        private readonly string? _connectionString;
+//namespace Chapeau.Repositories
+//{
+//    public class DbOrdersRepository : IOrderRepository
+//    {
+//        private readonly string? _connectionString;
 
-        public DbOrdersRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("SommerenDatabase");
-        }
+//        public DbOrdersRepository(IConfiguration configuration)
+//        {
+//            _connectionString = configuration.GetConnectionString("SommerenDatabase");
+//        }
 
-        public int Add(Order order)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            string query = @"INSERT INTO [Orders] (tableId, orderdate) 
-                             OUTPUT INSERTED.orderid 
-                             VALUES (@tableId, @OrderDate)";
+//        public int Add(Order order)
+//        {
+//            using var connection = new SqlConnection(_connectionString);
+//            string query = @"INSERT INTO [Orders] (tableId, orderdate) 
+//                             OUTPUT INSERTED.orderid 
+//                             VALUES (@tableId, @OrderDate)";
 
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@tableId", order.TableId);
-            command.Parameters.AddWithValue("@OrderDate", order.OrderDate == default ? DateTime.Now : order.OrderDate);
+//            using var command = new SqlCommand(query, connection);
+//            command.Parameters.AddWithValue("@tableId", order.TableId);
+//            command.Parameters.AddWithValue("@OrderDate", order.OrderDate == default ? DateTime.Now : order.OrderDate);
 
-            command.Connection.Open();
-            return (int)command.ExecuteScalar();
-        }
+//            command.Connection.Open();
+//            return (int)command.ExecuteScalar();
+//        }
 
-        public void Delete(Order order)
-        {
-            using var connection = new SqlConnection(_connectionString);
+//        public void Delete(Order order)
+//        {
+//            using var connection = new SqlConnection(_connectionString);
 
     
-            string query = @"
-                            UPDATE Drink
-                            SET Stock = Stock + OrderTotals.TotalAmount
-                             FROM Drink
-                            INNER JOIN (
-                                SELECT MenuItemId, SUM(amount) as TotalAmount
-                                FROM OrderParts
-                                WHERE orderid = @OrderId
-                                GROUP BY MenuItemId
-                            ) OrderTotals ON Drink.MenuItemId = OrderTotals.MenuItemId;
+//            string query = @"
+//                            UPDATE Drink
+//                            SET Stock = Stock + OrderTotals.TotalAmount
+//                             FROM Drink
+//                            INNER JOIN (
+//                                SELECT MenuItemId, SUM(amount) as TotalAmount
+//                                FROM OrderParts
+//                                WHERE orderid = @OrderId
+//                                GROUP BY MenuItemId
+//                            ) OrderTotals ON Drink.MenuItemId = OrderTotals.MenuItemId;
 
-                            DELETE FROM OrderParts WHERE orderid = @OrderId;
-                            DELETE FROM Orders WHERE orderid = @OrderId;
-         ";
+//                            DELETE FROM OrderParts WHERE orderid = @OrderId;
+//                            DELETE FROM Orders WHERE orderid = @OrderId;
+//         ";
 
-            using var command = new SqlCommand(query, connection);
+//            using var command = new SqlCommand(query, connection);
 
-            command.Parameters.AddWithValue("@OrderId", order.OrderId);
+//            command.Parameters.AddWithValue("@OrderId", order.OrderId);
 
-            command.Connection.Open();
-            int nrOfRowsAffected = command.ExecuteNonQuery();
+//            command.Connection.Open();
+//            int nrOfRowsAffected = command.ExecuteNonQuery();
 
-            if (nrOfRowsAffected == 0)
-            {
-                throw new Exception("No records were found to delete or update!");
-            }
-        }
+//            if (nrOfRowsAffected == 0)
+//            {
+//                throw new Exception("No records were found to delete or update!");
+//            }
+//        }
 
-        public List<Order> GetAll()
-        {
-            List<Order> orders = new List<Order>();
-            using var connection = new SqlConnection(_connectionString);
-            using var command = new SqlCommand("SELECT orderid, tableId, orderdate FROM [Orders]", connection);
+//        public List<Order> GetAll()
+//        {
+//            List<Order> orders = new List<Order>();
+//            using var connection = new SqlConnection(_connectionString);
+//            using var command = new SqlCommand("SELECT orderid, tableId, orderdate FROM [Orders]", connection);
 
-            command.Connection.Open();
-            using SqlDataReader reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                orders.Add(ReadOrder(reader));
-            }
-            return orders;
-        }
+//            command.Connection.Open();
+//            using SqlDataReader reader = command.ExecuteReader();
+//            while (reader.Read())
+//            {
+//                orders.Add(ReadOrder(reader));
+//            }
+//            return orders;
+//        }
 
-        public Order? GetById(int orderId)
-        {
-            Order? order = null;
-            using var connection = new SqlConnection(_connectionString);
-            using var command = new SqlCommand("SELECT orderid, tableId, orderdate FROM [Orders] WHERE orderid = @OrderId", connection);
-            command.Parameters.AddWithValue("@OrderId", orderId);
+//        public Order? GetById(int orderId)
+//        {
+//            Order? order = null;
+//            using var connection = new SqlConnection(_connectionString);
+//            using var command = new SqlCommand("SELECT orderid, tableId, orderdate FROM [Orders] WHERE orderid = @OrderId", connection);
+//            command.Parameters.AddWithValue("@OrderId", orderId);
 
-            command.Connection.Open();
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                order = ReadOrder(reader);
-            }
-            return order;
-        }
+//            command.Connection.Open();
+//            using var reader = command.ExecuteReader();
+//            if (reader.Read())
+//            {
+//                order = ReadOrder(reader);
+//            }
+//            return order;
+//        }
 
-        public void Update(Order order)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            string query = @"UPDATE [Orders] 
-                             SET tableId = @tableId, orderdate = @OrderDate 
-                             WHERE orderid = @OrderId";
+//        public void Update(Order order)
+//        {
+//            using var connection = new SqlConnection(_connectionString);
+//            string query = @"UPDATE [Orders] 
+//                             SET tableId = @tableId, orderdate = @OrderDate 
+//                             WHERE orderid = @OrderId";
 
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@tableId", order.TableId);
-            command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
-            command.Parameters.AddWithValue("@OrderId", order.OrderId);
+//            using var command = new SqlCommand(query, connection);
+//            command.Parameters.AddWithValue("@tableId", order.TableId);
+//            command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
+//            command.Parameters.AddWithValue("@OrderId", order.OrderId);
 
-            command.Connection.Open();
-            int nrOfRowsAffected = command.ExecuteNonQuery();
-            if (nrOfRowsAffected == 0) throw new Exception("No records Updated!");
-        }
+//            command.Connection.Open();
+//            int nrOfRowsAffected = command.ExecuteNonQuery();
+//            if (nrOfRowsAffected == 0) throw new Exception("No records Updated!");
+//        }
 
-        private Order ReadOrder(SqlDataReader reader)
-        {
-            int id = (int)reader["orderid"];
-            int tableId = (int)reader["tableId"];
-            DateTime orderDate = (DateTime)reader["orderdate"];
-            List<OrderItem> orderParts = FillOrderParts(id);
+//        private Order ReadOrder(SqlDataReader reader)
+//        {
+//            int id = (int)reader["orderid"];
+//            int tableId = (int)reader["tableId"];
+//            DateTime orderDate = (DateTime)reader["orderdate"];
+//            List<OrderItem> orderParts = FillOrderParts(id);
 
-            return new Order { OrderId = id, TableId = tableId, OrderDate = orderDate, OrderParts = orderParts };
-        }
+//            return new Order { OrderId = id, TableId = tableId, OrderDate = orderDate, OrderParts = orderParts };
+//        }
 
-        private List<OrderItem> FillOrderParts(int orderId)
-        {
-            List<OrderItem> parts = new List<OrderItem>();
-            using var connection = new SqlConnection(_connectionString);
-            using var command = new SqlCommand("SELECT orderpartid, orderid, MenuItemId, amount FROM OrderParts Where orderid = @OrderId ", connection);
+//        private List<OrderItem> FillOrderParts(int orderId)
+//        {
+//            List<OrderItem> parts = new List<OrderItem>();
+//            using var connection = new SqlConnection(_connectionString);
+//            using var command = new SqlCommand("SELECT orderpartid, orderid, MenuItemId, amount FROM OrderParts Where orderid = @OrderId ", connection);
 
-            command.Parameters.AddWithValue("@OrderId", orderId);
-            command.Connection.Open();
-            using SqlDataReader reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                parts.Add(ReadOrderPart(reader));
-            }
-            return parts;
-        }
+//            command.Parameters.AddWithValue("@OrderId", orderId);
+//            command.Connection.Open();
+//            using SqlDataReader reader = command.ExecuteReader();
+//            while (reader.Read())
+//            {
+//                parts.Add(ReadOrderPart(reader));
+//            }
+//            return parts;
+//        }
 
-        private OrderItem ReadOrderPart(SqlDataReader reader)
-        {
-            int id = (int)reader["orderpartid"];
-            int orderId = (int)reader["orderid"];
-            int MenuItemId = (int)reader["MenuItemId"];
-            int amount = (int)reader["amount"];
+//        private OrderItem ReadOrderPart(SqlDataReader reader)
+//        {
+//            int id = (int)reader["orderpartid"];
+//            int orderId = (int)reader["orderid"];
+//            int MenuItemId = (int)reader["MenuItemId"];
+//            int amount = (int)reader["amount"];
 
-            return new OrderItem { OrderPartId = id, OrderId = orderId, MenuItemId = MenuItemId, Amount = amount };
-        }
-    }
-}
+//            return new OrderItem { OrderPartId = id, OrderId = orderId, MenuItemId = MenuItemId, Amount = amount };
+//        }
+//    }
+//}

@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
 using Chapeau.Repositories;
+using Chapeau.Emums;
 
 public class OrderRepository : IOrderRepository
 {
@@ -39,12 +40,12 @@ public class OrderRepository : IOrderRepository
                     {
                         Order order = new Order
                         {
-                            OrderID = (int)reader["OrderID"],
-                            TableID = (int)reader["TableID"],
+                            OrderId = (int)reader["OrderID"],
+                            TableId = (int)reader["TableID"],
                             TableNumber = (int)reader["TableNumber"],
                             GuestName = reader["GuestName"] == DBNull.Value ? null : reader["GuestName"].ToString(),
                             OrderDate = (DateTime)reader["OrderDate"],
-                            OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
+                            Status = (OrderStatus)(int)reader["OrderStatus"]
                         };
                         orders.Add(order);
                     }
