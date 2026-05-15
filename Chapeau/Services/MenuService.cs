@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using Chapeau.Constants;
 using Chapeau.Models;
-using Chapeau.Repositories;
+using Chapeau.Repositories.Menu;
 using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Services
 {
     /// Service for menu-related business logic.
-    public class MenuService(MenuRepository menuManagaRepository, ILogger<MenuService> logger)
+    public class MenuService(IMenuRepository menuRepository, ILogger<MenuService> logger)
     {
-        private readonly MenuRepository _menuManagaRepository = menuManagaRepository;
+        private readonly IMenuRepository _menuRepository = menuRepository;
         private readonly ILogger<MenuService> _logger = logger;
 
         /// Gets all menu items, optionally filtered by category.
@@ -32,7 +32,7 @@ namespace Chapeau.Services
             if (!items.Any())
                 return 0m;
 
-            return items.Average(x => x.Price);
+            return items.Average(x => x.RetailPrice);
         }
 
         /// Gets low stock items (less than 10 units).
@@ -78,8 +78,8 @@ namespace Chapeau.Services
             if (string.IsNullOrWhiteSpace(item.Name))
                 throw new ArgumentException("Menu item name is required");
 
-            if (item.Price < 0)
-                throw new ArgumentException("Menu item price cannot be negative");
+            if (item.RetailPrice < 0)
+                throw new ArgumentException("Retail price cannot be negative");
 
             if (item.Stock < 0)
                 throw new ArgumentException("Menu item stock cannot be negative");

@@ -1,101 +1,123 @@
 using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Mvc;
+using Chapeau.Repositories.Role;
 
 namespace Chapeau.Controllers
 {
-    public class EmployeeController(EmployeeService employeeService) : Controller
+    public class EmployeeController(EmployeeService employeeService, IRoleRepository roleRepository) : Controller
     {
         private readonly EmployeeService _employeeService = employeeService;
+        private readonly IRoleRepository _roleRepository = roleRepository;
 
-        public IActionResult Index()
+        private const string FlashErrorKey = "FlashError";
+        private const string FlashSuccessKey = "FlashSuccess";
+
+        public IActionResult Index(int? editId, bool showCreate = false)
         {
             var employees = _employeeService.GetEmployees();
+
+            ViewBag.Roles = GetRolesSafe();
+
+            ViewBag.EditEmployee = null;
+            ViewBag.IsEdit = false;
+            ViewBag.ShowCreate = showCreate;
+
+            if (editId.HasValue)
+            {
+                var employee = employees.FirstOrDefault(e => e.EmployeeID == editId.Value);
+
+                if (employee != null)
+                {
+                    ViewBag.EditEmployee = employee;
+                    ViewBag.IsEdit = true;
+                    ViewBag.ShowCreate = false;
+                }
+                else
+                {
+                    TempData[FlashErrorKey] = "Medewerker niet gevonden.";
+                }
+            }
+
             return View(employees);
         }
 
         [HttpGet]
         public IActionResult Create()
         {
-            return View();
+            return RedirectToAction(nameof(Index), new { showCreate = true });
         }
 
         [HttpPost]
         public IActionResult Create(Employee employee)
         {
-            if (_employeeService.GetEmployees().Any(e =>
-                    e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase)))
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("Username", "This username is already taken.");
+                TempData[FlashErrorKey] = "Gegevens ongeldig. Probeer opnieuw.";
+                return RedirectToAction(nameof(Index), new { showCreate = true });
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _employeeService.AddEmployee(employee);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (InvalidOperationException ex)
-                {
-                    ModelState.AddModelError("Username", ex.Message);
-                }
-                catch (Exception)
-                {
-                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
-                }
+                _employeeService.AddEmployee(employee);
+                TempData[FlashSuccessKey] = "Medewerker succesvol toegevoegd.";
             }
-            return View(employee);
-        }
-
-        [HttpGet]
-        public IActionResult Edit(int id)
-        {
-            var employee = _employeeService.GetEmployees()
-                .FirstOrDefault(e => e.EmployeeID == id);
-
-            if (employee == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                TempData[FlashErrorKey] = $"Fout bij toevoegen medewerker: {ex.Message}";
+                return RedirectToAction(nameof(Index), new { showCreate = true });
             }
 
-            return View(employee);
-        }
-
-        [HttpPost]
-        public IActionResult Edit(Employee employee)
-        {
-            if (_employeeService.GetEmployees().Any(e =>
-                    e.Username.Equals(employee.Username, StringComparison.OrdinalIgnoreCase)
-                    && e.EmployeeID != employee.EmployeeID))
-            {
-                ModelState.AddModelError("Username", "This username is already taken by another employee.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _employeeService.UpdateEmployee(employee);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (InvalidOperationException ex)
-                {
-                    ModelState.AddModelError("Username", ex.Message);
-                }
-                catch (Exception)
-                {
-                    ModelState.AddModelError("", "An unexpected error occurred while saving to the database.");
-                }
-            }
-            return View(employee);
-        }
-
-        [HttpPost]
-        public IActionResult ToggleActive(int id, bool active)
-        {
-            _employeeService.SetEmployeeActive(id, active);
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public IActionResult Update(Employee employee)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData[FlashErrorKey] = "Gegevens ongeldig. Probeer opnieuw.";
+                return RedirectToAction(nameof(Index), new { editId = employee.EmployeeID });
+            }
+
+            try
+            {
+                _employeeService.UpdateEmployee(employee);
+                TempData[FlashSuccessKey] = "Medewerker succesvol bijgewerkt.";
+            }
+            catch (Exception ex)
+            {
+                TempData[FlashErrorKey] = $"Fout bij bijwerken medewerker: {ex.Message}";
+                return RedirectToAction(nameof(Index), new { editId = employee.EmployeeID });
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public IActionResult SetActive(int id, bool active)
+        {
+            try
+            {
+                _employeeService.SetEmployeeActive(id, active);
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, error = ex.Message });
+            }
+        }
+
+        private List<Role> GetRolesSafe()
+        {
+            try
+            {
+                return _roleRepository.GetRoles();
+            }
+            catch
+            {
+                return new List<Role>();
+            }
         }
     }
 }

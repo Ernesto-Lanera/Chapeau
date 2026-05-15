@@ -4,30 +4,34 @@ namespace Chapeau.Constants
     public static class ErrorMessages
     {
         // Connection & Database
-        public const string ConnectionStringMissing = "Database connection string is missing.";
-        public const string FailedToConnectDatabase = "Failed to connect to database.";
+        public const string ConnectionStringMissing = "Database-verbindingsstring ontbreekt.";
 
         // Menu Items
-        public const string RetrieveMenuItemsError = "An error occurred while retrieving menu items.";
-        public const string AddMenuItemError = "An error occurred while adding the menu item.";
-        public const string UpdateMenuItemError = "An error occurred while updating the menu item.";
-        public const string MenuItemNotFound = "Menu item not found.";
-        public const string MenuItemDuplicateName = "A menu item with this name already exists.";
-        public const string UpdateMenuItemAlreadyExists = "Another menu item with this name already exists.";
+        public const string RetrieveMenuItemsError = "Er is een fout opgetreden bij het ophalen van menu-items.";
+        public const string AddMenuItemError = "Er is een fout opgetreden bij het toevoegen van het menu-item.";
+        public const string UpdateMenuItemError = "Er is een fout opgetreden bij het bijwerken van het menu-item.";
+        public const string MenuItemNotFound = "Menu-item niet gevonden.";
+        public const string MenuItemDuplicateName = "Een menu-item met deze naam bestaat al.";
+        public const string UpdateMenuItemAlreadyExists = "Een ander menu-item met deze naam bestaat al.";
 
         // Employees
-        public const string RetrieveEmployeesError = "An error occurred while retrieving employees.";
-        public const string AddEmployeeError = "An error occurred while adding the employee.";
-        public const string UpdateEmployeeError = "An error occurred while updating the employee.";
-        public const string EmployeeNotFound = "Employee not found.";
-        public const string UsernameTaken = "This username is already taken. Please try another one.";
-        public const string UsernameAlreadyTaken = "This username is already taken by another employee.";
-        public const string UpdateEmployeeActiveError = "An error occurred while updating the employee's active status.";
+        public const string EmployeeNotFound = "Medewerker niet gevonden.";
+        public const string UsernameTaken = "Deze gebruikersnaam is al in gebruik. Probeer een ander.";
+        public const string UpdateEmployeeActiveError = "Er is een fout opgetreden bij het bijwerken van de actieve status van de medewerker.";
 
         // Categories
-        public const string RetrieveCategoriesError = "An error occurred while retrieving categories.";
+        public const string RetrieveCategoriesError = "Er is een fout opgetreden bij het ophalen van categorieën.";
+        public const string AddCategoryError = "Er is een fout opgetreden bij het toevoegen van de categorie.";
+        public const string UpdateCategoryError = "Er is een fout opgetreden bij het bijwerken van de categorie.";
+        public const string CategoryNotFound = "Categorie niet gevonden.";
+
+        // Roles
+        public const string RoleNotFound = "Rol niet gevonden.";
+
+        // Status
+        public const string RetrieveStatusError = "Er is een fout opgetreden bij het ophalen van statussen.";
 
         // General
-        public const string UnexpectedError = "An unexpected error occurred. Please try again later.";
+        public const string UnexpectedError = "Er is een onverwachte fout opgetreden. Probeer het later opnieuw.";
     }
 }
