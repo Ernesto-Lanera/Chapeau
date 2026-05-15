@@ -45,7 +45,7 @@ public class OrderRepository : IOrderRepository
                             TableNumber = (int)reader["TableNumber"],
                             GuestName = reader["GuestName"] == DBNull.Value ? null : reader["GuestName"].ToString(),
                             OrderDate = (DateTime)reader["OrderDate"],
-                            Status = (OrderStatus)(int)reader["OrderStatus"]
+                            OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
                         };
                         orders.Add(order);
                     }

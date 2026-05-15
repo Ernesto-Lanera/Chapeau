@@ -14,7 +14,7 @@ namespace Chapeau.Models
 
         public List<OrderItem> OrderParts { get; set; }
 
-        public OrderStatus Status { get; set; }
+        public OrderStatus OrderStatus { get; set; }
 
         public Order() { }
 

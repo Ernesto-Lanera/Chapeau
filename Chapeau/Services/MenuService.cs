@@ -15,20 +15,20 @@ namespace Chapeau.Services
         /// Gets all menu items, optionally filtered by category.
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
         {
-            return _menuManagaRepository.GetMenuItems(cardId, categoryId);
+            return _menuRepository.GetMenuItems(cardId, categoryId);
         }
 
         /// Gets only active menu items.
         public List<MenuItem> GetActiveMenuItems(int? categoryId = null)
         {
-            var items = _menuManagaRepository.GetMenuItems(null, categoryId);
+            var items = _menuRepository.GetMenuItems(null, categoryId);
             return items.Where(x => x.IsActive).ToList();
         }
 
         /// Gets the average price of all menu items.
         public decimal GetAverageMenuItemPrice()
         {
-            var items = _menuManagaRepository.GetMenuItems(null, null);
+            var items = _menuRepository.GetMenuItems(null, null);
             if (!items.Any())
                 return 0m;
 
@@ -39,7 +39,7 @@ namespace Chapeau.Services
         public List<MenuItem> GetLowStockItems()
         {
             const int lowStockThreshold = 10;
-            var items = _menuManagaRepository.GetMenuItems(null, null);
+            var items = _menuRepository.GetMenuItems(null, null);
             return items.Where(x => x.Stock < lowStockThreshold && x.IsActive).ToList();
         }
 
@@ -47,7 +47,7 @@ namespace Chapeau.Services
         public void AddMenuItem(MenuItem item)
         {
             ValidateMenuItem(item);
-            _menuManagaRepository.AddMenuItem(item);
+            _menuRepository.AddMenuItem(item);
             _logger.LogInformation("Menu item added successfully: {ItemName}", item.Name);
         }
 
@@ -55,13 +55,13 @@ namespace Chapeau.Services
         public void UpdateMenuItem(MenuItem item)
         {
             ValidateMenuItem(item);
-            _menuManagaRepository.UpdateMenuItem(item);
+            _menuRepository.UpdateMenuItem(item);
             _logger.LogInformation("Menu item updated successfully: {ItemId}", item.MenuItemID);
         }
 
         public void SetMenuItemActive(int id, bool active)
         {
-            _menuManagaRepository.SetMenuItemActive(id, active);
+            _menuRepository.SetMenuItemActive(id, active);
         }
 
         public void ChangeStock(int id, int newStock)
@@ -69,7 +69,7 @@ namespace Chapeau.Services
             if (newStock < 0)
                 throw new ArgumentException("Stock cannot be negative");
 
-            _menuManagaRepository.ChangeStock(id, newStock);
+            _menuRepository.ChangeStock(id, newStock);
             _logger.LogInformation("Stock changed for item {ItemId}: {NewStock}", id, newStock);
         }
 
