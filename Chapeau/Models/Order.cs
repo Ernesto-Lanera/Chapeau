@@ -5,12 +5,12 @@
         public int OrderId { get; set; }
 
         public int TableId { get; set; }
-         
+
         public int TableNumber { get; set; }
         public string GuestName { get; set; }
         public DateTime OrderDate { get; set; }
 
-        public List<OrderItem> OrderParts {  get; set; }  
+        public List<OrderItem> OrderParts { get; set; }
 
 
         public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
@@ -19,14 +19,15 @@
             OrderParts = order;
             TableId = tableId;
             OrderDate = date;
-    }
+        }
 
-    public enum OrderStatus
-    {
-     Ordered,
-     BeingPrepared,
-     ReadyToBeServed,
-     Served,
-     Paid
+        public enum OrderStatus
+        {
+            Ordered,
+            BeingPrepared,
+            ReadyToBeServed,
+            Served,
+            Paid
+        }
     }
 }

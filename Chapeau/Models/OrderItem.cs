@@ -1,4 +1,4 @@
-﻿namespace Someren.Models
+﻿namespace Chapeau.Models
 {
     public class OrderItem
     {
