@@ -19,9 +19,9 @@
             <div class="container-fluid">
                 <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center w-100 gap-2 gap-lg-4">
                     <a class="navbar-brand fw-semibold app-brand"
-                           asp-area=""
-                           asp-controller="Home"
-                           asp-action="Index">
+                       asp-area=""
+                       asp-controller="Home"
+                       asp-action="Index">
                         Restaurant Chapeau - Management System
                     </a>
 
@@ -39,37 +39,45 @@
                         <ul class="navbar-nav app-tabs">
                             <li class="nav-item">
                                 <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageMenu" ? "active" : "")"
-                                       asp-area=""
-                                       asp-controller="ManageMenu"
-                                       asp-action="Index">
+                                   asp-area=""
+                                   asp-controller="ManageMenu"
+                                   asp-action="Index">
                                     <i class="bi bi-tools me-1"></i>Menubeheer
                                 </a>
                             </li>
 
                             <li class="nav-item">
                                 <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employee" ? "active" : "")"
-                                       asp-area=""
-                                       asp-controller="Employee"
-                                       asp-action="Index">
+                                   asp-area=""
+                                   asp-controller="Employee"
+                                   asp-action="Index">
                                     <i class="bi bi-person me-1"></i>Medewerkers
                                 </a>
                             </li>
 
                             <li class="nav-item">
                                 <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "active" : "")"
-                                       asp-area=""
-                                       asp-controller="Stock"
-                                       asp-action="Index">
+                                   asp-area=""
+                                   asp-controller="Stock"
+                                   asp-action="Index">
                                     <i class="bi bi-box-seam me-1"></i>Voorraad
                                 </a>
                             </li>
 
                             <li class="nav-item">
                                 <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" ? "active" : "")"
-                                       asp-area=""
-                                       asp-controller="Finance"
-                                       asp-action="Index">
+                                   asp-area=""
+                                   asp-controller="Finance"
+                                   asp-action="Index">
                                     <i class="bi bi-graph-up me-1"></i>Financieel
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Menu" ? "active" : "")"
+                                   asp-area=""
+                                   asp-controller="Menu"
+                                   asp-action="Index">
+                                    <i class="bi bi-tools me-1"></i>Menu
                                 </a>
                             </li>
                         </ul>

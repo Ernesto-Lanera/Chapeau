@@ -1,21 +1,31 @@
-﻿namespace Chapeau.Models
+﻿using Chapeau.Emums;
+
+namespace Chapeau.Models
 {
     public class Order
     {
-        public int OrderID { get; set; }
-        public int TableID { get; set; }
+        public int OrderId { get; set; }
+
+        public int TableId { get; set; }
+
         public int TableNumber { get; set; }
         public string GuestName { get; set; }
         public DateTime OrderDate { get; set; }
-        public OrderStatus OrderStatus { get; set; }
-    }
 
-    public enum OrderStatus
-    {
-     Ordered,
-     BeingPrepared,
-     ReadyToBeServed,
-     Served,
-     Paid
+        public List<OrderItem> OrderParts { get; set; }
+
+        public OrderStatus OrderStatus { get; set; }
+
+        public Order() { }
+
+        public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
+        {
+            OrderId = orderId;
+            OrderParts = order;
+            TableId = tableId;
+            OrderDate = date;
+        }
+
+       
     }
 }
