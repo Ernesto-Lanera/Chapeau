@@ -1,3 +1,5 @@
+using Chapeau.Repositories;
+using Chapeau.Services;
 using System.Globalization;
 
 namespace Chapeau
@@ -67,6 +69,11 @@ namespace Chapeau
             });
 
             // Register Repositories
+            builder.Services.AddControllersWithViews();
+            builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddLogging();
+
             // Register Repositories - Map interfaces to implementations
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
             builder.Services.AddScoped<Repositories.EmployeeRepository>();
@@ -79,6 +86,8 @@ namespace Chapeau
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
 
+            builder.Services.AddScoped<Services.IAuthService, Services.AuthService>();
+            builder.Services.AddScoped<Services.IClaimsService, Services.ClaimsService>();
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())
