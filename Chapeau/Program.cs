@@ -69,17 +69,15 @@ namespace Chapeau
             // Register Repositories
             // Register Repositories - Map interfaces to implementations
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
-            builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
             builder.Services.AddScoped<Repositories.EmployeeRepository>();
+            builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
             builder.Services.AddScoped<Repositories.RoleRepository>();
 
             // Register Services
-            builder.Services.AddScoped<Services.AuthService>();
-            builder.Services.AddScoped<Services.IAuthService>(provider => provider.GetRequiredService<Services.AuthService>());
-            builder.Services.AddScoped<Services.IClaimsService, Services.ClaimsService>();
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.EmployeeService>();
             builder.Services.AddScoped<Services.CategoryService>();
+            builder.Services.AddScoped<Services.ImageService>();
 
             var app = builder.Build();
 
