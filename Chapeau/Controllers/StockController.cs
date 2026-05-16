@@ -36,6 +36,7 @@ namespace Chapeau.Controllers
                 ViewBag.SelectedCardId = cardId;
                 ViewBag.SelectedCategoryId = categoryId;
 
+                ViewBag.Categories = categories;
                 ViewBag.AllCategories = categories;
                 ViewBag.FilterCategories = categories;
                 ViewBag.MenuCards = GetMenuCards();
@@ -49,11 +50,50 @@ namespace Chapeau.Controllers
                 ViewBag.SelectedCardId = cardId;
                 ViewBag.SelectedCategoryId = categoryId;
 
+                ViewBag.Categories = new List<Category>();
                 ViewBag.AllCategories = new List<Category>();
                 ViewBag.FilterCategories = new List<Category>();
                 ViewBag.MenuCards = GetMenuCards();
 
                 return View(new List<MenuItem>());
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Update(int id, int newStock, int? cardId, int? categoryId)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    return BadRequest();
+                }
+
+                if (newStock < 0)
+                {
+                    return BadRequest();
+                }
+
+                _menuService.ChangeStock(id, newStock);
+
+                if (Request.Headers["X-Requested-With"] == "fetch")
+                {
+                    return Ok(new { success = true });
+                }
+
+                TempData[FlashSuccessKey] = "Voorraad succesvol bijgewerkt.";
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
+            }
+            catch (Exception ex)
+            {
+                if (Request.Headers["X-Requested-With"] == "fetch")
+                {
+                    return BadRequest(new { success = false, message = ex.Message });
+                }
+
+                TempData[FlashErrorKey] = $"Fout bij bijwerken voorraad: {ex.Message}";
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
             }
         }
 
