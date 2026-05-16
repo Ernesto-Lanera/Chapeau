@@ -81,7 +81,7 @@
                             @if (!string.IsNullOrEmpty(item.ImagePath))
                             {
                                 <img class="card-img-top @(item.Stock == 0 ? "style-grayscale" : "")"
-                                     src="@item.ImagePath" alt="@item.Name"
+                                     src="@item.ImagePath" alt="@item.Name" loading="lazy"
                                      style="height: 100px; object-fit: cover; @(item.Stock == 0 ? "filter: grayscale(100%);" : "")" />
                             }
 
