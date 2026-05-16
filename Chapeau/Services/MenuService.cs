@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using Chapeau.Constants;
 using Chapeau.Models;
-using Chapeau.Repositories;
+using Chapeau.Repositories.Menu;
 using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Services
 {
     /// Service for menu-related business logic.
-    public class MenuService(MenuRepository menuRepository, ILogger<MenuService> logger)
+    public class MenuService(IMenuRepository menuRepository, ILogger<MenuService> logger)
     {
-        private readonly MenuRepository _menuRepository = menuRepository;
+        private readonly IMenuRepository _menuRepository = menuRepository;
         private readonly ILogger<MenuService> _logger = logger;
 
         /// Gets all menu items, optionally filtered by category.

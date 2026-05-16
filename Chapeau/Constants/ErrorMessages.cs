@@ -5,7 +5,6 @@ namespace Chapeau.Constants
     {
         // Connection & Database
         public const string ConnectionStringMissing = "Database-verbindingsstring ontbreekt.";
-        public const string FailedToConnectDatabase = "Verbinding met database mislukt.";
 
         // Menu Items
         public const string RetrieveMenuItemsError = "Er is een fout opgetreden bij het ophalen van menu-items.";
@@ -16,16 +15,21 @@ namespace Chapeau.Constants
         public const string UpdateMenuItemAlreadyExists = "Een ander menu-item met deze naam bestaat al.";
 
         // Employees
-        public const string RetrieveEmployeesError = "Er is een fout opgetreden bij het ophalen van medewerkers.";
-        public const string AddEmployeeError = "Er is een fout opgetreden bij het toevoegen van de medewerker.";
-        public const string UpdateEmployeeError = "Er is een fout opgetreden bij het bijwerken van de medewerker.";
         public const string EmployeeNotFound = "Medewerker niet gevonden.";
         public const string UsernameTaken = "Deze gebruikersnaam is al in gebruik. Probeer een ander.";
-        public const string UsernameAlreadyTaken = "Deze gebruikersnaam wordt al gebruikt door een andere medewerker.";
         public const string UpdateEmployeeActiveError = "Er is een fout opgetreden bij het bijwerken van de actieve status van de medewerker.";
 
         // Categories
         public const string RetrieveCategoriesError = "Er is een fout opgetreden bij het ophalen van categorieën.";
+        public const string AddCategoryError = "Er is een fout opgetreden bij het toevoegen van de categorie.";
+        public const string UpdateCategoryError = "Er is een fout opgetreden bij het bijwerken van de categorie.";
+        public const string CategoryNotFound = "Categorie niet gevonden.";
+
+        // Roles
+        public const string RoleNotFound = "Rol niet gevonden.";
+
+        // Status
+        public const string RetrieveStatusError = "Er is een fout opgetreden bij het ophalen van statussen.";
 
         // General
         public const string UnexpectedError = "Er is een onverwachte fout opgetreden. Probeer het later opnieuw.";

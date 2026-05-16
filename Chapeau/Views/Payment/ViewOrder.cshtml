@@ -1,0 +1,91 @@
+@model Chapeau.ViewModels.PaymentOrderViewModel
+@{
+    ViewData["Title"] = "Payment Details";
+}
+
+<div class="container mt-4">
+    <h1>Order Payment Details</h1>
+
+    @if (Model != null)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5>Table @Model.TableNumber</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Order ID:</strong> @Model.OrderID</p>
+                    </div>
+                </div>
+
+                <hr />
+
+                <h5>Order Items</h5>
+                @if (Model.Items != null && Model.Items.Count > 0)
+                {
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>@item.Name</td>
+                                    <td>@item.AmountOrdered</td>
+                                    <td>€@item.Price.ToString("F2")</td>
+                                    <td>€@(item.Price * item.AmountOrdered).ToString("F2")</td>
+                                </tr>
+                                @if (!string.IsNullOrEmpty(item.Comment))
+                                {
+                                    <tr>
+                                        <td colspan="4"><em>Comment: @item.Comment</em></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+
+                    <div class="row mt-4">
+                        <div class="col-md-8"></div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p><strong>Low VAT (6%):</strong> €@Model.LowVAT.ToString("F2")</p>
+                                    <p><strong>High VAT (21%):</strong> €@Model.HighVAT.ToString("F2")</p>
+                                    <hr />
+                                    <h5><strong>Total: €@Model.Total.ToString("F2")</strong></h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info" role="alert">
+                        No items in this order.
+                    </div>
+                }
+
+                <div class="mt-4">
+                    <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">Back</a>
+                    <button type="button" class="btn btn-success btn-lg" id="checkoutBtn">Checkout</button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning" role="alert">
+            No order found for this table.
+        </div>
+    }
+</div>
+
+}

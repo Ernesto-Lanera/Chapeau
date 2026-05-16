@@ -1,0 +1,13 @@
+﻿using Chapeau.Models;
+using Chapeau.ViewModels;
+
+namespace Chapeau.Services
+{
+    public interface IOrderService
+    {
+        Order GetActiveOrderByTableId(int tableId);
+        PaymentOrderViewModel GetPaymentOrderViewModel(int orderID, int tableNumber);
+        List<Order> GetRunningOrders();
+        TimeSpan GetWaitingTime(Order order);
+    }
+}

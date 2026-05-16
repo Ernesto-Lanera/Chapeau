@@ -1,7 +1,5 @@
 namespace Chapeau.Constants
 {
-    /// Database column constraints and field length limitations.
-    /// Keep these in sync with the database schema.
     public static class DatabaseConstraints
     {
         // Employee constraints

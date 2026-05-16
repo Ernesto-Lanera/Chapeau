@@ -1,0 +1,9 @@
+﻿<input type="number" name="Amount" id="Amount" class="form-control" required
+       value="@ViewBag.CurrentAmount"
+       min="1"
+       max="@ViewBag.MaxStock"
+@(ViewBag.IsDisabled ? "disabled" : "") />
+
+<small id="stockLabel" class="text-muted">
+    @(ViewBag.IsDisabled ? "Please select a drink first." : $"Maximum available in stock: {ViewBag.MaxStock}")
+</small>

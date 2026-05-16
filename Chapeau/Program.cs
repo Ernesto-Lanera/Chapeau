@@ -1,3 +1,5 @@
+using Chapeau.Repositories;
+using Chapeau.Services;
 using System.Globalization;
 
 namespace Chapeau
@@ -14,6 +16,8 @@ namespace Chapeau
 
             // Add services to the container
             builder.Services.AddControllersWithViews();
+            builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddLogging();
 
             // Add Response Compression
@@ -82,6 +86,7 @@ namespace Chapeau
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.EmployeeService>();
             builder.Services.AddScoped<Services.CategoryService>();
+            builder.Services.AddScoped<Services.ImageService>();
 
             var app = builder.Build();
 
@@ -98,6 +103,7 @@ namespace Chapeau
 
             app.UseResponseCompression();
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
 
             app.UseAuthentication();
