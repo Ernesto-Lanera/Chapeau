@@ -62,21 +62,20 @@ namespace Chapeau.Controllers
                 var employee = await _authService.AuthenticateAsync(username, password);
 
                 if (employee != null)
-                {
-                    return Ok(new
                     {
-                        success = true,
-                        message = "✓ Authentication successful",
-                        employee = new
+                        return Ok(new
                         {
-                            employeeID = employee.EmployeeID,
-                            name = employee.Name,
-                            username = employee.Username,
-                            role = employee.Role.ToString(),
-                            isActive = employee.IsActive
-                        }
-                    });
-                }
+                            success = true,
+                            message = "✓ Authentication successful",
+                            employee = new
+                            {
+                                employeeID = employee.EmployeeID,
+                                name = employee.Name,
+                                roleID = employee.RoleID,
+                                isActive = employee.IsActive
+                            }
+                        });
+                    }
                 else
                 {
                     return Ok(new

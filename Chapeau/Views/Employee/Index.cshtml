@@ -3,11 +3,11 @@
 @{
     ViewData["Title"] = "MedewerkerBeheer";
 
-    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.Role>;
+    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>;
 
     if (roles == null)
     {
-        roles = Enumerable.Empty<Chapeau.Models.Role>();
+        roles = Enumerable.Empty<Chapeau.Models.EmployeeRole>();
     }
 
     var roleNameById = roles.ToDictionary(r => r.RoleID, r => r.RoleName);
@@ -331,7 +331,7 @@
                     string username = $"{usernameBase}{employee.EmployeeID:000}";
 
                     string roleName = roleNameById.TryGetValue(employee.RoleID, out var rn)
-                        ? rn
+                        ? rn ?? employee.RoleID.ToString()
                         : employee.RoleID.ToString();
 
                     string rowClass = employee.IsActive ? "" : "inactive-row";

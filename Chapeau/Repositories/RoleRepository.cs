@@ -3,18 +3,52 @@ using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
-using System.Data;
 
 namespace Chapeau.Repositories
 {
-    public class RoleRepository(IConfiguration configuration)
+    public class RoleRepository
     {
-        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-                                ?? throw new Exception("Database connection string is missing.");
+        private readonly string _connectionString;
 
-        public List<Role> GetRoles()
+        public RoleRepository(IConfiguration configuration)
         {
-            var roles = new List<Role>();
+            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+                ?? throw new Exception("Database connection string is missing.");
+        }
+
+        /// <summary>
+        /// Gets all roles from the database.
+        /// </summary>
+        public List<EmployeeRole> GetRoles()
+        {
+            var roles = new List<EmployeeRole>();
+
+            try
+            {
+                using SqlConnection connection = new(_connectionString);
+                connection.Open();
+
+                string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName";
+
+                using SqlCommand command = new(query, connection);
+                using SqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    roles.Add(new EmployeeRole
+                    {
+                        RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
+                        RoleName = reader.GetString(reader.GetOrdinal("RoleName"))
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while retrieving roles: {ex.Message}", ex);
+            }
+
+            return roles;
+        }
 
         /// <summary>
         /// Gets all permissions for a specific role.
@@ -28,33 +62,27 @@ namespace Chapeau.Repositories
                 using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
-                string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName";
+                string query = @"
+                    SELECT PermissionName
+                    FROM RolePermissions
+                    WHERE RoleID = @RoleID";
+
                 using SqlCommand command = new(query, connection);
+                command.Parameters.AddWithValue("@RoleID", roleId);
+
                 using SqlDataReader reader = command.ExecuteReader();
 
-                if (reader.HasRows)
+                while (reader.Read())
                 {
-                    int roleIdOrdinal = reader.GetOrdinal("RoleID");
-                    int roleNameOrdinal = reader.GetOrdinal("RoleName");
-
-                    while (reader.Read())
-                    {
-                        var role = new Role
-                        {
-                            RoleID = reader.GetInt32(roleIdOrdinal),
-                            RoleName = reader.GetString(roleNameOrdinal)
-                        };
-
-                        roles.Add(role);
-                    }
+                    permissions.Add(reader.GetString(0));
                 }
             }
             catch (Exception ex)
             {
-                throw new Exception($"An error occurred while retrieving roles: {ex.Message}", ex);
+                throw new Exception($"An error occurred while retrieving role permissions: {ex.Message}", ex);
             }
 
-            return roles;
+            return permissions;
         }
     }
 }

@@ -8,11 +8,11 @@
         isEdit = (bool)ViewBag.IsEdit;
     }
 
-    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.Role>;
+    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>;
 
     if (roles == null)
     {
-        roles = Enumerable.Empty<Chapeau.Models.Role>();
+        roles = Enumerable.Empty<Chapeau.Models.EmployeeRole>();
     }
 
     string formAction = isEdit ? "Edit" : "Create";

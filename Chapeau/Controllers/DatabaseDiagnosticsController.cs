@@ -100,7 +100,7 @@ namespace Chapeau.Controllers
                         {
                             employeeID = employee.EmployeeID,
                             name = employee.Name,
-                            role = employee.Role.ToString(),
+                            roleID = employee.RoleID,
                             isActive = employee.IsActive
                         }
                     });

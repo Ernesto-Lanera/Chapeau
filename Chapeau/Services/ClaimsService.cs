@@ -45,11 +45,11 @@ namespace Chapeau.Services
             {
                 // Identity claims
                 new Claim(ClaimTypes.NameIdentifier, employee.EmployeeID.ToString()),
-                new Claim(ClaimTypes.Name, employee.Username),
+                new Claim(ClaimTypes.Name, employee.Name),
                 new Claim(ClaimTypes.GivenName, employee.Name),
 
                 // Role claim for authorization (supports [Authorize(Roles = "Manager")])
-                new Claim(ClaimTypes.Role, employee.Role.ToString()),
+                new Claim(ClaimTypes.Role, employee.RoleID.ToString()),
 
                 // Custom claims
                 new Claim("EmployeeID", employee.EmployeeID.ToString()),
@@ -61,8 +61,7 @@ namespace Chapeau.Services
             // If database lookup fails, use fallback permissions based on role
             try
             {
-                var roleId = GetRoleIdFromRole(employee.Role);
-                var permissions = _roleRepository.GetRolePermissions(roleId);
+                var permissions = _roleRepository.GetRolePermissions(employee.RoleID);
 
                 if (permissions.Any())
                 {
@@ -77,8 +76,8 @@ namespace Chapeau.Services
                 else
                 {
                     // Fallback: if no permissions found in database, use defaults
-                    _logger.LogWarning("No permissions found in database for role {Role}, using defaults", employee.Role);
-                    AddDefaultPermissionsForRole(claims, employee.Role);
+                    _logger.LogWarning("No permissions found in database for role {RoleID}, using defaults", employee.RoleID);
+                    AddDefaultPermissionsForRole(claims, employee.RoleID);
                 }
             }
             catch (Exception ex)
@@ -86,7 +85,7 @@ namespace Chapeau.Services
                 _logger.LogWarning(ex, "Failed to load permissions from database for employee {EmployeeID}, using fallback", 
                     employee.EmployeeID);
                 // Fallback to default permissions if database lookup fails
-                AddDefaultPermissionsForRole(claims, employee.Role);
+                AddDefaultPermissionsForRole(claims, employee.RoleID);
             }
 
             return claims;
@@ -95,40 +94,26 @@ namespace Chapeau.Services
         /// <summary>
         /// Fallback method that adds permissions based on role when database is unavailable.
         /// </summary>
-        private void AddDefaultPermissionsForRole(List<Claim> claims, EmployeeRole role)
+        private void AddDefaultPermissionsForRole(List<Claim> claims, int roleID)
         {
-            List<string> permissions = role switch
+            List<string> permissions = roleID switch
             {
-                EmployeeRole.Waiter => new List<string> { "ViewMenu", "TakeOrders" },
-                EmployeeRole.Kitchen => new List<string> { "ViewMenu", "PrepareFood" },
-                EmployeeRole.Manager => new List<string> 
+                1 => new List<string> { "ViewMenu", "TakeOrders" }, // Waiter
+                2 => new List<string> { "ViewMenu", "PrepareFood" }, // Kitchen
+                3 => new List<string> 
                 { 
                     "ViewMenu", "TakeOrders", "PrepareFood", 
                     "ManageEmployees", "ManageMenuItems", "ViewReports", "ManageRoles" 
-                },
+                }, // Manager
                 _ => new List<string> { "ViewMenu" }
             };
 
             foreach (var permission in permissions)
             {
                 claims.Add(new Claim("Permission", permission));
-                _logger.LogDebug("Added default permission claim: {Permission} for role {Role}", 
-                    permission, role);
+                _logger.LogDebug("Added default permission claim: {Permission} for role {RoleID}", 
+                    permission, roleID);
             }
-        }
-
-        /// <summary>
-        /// Maps EmployeeRole enum to RoleID in database.
-        /// </summary>
-        private int GetRoleIdFromRole(EmployeeRole role)
-        {
-            return role switch
-            {
-                EmployeeRole.Waiter => 1,
-                EmployeeRole.Kitchen => 2,
-                EmployeeRole.Manager => 3,
-                _ => 1 // Default to Waiter
-            };
         }
     }
 }

@@ -16,6 +16,13 @@ namespace Chapeau
             builder.Services.AddControllersWithViews();
             builder.Services.AddLogging();
 
+            // Add Response Compression
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+                options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+            });
+
             // Add Authentication
             builder.Services.AddAuthentication("Cookies")
                 .AddCookie("Cookies", options =>
@@ -89,6 +96,7 @@ namespace Chapeau
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseResponseCompression();
             app.UseHttpsRedirection();
             app.UseRouting();
 
