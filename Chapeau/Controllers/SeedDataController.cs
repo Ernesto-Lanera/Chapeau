@@ -42,9 +42,9 @@ namespace Chapeau.Controllers
 
                 var testEmployees = new[]
                 {
-                    new { Name = "John Waiter", Password = "test", RoleID = 1 },
-                    new { Name = "Alice Kitchen", Password = "test", RoleID = 2 },
-                    new { Name = "Bob Manager", Password = "test", RoleID = 3 }
+                    new { Name = "Walter Waiter", Password = "test", RoleID = 1 },
+                    new { Name = "Evelyn Kitchen", Password = "test", RoleID = 2 },
+                    new { Name = "Karen Manager", Password = "test", RoleID = 3 }
                 };
 
                 var results = new List<object>();
