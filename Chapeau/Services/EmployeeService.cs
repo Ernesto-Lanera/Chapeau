@@ -40,11 +40,6 @@ namespace Chapeau.Services
             _employeeRepository.UpdateEmployee(employee);
         }
 
-        public void DeleteEmployee(int id)
-        {
-            _employeeRepository.DeleteEmployee(id);
-        }
-
         public void SetEmployeeActive(int id, bool active)
         {
             _employeeRepository.SetEmployeeActive(id, active);
