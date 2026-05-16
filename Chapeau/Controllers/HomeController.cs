@@ -1,38 +1,20 @@
+using Chapeau.Constants;
 using Chapeau.Models;
+using Chapeau.Services;
+using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(IConfiguration configuration, EmployeeService employeeService) : Controller
     {
-        private readonly IConfiguration _configuration;
-
-        public HomeController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
+        private readonly IConfiguration _configuration = configuration;
+        private readonly EmployeeService _employeeService = employeeService;
 
         public IActionResult Index()
         {
-            try
-            {
-                // Haal de connection string veilig uit the configuratie (User Secrets)
-                string connectionString = _configuration.GetConnectionString("ChapeauDatabaseSQL") 
-                    ?? throw new Exception("Database connection string is missing.");
-
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-                    ViewBag.DbStatus = "Verbonden met de Azure SQL Database!";
-                }
-            }
-            catch (Exception ex)
-            {
-                ViewBag.DbStatus = $"Fout bij verbinden met de database: {ex.Message}";
-            }
-
             return View();
         }
 
@@ -44,7 +26,14 @@ namespace Chapeau.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var errorMsg = exceptionHandlerPathFeature?.Error?.Message;
+
+            return View(new ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                ErrorMessage = errorMsg
+            });
         }
     }
 }

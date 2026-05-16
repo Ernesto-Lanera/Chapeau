@@ -1,4 +1,5 @@
 ﻿using System;
+using Chapeau.Emums;
 using Chapeau.Models;
 
 namespace Chapeau.ViewModels

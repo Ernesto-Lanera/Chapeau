@@ -23,7 +23,7 @@ namespace Chapeau.Controllers
 
                 List<OrderViewModel> viewModels = orders.Select(o => new OrderViewModel
                 {
-                    OrderID = o.OrderID,
+                    OrderID = o.OrderId,
                     TableNumber = o.TableNumber,
                     OrderDate = o.OrderDate,
                     OrderStatus = o.OrderStatus,
