@@ -540,6 +540,8 @@
                                         @Html.AntiForgeryToken()
 
                                         <input type="hidden" name="EmployeeID" value="@editEmployee.EmployeeID" />
+                                        <input type="hidden" name="IsActive" value="@editEmployee.IsActive.ToString().ToLower()" />
+                                        <input type="hidden" name="PasswordHash" value="@editEmployee.PasswordHash" />
 
                                         <div class="form-group">
                                             <input type="text"

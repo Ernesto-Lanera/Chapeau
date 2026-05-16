@@ -54,7 +54,8 @@ namespace Chapeau.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(Employee employee)
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(Employee employee, string? Password)
         {
             employee.IsActive = true;
 
@@ -248,7 +249,11 @@ namespace Chapeau.Controllers
         {
             try
             {
-                return _roleRepository.GetRoles();
+                return _roleRepository.GetRoles()
+                    .GroupBy(role => role.RoleID)
+                    .Select(group => group.First())
+                    .OrderBy(role => role.RoleName)
+                    .ToList();
             }
             catch
             {

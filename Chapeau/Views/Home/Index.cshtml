@@ -1,12 +1,21 @@
-﻿@{
+﻿﻿@{
     ViewData["Title"] = "Home";
+
+    string dbStatus = "Database status is niet gecontroleerd.";
+
+    if (ViewBag.DbStatus != null)
+    {
+        dbStatus = ViewBag.DbStatus.ToString();
+    }
+
+    bool isConnected = dbStatus.Contains("Verbonden met de database", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="text-center">
     <h1 class="display-4">Welkom bij Chapeau</h1>
 
-    <div class="alert @(ViewBag.DbStatus != null && ViewBag.DbStatus.Contains("Verbonden") ? "alert-success" : "alert-danger") mt-4">
-        <strong>Database status:</strong> @ViewBag.DbStatus
+    <div class="alert @(isConnected ? "alert-success" : "alert-danger") mt-4">
+        <strong>Database status:</strong> @dbStatus
     </div>
 
     <p>Chapeau is uw beheerplatform voor menu's en voorraden.</p>

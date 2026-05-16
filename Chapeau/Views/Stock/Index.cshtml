@@ -7,6 +7,11 @@
 
     if (categories == null)
     {
+        categories = ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category>;
+    }
+
+    if (categories == null)
+    {
         categories = Enumerable.Empty<Chapeau.Models.Category>();
     }
 
@@ -30,19 +35,29 @@
         new { Id = 3, Name = "Dranken" }
     };
 
-    var genericCategoryCards = categories
-        .GroupBy(c => (c.Name ?? string.Empty).Split(" - ")[0].Trim(), StringComparer.OrdinalIgnoreCase)
-        .Select(g => new
-        {
-            Name = g.Key,
-            CardIds = string.Join(",", g.Select(x => x.MenuCardID).Distinct().OrderBy(x => x))
-        })
-        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-        .OrderBy(x => x.Name)
-        .ToList();
-
     int soldOutCount = Model.Count(x => x.Stock == 0);
     int almostOutCount = Model.Count(x => x.Stock > 0 && x.Stock <= 10);
+
+    string GetMenuCardName(int menuCardId)
+    {
+        return menuCardId switch
+        {
+            1 => "Lunch",
+            2 => "Diner",
+            3 => "Dranken",
+            _ => "-"
+        };
+    }
+
+    string GetCategoryDisplayName(Chapeau.Models.Category category)
+    {
+        if (category.MenuCardID == 1 || category.MenuCardID == 2)
+        {
+            return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
+        }
+
+        return category.Name;
+    }
 }
 
 <style>
@@ -91,6 +106,12 @@
         font-size: 14px;
         padding-left: 10px;
     }
+
+        .filter-group select[name="categoryId"] {
+            width: 360px;
+            max-width: 100%;
+            text-overflow: ellipsis;
+        }
 
     .stock-summary-row {
         display: flex;
@@ -263,12 +284,12 @@
         </div>
     }
 
-    <form method="get" action="@Url.Action("Index", "Stock")">
+    <form id="stockFilterForm" method="get" action="@Url.Action("Index", "Stock")">
         <div class="filter-row">
             <div class="filter-group">
                 <label>Kaart</label>
 
-                <select name="cardId" id="cardFilter" onchange="this.form.submit()">
+                <select name="cardId" id="cardFilter">
                     <option value="">Alle</option>
 
                     @foreach (var card in cards)
@@ -288,20 +309,22 @@
             <div class="filter-group">
                 <label>Categorie</label>
 
-                <select name="categoryId" id="categoryFilter" onchange="this.form.submit()">
+                <select name="categoryId" id="categoryFilter">
                     <option value="">Alle</option>
 
                     @foreach (var category in categories)
                     {
                         if (!selectedCardId.HasValue || category.MenuCardID == selectedCardId.Value)
                         {
+                            string categoryName = GetCategoryDisplayName(category);
+
                             if (selectedCategoryId.HasValue && selectedCategoryId.Value == category.CategoryID)
                             {
-                                <option value="@category.CategoryID" selected="selected">@category.Name</option>
+                                <option value="@category.CategoryID" selected="selected">@categoryName</option>
                             }
                             else
                             {
-                                <option value="@category.CategoryID">@category.Name</option>
+                                <option value="@category.CategoryID">@categoryName</option>
                             }
                         }
                     }
@@ -312,32 +335,10 @@
 
     <div class="stock-summary-row">
         <span class="stock-pill danger">
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 fill="none"
-                 viewBox="0 0 24 24"
-                 stroke="currentColor">
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M10.29 3.86L1.82 18a1.875 1.875 0 001.61 2.84h17.14A1.875 1.875 0 0022.18 18L13.71 3.86a1.875 1.875 0 00-3.42 0z" />
-            </svg>
             Uitverkocht: <span id="soldOutCount">@soldOutCount</span> item(s)
         </span>
 
         <span class="stock-pill warn">
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 fill="none"
-                 viewBox="0 0 24 24"
-                 stroke="currentColor">
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 2.25a9.75 9.75 0 110 19.5 9.75 9.75 0 010-19.5z" />
-            </svg>
             Bijna op: <span id="almostOutCount">@almostOutCount</span> item(s)
         </span>
     </div>
@@ -358,25 +359,21 @@
             <tbody>
                 @foreach (var item in Model)
                 {
-                    string cardName = "-";
+                    var itemCategory = item.Category;
 
-                    if (item.Category != null)
+                    if (itemCategory == null)
                     {
-                        if (item.Category.MenuCardID == 1)
-                        {
-                            cardName = "Lunch";
-                        }
-                        else if (item.Category.MenuCardID == 2)
-                        {
-                            cardName = "Diner";
-                        }
-                        else if (item.Category.MenuCardID == 3)
-                        {
-                            cardName = "Drinks";
-                        }
+                        itemCategory = categories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
                     }
 
-                    string categoryName = item.Category?.Name ?? "Onbekend";
+                    string cardName = "-";
+                    string categoryName = "Onbekend";
+
+                    if (itemCategory != null)
+                    {
+                        cardName = GetMenuCardName(itemCategory.MenuCardID);
+                        categoryName = GetCategoryDisplayName(itemCategory);
+                    }
 
                     string pillClass = "ok";
                     string pillText = "Op voorraad";
@@ -408,46 +405,6 @@
 
                         <td>
                             <span class="stock-pill @pillClass stock-status">
-                                @if (item.Stock == 0)
-                                {
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              d="M10.29 3.86L1.82 18a1.875 1.875 0 001.61 2.84h17.14A1.875 1.875 0 0022.18 18L13.71 3.86a1.875 1.875 0 00-3.42 0z" />
-                                    </svg>
-                                }
-                                else if (item.Stock <= 10)
-                                {
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              d="M12 2.25a9.75 9.75 0 110 19.5 9.75 9.75 0 010-19.5z" />
-                                    </svg>
-                                }
-                                else
-                                {
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              d="M20.25 6.75L9 18l-5.25-5.25" />
-                                    </svg>
-                                }
-
                                 <span class="stock-status-text">@pillText</span>
                             </span>
                         </td>
@@ -457,6 +414,8 @@
                                 <form method="post"
                                       action="@Url.Action("Update", "Stock")"
                                       class="inline-stock-form stock-form">
+
+                                    @Html.AntiForgeryToken()
 
                                     <input type="hidden" name="id" value="@item.MenuItemID" />
                                     <input type="hidden" name="newStock" class="stock-new" value="@item.Stock" />
@@ -489,6 +448,21 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const filterForm = document.getElementById("stockFilterForm");
+            const cardFilter = document.getElementById("cardFilter");
+            const categoryFilter = document.getElementById("categoryFilter");
+
+            if (filterForm && cardFilter && categoryFilter) {
+                cardFilter.addEventListener("change", function () {
+                    categoryFilter.value = "";
+                    filterForm.submit();
+                });
+
+                categoryFilter.addEventListener("change", function () {
+                    filterForm.submit();
+                });
+            }
+
             function debounce(fn, waitMs) {
                 let timer;
 
@@ -507,47 +481,21 @@
                 if (stock <= 0) {
                     return {
                         cls: "danger",
-                        text: "Uitverkocht",
-                        icon: "danger"
+                        text: "Uitverkocht"
                     };
                 }
 
                 if (stock <= 10) {
                     return {
                         cls: "warn",
-                        text: "Bijna op",
-                        icon: "warn"
+                        text: "Bijna op"
                     };
                 }
 
                 return {
                     cls: "ok",
-                    text: "Op voorraad",
-                    icon: "ok"
+                    text: "Op voorraad"
                 };
-            }
-
-            function iconHtml(type) {
-                if (type === "danger") {
-                    return `
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86L1.82 18a1.875 1.875 0 001.61 2.84h17.14A1.875 1.875 0 0022.18 18L13.71 3.86a1.875 1.875 0 00-3.42 0z" />
-                        </svg>`;
-                }
-
-                if (type === "warn") {
-                    return `
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25a9.75 9.75 0 110 19.5 9.75 9.75 0 010-19.5z" />
-                        </svg>`;
-                }
-
-                return `
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.75L9 18l-5.25-5.25" />
-                    </svg>`;
             }
 
             function recalcTopCounters() {
@@ -594,7 +542,7 @@
                     statusPill.classList.remove("ok", "warn", "danger");
                     statusPill.classList.add(status.cls);
 
-                    statusPill.innerHTML = iconHtml(status.icon) + `<span class="stock-status-text">${status.text}</span>`;
+                    statusText.textContent = status.text;
 
                     if (stock === 0) {
                         row.classList.add("sold-out-row");
@@ -622,15 +570,10 @@
                     body.set("id", form.querySelector('input[name="id"]').value);
                     body.set("newStock", stock.toString());
 
-                    const cardIdInput = form.querySelector('input[name="cardId"]');
-                    const categoryIdInput = form.querySelector('input[name="categoryId"]');
+                    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
 
-                    if (cardIdInput && cardIdInput.value) {
-                        body.set("cardId", cardIdInput.value);
-                    }
-
-                    if (categoryIdInput && categoryIdInput.value) {
-                        body.set("categoryId", categoryIdInput.value);
+                    if (tokenInput) {
+                        body.set("__RequestVerificationToken", tokenInput.value);
                     }
 
                     currentInput.classList.remove("is-invalid");
@@ -663,11 +606,9 @@
                 }, 200);
 
                 currentInput.addEventListener("input", autoSave);
-
                 currentInput.addEventListener("change", function () {
                     saveStock();
                 });
-
                 currentInput.addEventListener("blur", function () {
                     saveStock();
                 });

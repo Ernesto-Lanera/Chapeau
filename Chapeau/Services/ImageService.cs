@@ -19,11 +19,9 @@ namespace Chapeau.Services
 
         public async Task<(bool Success, string? Path, string? ErrorMessage)> UploadImageAsync(IFormFile? file)
         {
-            // Geen bestand = geen fout
             if (file == null || file.Length == 0)
                 return (true, null, null);
 
-            // Validatie
             if (file.Length > MaxFileSize)
                 return (false, null, "Bestand is te groot. Maximum 10MB.");
 
@@ -33,16 +31,13 @@ namespace Chapeau.Services
 
             try
             {
-                // Maak folder aan
                 var uploadPath = Path.Combine(_webHostEnvironment.WebRootPath, UploadFolderName);
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
-                // Unieke bestandsnaam
                 var fileName = $"{Guid.NewGuid()}{fileExtension}";
                 var filePath = Path.Combine(uploadPath, fileName);
 
-                // Sla bestand op
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);

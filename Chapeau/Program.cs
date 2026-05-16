@@ -12,7 +12,6 @@ namespace Chapeau
             CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
             CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
-            // Add services to the container
             builder.Services.AddControllersWithViews();
             builder.Services.AddLogging();
 
@@ -84,7 +83,6 @@ namespace Chapeau
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
