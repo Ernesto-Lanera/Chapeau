@@ -44,6 +44,8 @@
     }
 }
 
+@Html.Partial("_ToastMessage")
+
 <style>
     body {
         background-color: #f8fafc;
@@ -368,7 +370,7 @@
 
                 <div class="form-group">
                     <input type="password"
-                           name="Password"
+                           name="PasswordHash"
                            class="form-control"
                            placeholder="Wachtwoord"
                            required="required" />
@@ -471,7 +473,7 @@
                                 </a>
 
                                 <form method="post"
-                                      action="@Url.Action("SetActive", "Employee")"
+                                      action="@Url.Action("ToggleActive", "Employee")"
                                       class="inline-action-form preserve-scroll-form">
 
                                     @Html.AntiForgeryToken()
@@ -541,7 +543,6 @@
 
                                         <input type="hidden" name="EmployeeID" value="@editEmployee.EmployeeID" />
                                         <input type="hidden" name="IsActive" value="@editEmployee.IsActive.ToString().ToLower()" />
-                                        <input type="hidden" name="PasswordHash" value="@editEmployee.PasswordHash" />
 
                                         <div class="form-group">
                                             <input type="text"
@@ -554,7 +555,7 @@
 
                                         <div class="form-group">
                                             <input type="password"
-                                                   name="Password"
+                                                   name="PasswordHash"
                                                    class="form-control"
                                                    placeholder="Nieuw wachtwoord optioneel" />
                                         </div>

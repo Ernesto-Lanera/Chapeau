@@ -124,7 +124,6 @@ namespace Chapeau.Controllers
         public IActionResult Edit(Employee employee)
         {
             ModelState.Remove(nameof(Employee.PasswordHash));
-            ModelState.Remove("PasswordHash");
 
             var existingEmployee = _employeeService.GetEmployees()
                 .FirstOrDefault(e => e.EmployeeID == employee.EmployeeID);
