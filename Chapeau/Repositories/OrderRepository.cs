@@ -79,8 +79,8 @@ public class OrderRepository : IOrderRepository
                     {
                         return new Order
                         {
-                            OrderID = (int)reader["OrderID"],
-                            TableID = (int)reader["TableID"],
+                            OrderId = (int)reader["OrderID"],
+                            TableId = (int)reader["TableID"],
                             TableNumber = (int)reader["TableNumber"],
                             GuestName = reader["GuestName"] == DBNull.Value ? null : reader["GuestName"].ToString(),
                             OrderDate = (DateTime)reader["OrderDate"],
