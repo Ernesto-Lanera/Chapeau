@@ -1,0 +1,45 @@
+@model List<Chapeau.Models.Order>
+@{
+    ViewData["Title"] = "Payment";
+}
+
+<div class="container mt-4">
+    <h1>Order Payment - All Tables</h1>
+
+    @if (Model != null && Model.Count > 0)
+    {
+        <div class="row">
+            @foreach (var order in Model)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Table @order.TableNumber</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Order ID:</strong> @order.OrderId</p>
+                            <p><strong>Guest Name:</strong> @order.GuestName</p>
+                            <p><strong>Order Date:</strong> @order.OrderDate.ToString("g")</p>
+                            
+                            <hr />
+
+                            <a href="@Url.Action("ViewOrder", "Payment", new { tableId = order.TableNumber })" class="btn btn-primary">
+                                View Details & Pay
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            No active orders at this time.
+        </div>
+    }
+
+    <div class="mt-4">
+        <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">Back</a>
+    </div>
+</div>
