@@ -1,22 +1,17 @@
 using System.Collections.Generic;
 using Chapeau.Models;
-using Chapeau.Repositories.Employee;
+using Chapeau.Repositories;
 using Chapeau.Utilities;
 
 namespace Chapeau.Services
 {
-    public class EmployeeService(IEmployeeRepository employeeRepository)
+    public class EmployeeService(EmployeeRepository employeeRepository)
     {
-        private readonly IEmployeeRepository _employeeRepository = employeeRepository;
+        private readonly EmployeeRepository _employeeRepository = employeeRepository;
 
         public List<Employee> GetEmployees()
         {
             return _employeeRepository.GetEmployees();
-        }
-
-        public Employee? GetEmployeeById(int id)
-        {
-            return _employeeRepository.GetEmployeeById(id);
         }
 
         public void AddEmployee(Employee employee)
@@ -32,6 +27,7 @@ namespace Chapeau.Services
 
         public void UpdateEmployee(Employee employee)
         {
+            // Hash the password only if it's a new plaintext password (not already hashed)
             if (!string.IsNullOrWhiteSpace(employee.PasswordHash) && !IsAlreadyHashed(employee.PasswordHash))
             {
                 employee.PasswordHash = PasswordHasher.HashPassword(employee.PasswordHash);

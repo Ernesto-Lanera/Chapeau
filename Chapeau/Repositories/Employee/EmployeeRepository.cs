@@ -4,18 +4,17 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
 using System.Data;
-using EmployeeModel = Chapeau.Models.Employee;
 
-namespace Chapeau.Repositories.Employee
+namespace Chapeau.Repositories
 {
-    public class EmployeeRepository(IConfiguration configuration) : IEmployeeRepository
+    public class EmployeeRepository(IConfiguration configuration)
     {
         private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
                                 ?? throw new Exception("Database connection string is missing.");
 
-        public List<EmployeeModel> GetEmployees()
+        public List<Employee> GetEmployees()
         {
-            var employees = new List<EmployeeModel>();
+            var employees = new List<Employee>();
 
             try
             {
@@ -36,7 +35,7 @@ namespace Chapeau.Repositories.Employee
 
                     while (reader.Read())
                     {
-                        var employee = new EmployeeModel
+                        var employee = new Employee
                         {
                             EmployeeID = reader.GetInt32(employeeIdOrdinal),
                             Name = reader.GetString(nameOrdinal),
@@ -57,39 +56,7 @@ namespace Chapeau.Repositories.Employee
             return employees;
         }
 
-        public EmployeeModel? GetEmployeeById(int id)
-        {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-
-                string query = "SELECT EmployeeID, Name, PasswordHash, RoleID, IsActive FROM Employee WHERE EmployeeID = @EmployeeID";
-                using SqlCommand command = new(query, connection);
-                command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = id;
-                using SqlDataReader reader = command.ExecuteReader();
-
-                if (reader.Read())
-                {
-                    return new EmployeeModel
-                    {
-                        EmployeeID = reader.GetInt32(0),
-                        Name = reader.GetString(1),
-                        PasswordHash = reader.GetString(2),
-                        RoleID = reader.GetInt32(3),
-                        IsActive = reader.GetBoolean(4)
-                    };
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving the employee: {ex.Message}", ex);
-            }
-        }
-
-        public void AddEmployee(EmployeeModel employee)
+        public void AddEmployee(Employee employee)
         {
             try
             {
@@ -112,7 +79,7 @@ namespace Chapeau.Repositories.Employee
             }
         }
 
-        public void UpdateEmployee(EmployeeModel employee)
+        public void UpdateEmployee(Employee employee)
         {
             try
             {

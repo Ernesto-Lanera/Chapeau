@@ -1,17 +1,19 @@
 using Chapeau.Models;
+using Chapeau.Repositories;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Mvc;
-using Chapeau.Repositories.Role;
+using System.Text.Json;
 
 namespace Chapeau.Controllers
 {
-    public class EmployeeController(EmployeeService employeeService, IRoleRepository roleRepository) : Controller
+    public class EmployeeController(EmployeeService employeeService, RoleRepository roleRepository) : Controller
     {
         private readonly EmployeeService _employeeService = employeeService;
-        private readonly IRoleRepository _roleRepository = roleRepository;
+        private readonly RoleRepository _roleRepository = roleRepository;
 
         private const string FlashErrorKey = "FlashError";
         private const string FlashSuccessKey = "FlashSuccess";
+        private const string NewEmployeeDraftKey = "NewEmployeeDraft";
 
         public IActionResult Index(int? editId, bool showCreate = false)
         {
@@ -45,24 +47,37 @@ namespace Chapeau.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            return RedirectToAction(nameof(Index), new { showCreate = true });
+            return RedirectToAction(nameof(Index), new
+            {
+                showCreate = true
+            });
         }
 
         [HttpPost]
         public IActionResult Create(Employee employee)
         {
+            employee.IsActive = true;
+
             ValidateEmployeeForCreate(employee);
 
             if (!ModelState.IsValid)
             {
+                TempData[NewEmployeeDraftKey] = JsonSerializer.Serialize(new
+                {
+                    employee.Name,
+                    employee.RoleID
+                });
+
                 TempData[FlashErrorKey] = GetModelStateErrors();
-                return RedirectToAction(nameof(Index), new { showCreate = true });
+
+                return RedirectToAction(nameof(Index), new
+                {
+                    showCreate = true
+                });
             }
 
             try
             {
-                employee.IsActive = true;
-
                 _employeeService.AddEmployee(employee);
 
                 TempData[FlashSuccessKey] = "Medewerker toegevoegd.";
@@ -70,7 +85,7 @@ namespace Chapeau.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 TempData[FlashErrorKey] = ex.Message;
 
@@ -79,6 +94,9 @@ namespace Chapeau.Controllers
                     showCreate = true
                 });
             }
+            catch
+            {
+                TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
 
                 return RedirectToAction(nameof(Index), new
                 {
@@ -88,16 +106,19 @@ namespace Chapeau.Controllers
         }
 
         [HttpPost]
-        public IActionResult Update(Employee employee)
+        public IActionResult QuickCreate(Employee employee)
         {
-            var existingEmployee = _employeeService.GetEmployees()
-                .FirstOrDefault(e => e.EmployeeID == employee.EmployeeID);
+            return Create(employee);
+        }
 
-            if (existingEmployee == null)
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            return RedirectToAction(nameof(Index), new
             {
-                TempData[FlashErrorKey] = "Medewerker niet gevonden.";
-                return RedirectToAction(nameof(Index));
-            }
+                editId = id
+            });
+        }
 
         [HttpPost]
         public IActionResult Edit(Employee employee)
@@ -105,12 +126,13 @@ namespace Chapeau.Controllers
             ModelState.Remove(nameof(Employee.PasswordHash));
             ModelState.Remove("PasswordHash");
 
-            ValidateEmployeeForUpdate(employee);
+            var existingEmployee = _employeeService.GetEmployees()
+                .FirstOrDefault(e => e.EmployeeID == employee.EmployeeID);
 
-            if (!ModelState.IsValid)
+            if (existingEmployee == null)
             {
-                TempData[FlashErrorKey] = GetModelStateErrors();
-                return RedirectToAction(nameof(Index), new { editId = employee.EmployeeID });
+                TempData[FlashErrorKey] = "Medewerker bestaat niet meer.";
+                return RedirectToAction(nameof(Index));
             }
 
             employee.IsActive = existingEmployee.IsActive;
@@ -120,7 +142,11 @@ namespace Chapeau.Controllers
                 employee.PasswordHash = existingEmployee.PasswordHash;
             }
 
-                employee.IsActive = existingEmployee.IsActive;
+            ValidateEmployeeForEdit(employee);
+
+            if (!ModelState.IsValid)
+            {
+                TempData[FlashErrorKey] = GetModelStateErrors();
 
                 return RedirectToAction(nameof(Index), new
                 {
@@ -136,7 +162,7 @@ namespace Chapeau.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 TempData[FlashErrorKey] = ex.Message;
 
@@ -145,6 +171,9 @@ namespace Chapeau.Controllers
                     editId = employee.EmployeeID
                 });
             }
+            catch
+            {
+                TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
 
                 return RedirectToAction(nameof(Index), new
                 {
@@ -154,19 +183,19 @@ namespace Chapeau.Controllers
         }
 
         [HttpPost]
-        public IActionResult SetActive(int id, bool active)
+        public IActionResult ToggleActive(int id, bool active)
         {
             try
             {
                 _employeeService.SetEmployeeActive(id, active);
 
                 TempData[FlashSuccessKey] = active
-                    ? "Medewerker succesvol geactiveerd."
-                    : "Medewerker succesvol gedeactiveerd.";
+                    ? "Medewerker geactiveerd."
+                    : "Medewerker gedeactiveerd.";
             }
-            catch (Exception ex)
+            catch
             {
-                TempData[FlashErrorKey] = $"Fout bij aanpassen status: {ex.Message}";
+                TempData[FlashErrorKey] = "Kon status niet aanpassen. Probeer opnieuw.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -174,28 +203,31 @@ namespace Chapeau.Controllers
 
         private void ValidateEmployeeForCreate(Employee employee)
         {
+            var roles = GetRolesSafe();
+
             if (string.IsNullOrWhiteSpace(employee.Name))
             {
                 ModelState.AddModelError(nameof(Employee.Name), "Naam is verplicht.");
+            }
+
+            if (employee.RoleID <= 0)
+            {
+                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
+            }
+            else if (!roles.Any(r => r.RoleID == employee.RoleID))
+            {
+                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een rol uit de lijst.");
             }
 
             if (string.IsNullOrWhiteSpace(employee.PasswordHash))
             {
-                ModelState.AddModelError(nameof(Employee.PasswordHash), "Wachtwoord/pincode is verplicht.");
-            }
-
-            if (employee.RoleID <= 0)
-            {
-                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
+                ModelState.AddModelError(nameof(Employee.PasswordHash), "Wachtwoord/Pincode is verplicht.");
             }
         }
 
-        private void ValidateEmployeeForUpdate(Employee employee)
+        private void ValidateEmployeeForEdit(Employee employee)
         {
-            if (employee.EmployeeID <= 0)
-            {
-                ModelState.AddModelError(nameof(Employee.EmployeeID), "Ongeldige medewerker.");
-            }
+            var roles = GetRolesSafe();
 
             if (string.IsNullOrWhiteSpace(employee.Name))
             {
@@ -206,23 +238,10 @@ namespace Chapeau.Controllers
             {
                 ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
             }
-        }
-
-        private string GetModelStateErrors()
-        {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .Where(message => !string.IsNullOrWhiteSpace(message))
-                .Distinct()
-                .ToList();
-
-            if (!errors.Any())
+            else if (!roles.Any(r => r.RoleID == employee.RoleID))
             {
-                return "Gegevens ongeldig. Probeer opnieuw.";
+                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een rol uit de lijst.");
             }
-
-            return string.Join("\n", errors);
         }
 
         private List<EmployeeRole> GetRolesSafe()
@@ -236,6 +255,18 @@ namespace Chapeau.Controllers
                 TempData[FlashErrorKey] = "Kon rollen niet ophalen. Controleer database/connectionstring.";
                 return new List<EmployeeRole>();
             }
+        }
+
+        private string GetModelStateErrors()
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .Where(msg => !string.IsNullOrWhiteSpace(msg))
+                .Distinct()
+                .ToList();
+
+            return string.Join("\n", errors);
         }
     }
 }

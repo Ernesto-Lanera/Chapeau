@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
 
-namespace Chapeau.Repositories.Role
+namespace Chapeau.Repositories
 {
     public class RoleRepository
     {
@@ -83,35 +83,6 @@ namespace Chapeau.Repositories.Role
             }
 
             return permissions;
-        }
-
-        public RoleModel? GetRoleById(int id)
-        {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-
-                string query = "SELECT RoleID, RoleName FROM Roles WHERE RoleID = @RoleID";
-                using SqlCommand command = new(query, connection);
-                command.Parameters.Add("@RoleID", SqlDbType.Int).Value = id;
-                using SqlDataReader reader = command.ExecuteReader();
-
-                if (reader.Read())
-                {
-                    return new RoleModel
-                    {
-                        RoleID = reader.GetInt32(0),
-                        RoleName = reader.GetString(1)
-                    };
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving the role: {ex.Message}", ex);
-            }
         }
     }
 }
