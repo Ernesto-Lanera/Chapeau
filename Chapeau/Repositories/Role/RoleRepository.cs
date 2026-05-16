@@ -3,19 +3,25 @@ using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
-using System.Data;
-using RoleModel = Chapeau.Models.Role;
 
-namespace Chapeau.Repositories.Role
+namespace Chapeau.Repositories
 {
-    public class RoleRepository(IConfiguration configuration) : IRoleRepository
+    public class RoleRepository
     {
-        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-                                ?? throw new Exception("Database connection string is missing.");
+        private readonly string _connectionString;
 
-        public List<RoleModel> GetRoles()
+        public RoleRepository(IConfiguration configuration)
         {
-            var roles = new List<RoleModel>();
+            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+                ?? throw new Exception("Database connection string is missing.");
+        }
+
+        /// <summary>
+        /// Gets all roles from the database.
+        /// </summary>
+        public List<EmployeeRole> GetRoles()
+        {
+            var roles = new List<EmployeeRole>();
 
             try
             {
@@ -23,24 +29,17 @@ namespace Chapeau.Repositories.Role
                 connection.Open();
 
                 string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName";
+
                 using SqlCommand command = new(query, connection);
                 using SqlDataReader reader = command.ExecuteReader();
 
-                if (reader.HasRows)
+                while (reader.Read())
                 {
-                    int roleIdOrdinal = reader.GetOrdinal("RoleID");
-                    int roleNameOrdinal = reader.GetOrdinal("RoleName");
-
-                    while (reader.Read())
+                    roles.Add(new EmployeeRole
                     {
-                        var role = new RoleModel
-                        {
-                            RoleID = reader.GetInt32(roleIdOrdinal),
-                            RoleName = reader.GetString(roleNameOrdinal)
-                        };
-
-                        roles.Add(role);
-                    }
+                        RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
+                        RoleName = reader.GetString(reader.GetOrdinal("RoleName"))
+                    });
                 }
             }
             catch (Exception ex)
@@ -51,33 +50,39 @@ namespace Chapeau.Repositories.Role
             return roles;
         }
 
-        public RoleModel? GetRoleById(int id)
+        /// <summary>
+        /// Gets all permissions for a specific role.
+        /// </summary>
+        public List<string> GetRolePermissions(int roleId)
         {
+            var permissions = new List<string>();
+
             try
             {
                 using SqlConnection connection = new(_connectionString);
                 connection.Open();
 
-                string query = "SELECT RoleID, RoleName FROM Roles WHERE RoleID = @RoleID";
+                string query = @"
+                    SELECT PermissionName
+                    FROM RolePermissions
+                    WHERE RoleID = @RoleID";
+
                 using SqlCommand command = new(query, connection);
-                command.Parameters.Add("@RoleID", SqlDbType.Int).Value = id;
+                command.Parameters.AddWithValue("@RoleID", roleId);
+
                 using SqlDataReader reader = command.ExecuteReader();
 
-                if (reader.Read())
+                while (reader.Read())
                 {
-                    return new RoleModel
-                    {
-                        RoleID = reader.GetInt32(0),
-                        RoleName = reader.GetString(1)
-                    };
+                    permissions.Add(reader.GetString(0));
                 }
-
-                return null;
             }
             catch (Exception ex)
             {
-                throw new Exception($"An error occurred while retrieving the role: {ex.Message}", ex);
+                throw new Exception($"An error occurred while retrieving role permissions: {ex.Message}", ex);
             }
+
+            return permissions;
         }
     }
 }

@@ -15,20 +15,79 @@ namespace Chapeau
             CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
             builder.Services.AddControllersWithViews();
+            builder.Services.AddLogging();
+
+            // Add Response Compression
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+                options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+            });
+
+            // Add Authentication
+            builder.Services.AddAuthentication("Cookies")
+                .AddCookie("Cookies", options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            // Add Authorization with permission-based policies
+            builder.Services.AddAuthorization(options =>
+            {
+                // Permission-based policies
+                options.AddPolicy("CanViewMenu", policy =>
+                    policy.RequireClaim("Permission", "ViewMenu"));
+
+                options.AddPolicy("CanTakeOrders", policy =>
+                    policy.RequireClaim("Permission", "TakeOrders"));
+
+                options.AddPolicy("CanPrepareFood", policy =>
+                    policy.RequireClaim("Permission", "PrepareFood"));
+
+                options.AddPolicy("CanManageEmployees", policy =>
+                    policy.RequireClaim("Permission", "ManageEmployees"));
+
+                options.AddPolicy("CanManageMenuItems", policy =>
+                    policy.RequireClaim("Permission", "ManageMenuItems"));
+
+                options.AddPolicy("CanViewReports", policy =>
+                    policy.RequireClaim("Permission", "ViewReports"));
+
+                options.AddPolicy("CanManageRoles", policy =>
+                    policy.RequireClaim("Permission", "ManageRoles"));
+
+                // Role-based policies
+                options.AddPolicy("IsManager", policy =>
+                    policy.RequireRole("Manager"));
+
+                options.AddPolicy("IsWaiter", policy =>
+                    policy.RequireRole("Waiter"));
+
+                options.AddPolicy("IsKitchenStaff", policy =>
+                    policy.RequireRole("Kitchen"));
+            });
+
+            // Register Repositories
+            builder.Services.AddControllersWithViews();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddLogging();
 
+            // Register Repositories - Map interfaces to implementations
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
-            builder.Services.AddScoped<Repositories.Employee.IEmployeeRepository, Repositories.Employee.EmployeeRepository>();
+            builder.Services.AddScoped<Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
-            builder.Services.AddScoped<Repositories.Role.IRoleRepository, Repositories.Role.RoleRepository>();
+            builder.Services.AddScoped<Repositories.RoleRepository>();
 
+            // Register Services
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.EmployeeService>();
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
 
+            builder.Services.AddScoped<Services.IAuthService, Services.AuthService>();
+            builder.Services.AddScoped<Services.IClaimsService, Services.ClaimsService>();
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())
@@ -41,10 +100,11 @@ namespace Chapeau
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseResponseCompression();
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapStaticAssets();
