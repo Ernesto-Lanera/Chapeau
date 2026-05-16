@@ -6,6 +6,7 @@ namespace Chapeau.Repositories.Menu
     public interface IMenuRepository
     {
         List<MenuItem> GetMenuItems(int? cardId, int? categoryId);
+        MenuItem? GetMenuItemById(int menuItemId);
         void AddMenuItem(MenuItem item);
         void UpdateMenuItem(MenuItem item);
         void SetMenuItemActive(int id, bool active);

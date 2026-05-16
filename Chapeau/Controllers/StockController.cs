@@ -1,5 +1,7 @@
+using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Chapeau.Controllers
 {
@@ -13,74 +15,98 @@ namespace Chapeau.Controllers
 
         public IActionResult Index(int? cardId, int? categoryId)
         {
-            var menuItems = _menuService.GetMenuItems(cardId, categoryId);
-            var categories = _categoryService.GetCategories();
+            try
+            {
+                var categories = _categoryService.GetCategories();
 
-            ViewBag.SelectedCardId = cardId;
-            ViewBag.SelectedCategoryId = categoryId;
-            ViewBag.Categories = categories;
+                if (cardId.HasValue && categoryId.HasValue)
+                {
+                    bool categoryBelongsToCard = categories.Any(category =>
+                        category.CategoryID == categoryId.Value &&
+                        category.MenuCardID == cardId.Value);
 
-            return View(menuItems);
+                    if (!categoryBelongsToCard)
+                    {
+                        categoryId = null;
+                    }
+                }
+
+                var menuItems = _menuService.GetMenuItems(cardId, categoryId);
+
+                ViewBag.SelectedCardId = cardId;
+                ViewBag.SelectedCategoryId = categoryId;
+
+                ViewBag.AllCategories = categories;
+                ViewBag.FilterCategories = categories;
+                ViewBag.MenuCards = GetMenuCards();
+
+                return View(menuItems);
+            }
+            catch (Exception ex)
+            {
+                TempData[FlashErrorKey] = $"Fout bij laden voorraad: {ex.Message}";
+
+                ViewBag.SelectedCardId = cardId;
+                ViewBag.SelectedCategoryId = categoryId;
+
+                ViewBag.AllCategories = new List<Category>();
+                ViewBag.FilterCategories = new List<Category>();
+                ViewBag.MenuCards = GetMenuCards();
+
+                return View(new List<MenuItem>());
+            }
         }
 
         [HttpPost]
-        public IActionResult Update(int id, int newStock, int? cardId, int? categoryId)
+        [ValidateAntiForgeryToken]
+        public IActionResult ChangeStock(int id, int stock, int? cardId, int? categoryId)
         {
-            bool isAjax =
-                string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(Request.Headers["X-Requested-With"], "fetch", StringComparison.OrdinalIgnoreCase)
-                || Request.Headers.Accept.Any(h => h != null && h.Contains("application/json", StringComparison.OrdinalIgnoreCase));
-
             try
             {
-                if (newStock < 0)
+                if (id <= 0)
                 {
-                    newStock = 0;
+                    TempData[FlashErrorKey] = "Ongeldig menu item.";
+                    return RedirectToAction(nameof(Index), new { cardId, categoryId });
                 }
 
-                _menuService.ChangeStock(id, newStock);
-
-                if (isAjax)
+                if (stock < 0)
                 {
-                    return Ok(new
-                    {
-                        id,
-                        newStock
-                    });
+                    TempData[FlashErrorKey] = "Voorraad mag niet negatief zijn.";
+                    return RedirectToAction(nameof(Index), new { cardId, categoryId });
                 }
 
-                TempData[FlashSuccessKey] = "Voorraad bijgewerkt.";
+                _menuService.ChangeStock(id, stock);
+
+                TempData[FlashSuccessKey] = "Voorraad succesvol bijgewerkt.";
             }
-            catch (ArgumentException ex)
+            catch (Exception ex)
             {
-                if (isAjax)
-                {
-                    return BadRequest(new
-                    {
-                        error = ex.Message
-                    });
-                }
-
-                TempData[FlashErrorKey] = ex.Message;
-            }
-            catch
-            {
-                if (isAjax)
-                {
-                    return StatusCode(500, new
-                    {
-                        error = "Kon voorraad niet bijwerken. Probeer opnieuw."
-                    });
-                }
-
-                TempData[FlashErrorKey] = "Kon voorraad niet bijwerken. Probeer opnieuw.";
+                TempData[FlashErrorKey] = $"Fout bij bijwerken voorraad: {ex.Message}";
             }
 
-            return RedirectToAction(nameof(Index), new
+            return RedirectToAction(nameof(Index), new { cardId, categoryId });
+        }
+
+        private List<SelectListItem> GetMenuCards()
+        {
+            return new List<SelectListItem>
             {
-                cardId,
-                categoryId
-            });
+                new SelectListItem
+                {
+                    Value = "1",
+                    Text = "Lunch"
+                },
+                new SelectListItem
+                {
+                    Value = "2",
+                    Text = "Diner"
+                },
+                new SelectListItem
+                {
+                    Value = "3",
+                    Text = "Dranken"
+                }
+            };
         }
     }
 }

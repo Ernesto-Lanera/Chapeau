@@ -49,8 +49,14 @@ namespace Chapeau.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(Employee employee)
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(Employee employee, string? Password)
         {
+            if (!string.IsNullOrWhiteSpace(Password))
+            {
+                employee.PasswordHash = Password;
+            }
+
             ValidateEmployeeForCreate(employee);
 
             if (!ModelState.IsValid)
@@ -66,18 +72,30 @@ namespace Chapeau.Controllers
                 _employeeService.AddEmployee(employee);
 
                 TempData[FlashSuccessKey] = "Medewerker succesvol toegevoegd.";
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData[FlashErrorKey] = $"Fout bij toevoegen medewerker: {ex.Message}";
                 return RedirectToAction(nameof(Index), new { showCreate = true });
             }
-
-            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        public IActionResult Update(Employee employee)
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(Employee employee, string? Password)
+        {
+            return UpdateEmployee(employee, Password);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Update(Employee employee, string? Password)
+        {
+            return UpdateEmployee(employee, Password);
+        }
+
+        private IActionResult UpdateEmployee(Employee employee, string? Password)
         {
             var existingEmployee = _employeeService.GetEmployees()
                 .FirstOrDefault(e => e.EmployeeID == employee.EmployeeID);
@@ -90,6 +108,7 @@ namespace Chapeau.Controllers
 
             ModelState.Remove(nameof(Employee.PasswordHash));
             ModelState.Remove("PasswordHash");
+            ModelState.Remove("Password");
 
             ValidateEmployeeForUpdate(employee);
 
@@ -101,7 +120,11 @@ namespace Chapeau.Controllers
 
             try
             {
-                if (string.IsNullOrWhiteSpace(employee.PasswordHash))
+                if (!string.IsNullOrWhiteSpace(Password))
+                {
+                    employee.PasswordHash = Password;
+                }
+                else if (string.IsNullOrWhiteSpace(employee.PasswordHash))
                 {
                     employee.PasswordHash = existingEmployee.PasswordHash;
                 }
@@ -111,17 +134,17 @@ namespace Chapeau.Controllers
                 _employeeService.UpdateEmployee(employee);
 
                 TempData[FlashSuccessKey] = "Medewerker succesvol bijgewerkt.";
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData[FlashErrorKey] = $"Fout bij bijwerken medewerker: {ex.Message}";
                 return RedirectToAction(nameof(Index), new { editId = employee.EmployeeID });
             }
-
-            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult SetActive(int id, bool active)
         {
             try
@@ -197,7 +220,11 @@ namespace Chapeau.Controllers
         {
             try
             {
-                return _roleRepository.GetRoles();
+                return _roleRepository.GetRoles()
+                    .GroupBy(role => role.RoleID)
+                    .Select(group => group.First())
+                    .OrderBy(role => role.RoleName)
+                    .ToList();
             }
             catch
             {
