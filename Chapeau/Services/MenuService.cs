@@ -1,88 +1,104 @@
-using System.Collections.Generic;
-using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Repositories.Menu;
-using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Services
 {
-    /// Service for menu-related business logic.
-    public class MenuService(IMenuRepository menuRepository, ILogger<MenuService> logger)
+    public class MenuService
     {
-        private readonly IMenuRepository _menuRepository = menuRepository;
-        private readonly ILogger<MenuService> _logger = logger;
+        private readonly IMenuRepository _menuRepository;
 
-        /// Gets all menu items, optionally filtered by category.
+        public MenuService(IMenuRepository menuRepository)
+        {
+            _menuRepository = menuRepository;
+        }
+
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
         {
             return _menuRepository.GetMenuItems(cardId, categoryId);
         }
 
-        /// Gets only active menu items.
-        public List<MenuItem> GetActiveMenuItems(int? categoryId = null)
+        public MenuItem? GetMenuItemById(int menuItemId)
         {
-            var items = _menuRepository.GetMenuItems(null, categoryId);
-            return items.Where(x => x.IsActive).ToList();
+            if (menuItemId <= 0)
+            {
+                throw new ArgumentException("Ongeldig menu item.");
+            }
+
+            return _menuRepository.GetMenuItemById(menuItemId);
         }
 
-        /// Gets the average price of all menu items.
-        public decimal GetAverageMenuItemPrice()
+        public void AddMenuItem(MenuItem menuItem)
         {
-            var items = _menuRepository.GetMenuItems(null, null);
-            if (!items.Any())
-                return 0m;
+            ValidateMenuItem(menuItem, isEdit: false);
 
-            return items.Average(x => x.RetailPrice);
+            menuItem.IsActive = true;
+
+            _menuRepository.AddMenuItem(menuItem);
         }
 
-        /// Gets low stock items (less than 10 units).
-        public List<MenuItem> GetLowStockItems()
+        public void UpdateMenuItem(MenuItem menuItem)
         {
-            const int lowStockThreshold = 10;
-            var items = _menuRepository.GetMenuItems(null, null);
-            return items.Where(x => x.Stock < lowStockThreshold && x.IsActive).ToList();
+            ValidateMenuItem(menuItem, isEdit: true);
+
+            _menuRepository.UpdateMenuItem(menuItem);
         }
 
-        /// Adds a menu item with validation.
-        public void AddMenuItem(MenuItem item)
+        public void SetMenuItemActive(int menuItemId, bool active)
         {
-            ValidateMenuItem(item);
-            _menuRepository.AddMenuItem(item);
-            _logger.LogInformation("Menu item added successfully: {ItemName}", item.Name);
+            if (menuItemId <= 0)
+            {
+                throw new ArgumentException("Ongeldig menu item.");
+            }
+
+            _menuRepository.SetMenuItemActive(menuItemId, active);
         }
 
-        /// Updates a menu item with validation.
-        public void UpdateMenuItem(MenuItem item)
+        public void ChangeStock(int menuItemId, int stock)
         {
-            ValidateMenuItem(item);
-            _menuRepository.UpdateMenuItem(item);
-            _logger.LogInformation("Menu item updated successfully: {ItemId}", item.MenuItemID);
+            if (menuItemId <= 0)
+            {
+                throw new ArgumentException("Ongeldig menu item.");
+            }
+
+            if (stock < 0)
+            {
+                throw new ArgumentException("Voorraad mag niet negatief zijn.");
+            }
+
+            _menuRepository.ChangeStock(menuItemId, stock);
         }
 
-        public void SetMenuItemActive(int id, bool active)
+        private void ValidateMenuItem(MenuItem menuItem, bool isEdit)
         {
-            _menuRepository.SetMenuItemActive(id, active);
-        }
+            if (menuItem == null)
+            {
+                throw new ArgumentException("Menu item ontbreekt.");
+            }
 
-        public void ChangeStock(int id, int newStock)
-        {
-            if (newStock < 0)
-                throw new ArgumentException("Stock cannot be negative");
+            if (isEdit && menuItem.MenuItemID <= 0)
+            {
+                throw new ArgumentException("Ongeldig menu item.");
+            }
 
-            _menuRepository.ChangeStock(id, newStock);
-            _logger.LogInformation("Stock changed for item {ItemId}: {NewStock}", id, newStock);
-        }
+            if (string.IsNullOrWhiteSpace(menuItem.Name))
+            {
+                throw new ArgumentException("Naam is verplicht.");
+            }
 
-        private void ValidateMenuItem(MenuItem item)
-        {
-            if (string.IsNullOrWhiteSpace(item.Name))
-                throw new ArgumentException("Menu item name is required");
+            if (menuItem.RetailPrice <= 0)
+            {
+                throw new ArgumentException("Prijs moet hoger zijn dan 0.");
+            }
 
-            if (item.RetailPrice < 0)
-                throw new ArgumentException("Retail price cannot be negative");
+            if (menuItem.Stock < 0)
+            {
+                throw new ArgumentException("Voorraad mag niet negatief zijn.");
+            }
 
-            if (item.Stock < 0)
-                throw new ArgumentException("Menu item stock cannot be negative");
+            if (menuItem.CategoryID <= 0)
+            {
+                throw new ArgumentException("Kies een geldige categorie.");
+            }
         }
     }
 }
