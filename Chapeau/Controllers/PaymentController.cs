@@ -27,7 +27,7 @@ namespace Chapeau.Controllers
             if (order == null)
                 return View("Index");
             
-            PaymentOrderViewModel viewModel = _orderService.GetPaymentOrderViewModel(order.OrderID, order.TableNumber);
+            PaymentOrderViewModel viewModel = _orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber);
             return View(viewModel);
         }
     }
