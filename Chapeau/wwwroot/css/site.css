@@ -18,6 +18,264 @@ html {
 }
 
 body {
+  margin-bottom: 60px;
+  background: #f6f8fb;
+}
+
+/* --- Management UI (screenshots) --- */
+.app-navbar {
+  padding-top: 0.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.app-brand {
+  line-height: 1.2;
+}
+
+.app-container {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.app-tabs {
+  gap: 0.25rem;
+}
+
+.app-tabs .nav-link {
+  border-radius: 0;
+  padding: 0.65rem 1rem;
+  color: #111827;
+  border-bottom: 3px solid transparent;
+}
+
+.app-tabs .nav-link:hover {
+  background: #f3f6fb;
+}
+
+.app-tabs .nav-link.active {
+  background: #eaf2ff;
+  color: #0b5ed7;
+  font-weight: 600;
+  border-bottom-color: #0b5ed7;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.page-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.card-soft {
+  border: 1px solid #e5e7eb;
+  background: #f7fbff;
+}
+
+.table-responsive {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.04);
+}
+
+.app-table {
+  margin-bottom: 0;
+}
+
+.app-table tbody tr {
+  border-top: 1px solid #eef2f7;
+}
+
+.app-table tbody tr:hover {
+  background: #fafcff;
+}
+
+.table thead th {
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.status-badge {
+  font-weight: 600;
+}
+
+.status-badge.status-active {
+  background: #e7f7ee;
+  color: #137a3c;
+}
+
+.status-badge.status-inactive {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+.stock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.stock-pill.ok {
+  background: #e7f7ee;
+  color: #137a3c;
+}
+.stock-pill.warn {
+  background: #fff7e6;
+  color: #8a5a00;
+}
+.stock-pill.danger {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+.icon-btn {
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0.35rem;
+  border-radius: 0.375rem;
+  line-height: 1;
+}
+
+.icon-btn:hover {
+  background: #f3f4f6;
+}
+
+.icon-btn.text-danger:hover {
+  background: #fde8e8;
+}
+
+.qty-actions .btn {
+  padding: 0.2rem 0.45rem;
+  font-weight: 700;
+}
+
+.flash-alert {
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.04);
+}
+
+/* Form fields: keep white like design */
+.form-control,
+.form-select {
+  background-color: #fff;
+}
+
+.form-control:read-only,
+.form-control[readonly] {
+  background-color: #fff;
+}
+
+/* Inactive rows: greyed out */
+.table tbody tr.is-inactive {
+  --bs-table-bg: #f3f4f6;
+  --bs-table-hover-bg: #e9ecef;
+  color: #6b7280;
+}
+
+.table tbody tr.is-inactive td,
+.table tbody tr.is-inactive .fw-semibold {
+  color: #6b7280 !important;
+}
+
+.finance-period-card {
+  border: 1px solid #e5e7eb;
+}
+
+.finance-kpi-card {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.04);
+}
+
+.finance-kpi-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.finance-kpi-value {
+  font-weight: 700;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  margin-top: 0.25rem;
+}
+
+.finance-kpi-sub {
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+.text-purple {
+  color: #7c3aed !important;
+}
+
+.finance-table-wrap {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.finance-chart {
+  padding: 0.5rem 0.25rem 0;
+}
+
+.finance-chart-grid {
+  height: 220px;
+  border-left: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2.5rem;
+  padding: 0 1rem 0.5rem;
+  align-items: end;
+  background-image: linear-gradient(to top, transparent 24%, #f3f4f6 25%, transparent 26%, transparent 49%, #f3f4f6 50%, transparent 51%, transparent 74%, #f3f4f6 75%, transparent 76%);
+}
+
+.finance-chart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  gap: 0.4rem;
+  height: 100%;
+}
+
+.finance-chart-bar {
+  width: 64px;
+  min-height: 8px;
+  border-radius: 2px 2px 0 0;
+  background: #a855f7;
+}
+
+.finance-chart-label {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.finance-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.finance-chart-legend i {
+  font-size: 0.6rem;
+  margin-right: 0.25rem;
     margin-bottom: 60px;
     background-color: #f0eef8;
 }

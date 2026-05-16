@@ -1,0 +1,689 @@
+@model IEnumerable<Chapeau.Models.MenuItem>
+
+@{
+    ViewData["Title"] = "VoorraadBeheer";
+
+    var categories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category>;
+
+    if (categories == null)
+    {
+        categories = Enumerable.Empty<Chapeau.Models.Category>();
+    }
+
+    int? selectedCardId = null;
+    int? selectedCategoryId = null;
+
+    if (ViewBag.SelectedCardId != null)
+    {
+        selectedCardId = Convert.ToInt32(ViewBag.SelectedCardId);
+    }
+
+    if (ViewBag.SelectedCategoryId != null)
+    {
+        selectedCategoryId = Convert.ToInt32(ViewBag.SelectedCategoryId);
+    }
+
+    var cards = new[]
+    {
+        new { Id = 1, Name = "Lunch" },
+        new { Id = 2, Name = "Diner" },
+        new { Id = 3, Name = "Dranken" }
+    };
+
+    var genericCategoryCards = categories
+        .GroupBy(c => (c.Name ?? string.Empty).Split(" - ")[0].Trim(), StringComparer.OrdinalIgnoreCase)
+        .Select(g => new
+        {
+            Name = g.Key,
+            CardIds = string.Join(",", g.Select(x => x.MenuCardID).Distinct().OrderBy(x => x))
+        })
+        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+        .OrderBy(x => x.Name)
+        .ToList();
+
+    int soldOutCount = Model.Count(x => x.Stock == 0);
+    int almostOutCount = Model.Count(x => x.Stock > 0 && x.Stock <= 10);
+}
+
+<style>
+    body {
+        background-color: #f8fafc;
+    }
+
+    .page-content {
+        padding: 28px 24px;
+    }
+
+    .page-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 22px;
+    }
+
+    .page-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .filter-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .filter-group select {
+        width: 140px;
+        height: 38px;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        background-color: white;
+        font-size: 14px;
+        padding-left: 10px;
+    }
+
+    .stock-summary-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+    }
+
+    .stock-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+        .stock-pill svg {
+            width: 17px;
+            height: 17px;
+            stroke-width: 2;
+        }
+
+        .stock-pill.ok {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .stock-pill.warn {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .stock-pill.danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+    .stock-table-card {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .stock-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: collapse;
+    }
+
+        .stock-table thead {
+            background-color: #f9fafb;
+        }
+
+        .stock-table th {
+            padding: 16px 22px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            text-align: left;
+        }
+
+        .stock-table td {
+            padding: 17px 22px;
+            border-top: 1px solid #f1f5f9;
+            color: #374151;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .stock-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+    .stock-input {
+        width: 90px;
+        height: 38px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+
+        .stock-input.is-invalid {
+            border-color: #dc2626;
+            background-color: #fee2e2;
+        }
+
+    .qty-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .stock-action-button {
+        border: none;
+        border-radius: 5px;
+        color: white;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 7px 13px;
+        cursor: pointer;
+    }
+
+    .stock-plus {
+        background-color: #16a34a;
+    }
+
+        .stock-plus:hover {
+            background-color: #15803d;
+        }
+
+    .stock-minus {
+        background-color: #dc2626;
+    }
+
+        .stock-minus:hover {
+            background-color: #b91c1c;
+        }
+
+    .inline-stock-form {
+        display: inline;
+        margin: 0;
+        padding: 0;
+    }
+
+    .sold-out-row td {
+        color: #6b7280;
+        background-color: #f3f4f6;
+    }
+
+    .sold-out-row:hover td {
+        background-color: #f3f4f6;
+    }
+
+    .alert {
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="page-content">
+
+    <div class="page-title-row">
+        <h2 class="page-title">Voorraad Beheer</h2>
+    </div>
+
+    @if (TempData["FlashError"] != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Er ging iets mis</strong>
+            <ul>
+                @foreach (var error in TempData["FlashError"].ToString()!.Split('\n'))
+                {
+                    if (!string.IsNullOrWhiteSpace(error))
+                    {
+                        <li>@error</li>
+                    }
+                }
+            </ul>
+        </div>
+    }
+
+    @if (TempData["FlashSuccess"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["FlashSuccess"]
+        </div>
+    }
+
+    <form method="get" action="@Url.Action("Index", "Stock")">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Kaart</label>
+
+                <select name="cardId" id="cardFilter" onchange="this.form.submit()">
+                    <option value="">Alle</option>
+
+                    @foreach (var card in cards)
+                    {
+                        if (selectedCardId.HasValue && selectedCardId.Value == card.Id)
+                        {
+                            <option value="@card.Id" selected="selected">@card.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@card.Id">@card.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Categorie</label>
+
+                <select name="categoryId" id="categoryFilter" onchange="this.form.submit()">
+                    <option value="">Alle</option>
+
+                    @foreach (var category in categories)
+                    {
+                        if (!selectedCardId.HasValue || category.MenuCardID == selectedCardId.Value)
+                        {
+                            if (selectedCategoryId.HasValue && selectedCategoryId.Value == category.CategoryID)
+                            {
+                                <option value="@category.CategoryID" selected="selected">@category.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@category.CategoryID">@category.Name</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <div class="stock-summary-row">
+        <span class="stock-pill danger">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M10.29 3.86L1.82 18a1.875 1.875 0 001.61 2.84h17.14A1.875 1.875 0 0022.18 18L13.71 3.86a1.875 1.875 0 00-3.42 0z" />
+            </svg>
+            Uitverkocht: <span id="soldOutCount">@soldOutCount</span> item(s)
+        </span>
+
+        <span class="stock-pill warn">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 2.25a9.75 9.75 0 110 19.5 9.75 9.75 0 010-19.5z" />
+            </svg>
+            Bijna op: <span id="almostOutCount">@almostOutCount</span> item(s)
+        </span>
+    </div>
+
+    <div class="stock-table-card">
+        <table class="stock-table" id="stockTable">
+            <thead>
+                <tr>
+                    <th>Naam</th>
+                    <th>Kaart</th>
+                    <th>Categorie</th>
+                    <th>Voorraad</th>
+                    <th>Status</th>
+                    <th>Acties</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    string cardName = "-";
+
+                    if (item.Category != null)
+                    {
+                        if (item.Category.MenuCardID == 1)
+                        {
+                            cardName = "Lunch";
+                        }
+                        else if (item.Category.MenuCardID == 2)
+                        {
+                            cardName = "Diner";
+                        }
+                        else if (item.Category.MenuCardID == 3)
+                        {
+                            cardName = "Drinks";
+                        }
+                    }
+
+                    string categoryName = item.Category?.Name ?? "Onbekend";
+
+                    string pillClass = "ok";
+                    string pillText = "Op voorraad";
+
+                    if (item.Stock == 0)
+                    {
+                        pillClass = "danger";
+                        pillText = "Uitverkocht";
+                    }
+                    else if (item.Stock <= 10)
+                    {
+                        pillClass = "warn";
+                        pillText = "Bijna op";
+                    }
+
+                    string rowClass = item.Stock == 0 ? "sold-out-row" : "";
+
+                    <tr class="@rowClass">
+                        <td>@item.Name</td>
+                        <td>@cardName</td>
+                        <td>@categoryName</td>
+
+                        <td>
+                            <input class="stock-input stock-current"
+                                   type="number"
+                                   min="0"
+                                   value="@item.Stock" />
+                        </td>
+
+                        <td>
+                            <span class="stock-pill @pillClass stock-status">
+                                @if (item.Stock == 0)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M10.29 3.86L1.82 18a1.875 1.875 0 001.61 2.84h17.14A1.875 1.875 0 0022.18 18L13.71 3.86a1.875 1.875 0 00-3.42 0z" />
+                                    </svg>
+                                }
+                                else if (item.Stock <= 10)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M12 2.25a9.75 9.75 0 110 19.5 9.75 9.75 0 010-19.5z" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M20.25 6.75L9 18l-5.25-5.25" />
+                                    </svg>
+                                }
+
+                                <span class="stock-status-text">@pillText</span>
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="qty-actions">
+                                <form method="post"
+                                      action="@Url.Action("Update", "Stock")"
+                                      class="inline-stock-form stock-form">
+
+                                    <input type="hidden" name="id" value="@item.MenuItemID" />
+                                    <input type="hidden" name="newStock" class="stock-new" value="@item.Stock" />
+                                    <input type="hidden" name="cardId" value="@selectedCardId" />
+                                    <input type="hidden" name="categoryId" value="@selectedCategoryId" />
+
+                                    <button type="submit"
+                                            class="stock-action-button stock-plus stock-delta"
+                                            data-delta="10"
+                                            title="+10">
+                                        +10
+                                    </button>
+
+                                    <button type="submit"
+                                            class="stock-action-button stock-minus stock-delta"
+                                            data-delta="-1"
+                                            title="-1">
+                                        -1
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            function debounce(fn, waitMs) {
+                let timer;
+
+                return function () {
+                    const args = arguments;
+
+                    clearTimeout(timer);
+
+                    timer = setTimeout(function () {
+                        fn.apply(null, args);
+                    }, waitMs);
+                };
+            }
+
+            function getStatusData(stock) {
+                if (stock <= 0) {
+                    return {
+                        cls: "danger",
+                        text: "Uitverkocht",
+                        icon: "danger"
+                    };
+                }
+
+                if (stock <= 10) {
+                    return {
+                        cls: "warn",
+                        text: "Bijna op",
+                        icon: "warn"
+                    };
+                }
+
+                return {
+                    cls: "ok",
+                    text: "Op voorraad",
+                    icon: "ok"
+                };
+            }
+
+            function iconHtml(type) {
+                if (type === "danger") {
+                    return `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86L1.82 18a1.875 1.875 0 001.61 2.84h17.14A1.875 1.875 0 0022.18 18L13.71 3.86a1.875 1.875 0 00-3.42 0z" />
+                        </svg>`;
+                }
+
+                if (type === "warn") {
+                    return `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12V16.5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25a9.75 9.75 0 110 19.5 9.75 9.75 0 010-19.5z" />
+                        </svg>`;
+                }
+
+                return `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.75L9 18l-5.25-5.25" />
+                    </svg>`;
+            }
+
+            function recalcTopCounters() {
+                let soldOut = 0;
+                let almostOut = 0;
+
+                document.querySelectorAll(".stock-current").forEach(function (input) {
+                    let value = parseInt(input.value, 10);
+
+                    if (isNaN(value) || value < 0) {
+                        value = 0;
+                    }
+
+                    if (value === 0) {
+                        soldOut++;
+                    }
+                    else if (value <= 10) {
+                        almostOut++;
+                    }
+                });
+
+                const soldOutCount = document.getElementById("soldOutCount");
+                const almostOutCount = document.getElementById("almostOutCount");
+
+                if (soldOutCount) {
+                    soldOutCount.textContent = soldOut;
+                }
+
+                if (almostOutCount) {
+                    almostOutCount.textContent = almostOut;
+                }
+            }
+
+            document.querySelectorAll(".stock-form").forEach(function (form) {
+                const row = form.closest("tr");
+                const currentInput = row.querySelector(".stock-current");
+                const newStockInput = form.querySelector(".stock-new");
+                const statusPill = row.querySelector(".stock-status");
+                const statusText = row.querySelector(".stock-status-text");
+
+                function updateStatusUi(stock) {
+                    const status = getStatusData(stock);
+
+                    statusPill.classList.remove("ok", "warn", "danger");
+                    statusPill.classList.add(status.cls);
+
+                    statusPill.innerHTML = iconHtml(status.icon) + `<span class="stock-status-text">${status.text}</span>`;
+
+                    if (stock === 0) {
+                        row.classList.add("sold-out-row");
+                    }
+                    else {
+                        row.classList.remove("sold-out-row");
+                    }
+                }
+
+                function saveStock(stockOverride) {
+                    let stock = parseInt(currentInput.value, 10);
+
+                    if (isNaN(stock) || stock < 0) {
+                        stock = 0;
+                    }
+
+                    if (typeof stockOverride === "number") {
+                        stock = Math.max(0, stockOverride);
+                    }
+
+                    currentInput.value = stock;
+                    newStockInput.value = stock;
+
+                    const body = new URLSearchParams();
+                    body.set("id", form.querySelector('input[name="id"]').value);
+                    body.set("newStock", stock.toString());
+
+                    const cardIdInput = form.querySelector('input[name="cardId"]');
+                    const categoryIdInput = form.querySelector('input[name="categoryId"]');
+
+                    if (cardIdInput && cardIdInput.value) {
+                        body.set("cardId", cardIdInput.value);
+                    }
+
+                    if (categoryIdInput && categoryIdInput.value) {
+                        body.set("categoryId", categoryIdInput.value);
+                    }
+
+                    currentInput.classList.remove("is-invalid");
+
+                    fetch(form.action, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                            "Accept": "application/json",
+                            "X-Requested-With": "fetch"
+                        },
+                        body: body.toString()
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            currentInput.classList.add("is-invalid");
+                            return;
+                        }
+
+                        updateStatusUi(stock);
+                        recalcTopCounters();
+                    })
+                    .catch(function () {
+                        currentInput.classList.add("is-invalid");
+                    });
+                }
+
+                const autoSave = debounce(function () {
+                    saveStock();
+                }, 200);
+
+                currentInput.addEventListener("input", autoSave);
+
+                currentInput.addEventListener("change", function () {
+                    saveStock();
+                });
+
+                currentInput.addEventListener("blur", function () {
+                    saveStock();
+                });
+
+                form.querySelectorAll(".stock-delta").forEach(function (button) {
+                    button.addEventListener("click", function (event) {
+                        event.preventDefault();
+
+                        const delta = parseInt(button.getAttribute("data-delta"), 10) || 0;
+                        const current = parseInt(currentInput.value, 10) || 0;
+                        const next = Math.max(0, current + delta);
+
+                        saveStock(next);
+                    });
+                });
+            });
+        });
+    </script>
+}
