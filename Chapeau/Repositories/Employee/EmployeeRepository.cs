@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
@@ -54,6 +55,39 @@ namespace Chapeau.Repositories
             }
 
             return employees;
+        }
+
+        public async Task<Employee?> GetEmployeeByNameAsync(string name)
+        {
+            try
+            {
+                using SqlConnection connection = new(_connectionString);
+                await connection.OpenAsync();
+
+                string query = "SELECT EmployeeID, Name, PasswordHash, RoleID, IsActive FROM Employee WHERE Name = @Name AND IsActive = 1";
+                using SqlCommand command = new(query, connection);
+                command.Parameters.AddWithValue("@Name", name);
+
+                using SqlDataReader reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    return new Employee
+                    {
+                        EmployeeID = reader.GetInt32(reader.GetOrdinal("EmployeeID")),
+                        Name = reader.GetString(reader.GetOrdinal("Name")),
+                        PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
+                        RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
+                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"An error occurred while retrieving employee: {ex.Message}", ex);
+            }
+
+            return null;
         }
 
         public void AddEmployee(Employee employee)

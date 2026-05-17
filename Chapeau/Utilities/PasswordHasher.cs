@@ -10,38 +10,17 @@ namespace Chapeau.Utilities
         private const int HashSize = 32;
         private const int Iterations = 100000;
 
-        /// <summary>
-        /// Hashes a password using PBKDF2 with SHA-256.
-        /// Returns a string containing the salt and hash in Base64 format.
-        /// </summary>
         public static string HashPassword(string password)
         {
             ArgumentNullException.ThrowIfNull(password);
 
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                byte[] salt = new byte[SaltSize];
-                rng.GetBytes(salt);
+            byte[] salt = GenerateSalt();
+            byte[] hash = ComputeHash(password, salt);
+            byte[] combined = CombineSaltAndHash(salt, hash);
 
-                using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256))
-                {
-                    byte[] hash = pbkdf2.GetBytes(HashSize);
-
-                    // Combine salt and hash: salt + hash
-                    byte[] combined = new byte[SaltSize + HashSize];
-                    Array.Copy(salt, 0, combined, 0, SaltSize);
-                    Array.Copy(hash, 0, combined, SaltSize, HashSize);
-
-                    // Return as Base64 string
-                    return Convert.ToBase64String(combined);
-                }
-            }
+            return Convert.ToBase64String(combined);
         }
 
-        /// <summary>
-        /// Verifies a password against a stored hash.
-        /// Returns true if the password matches the hash.
-        /// </summary>
         public static bool VerifyPassword(string password, string hash)
         {
             ArgumentNullException.ThrowIfNull(password);
@@ -49,29 +28,57 @@ namespace Chapeau.Utilities
 
             try
             {
-                // Decode the hash from Base64
                 byte[] combined = Convert.FromBase64String(hash);
+                byte[] salt = ExtractSalt(combined);
+                byte[] storedHash = ExtractHash(combined);
+                byte[] computedHash = ComputeHash(password, salt);
 
-                // Extract salt and stored hash
-                byte[] salt = new byte[SaltSize];
-                byte[] storedHash = new byte[HashSize];
-
-                Array.Copy(combined, 0, salt, 0, SaltSize);
-                Array.Copy(combined, SaltSize, storedHash, 0, HashSize);
-
-                // Compute hash of the provided password
-                using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256))
-                {
-                    byte[] computedHash = pbkdf2.GetBytes(HashSize);
-
-                    // Compare hashes in constant time
-                    return CryptographicOperations.FixedTimeEquals(storedHash, computedHash);
-                }
+                return CryptographicOperations.FixedTimeEquals(storedHash, computedHash);
             }
             catch
             {
                 return false;
             }
+        }
+
+        private static byte[] GenerateSalt()
+        {
+            byte[] salt = new byte[SaltSize];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(salt);
+            }
+            return salt;
+        }
+
+        private static byte[] ComputeHash(string password, byte[] salt)
+        {
+            using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256))
+            {
+                return pbkdf2.GetBytes(HashSize);
+            }
+        }
+
+        private static byte[] CombineSaltAndHash(byte[] salt, byte[] hash)
+        {
+            byte[] combined = new byte[SaltSize + HashSize];
+            Array.Copy(salt, 0, combined, 0, SaltSize);
+            Array.Copy(hash, 0, combined, SaltSize, HashSize);
+            return combined;
+        }
+
+        private static byte[] ExtractSalt(byte[] combined)
+        {
+            byte[] salt = new byte[SaltSize];
+            Array.Copy(combined, 0, salt, 0, SaltSize);
+            return salt;
+        }
+
+        private static byte[] ExtractHash(byte[] combined)
+        {
+            byte[] hash = new byte[HashSize];
+            Array.Copy(combined, SaltSize, hash, 0, HashSize);
+            return hash;
         }
     }
 }

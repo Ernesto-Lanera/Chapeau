@@ -14,14 +14,7 @@ namespace Chapeau.Services
 
         public OrderService(IOrderRepository orderRepository)
         {
-            try
-            {
-                _orderRepository = orderRepository;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Failed to retrieve running orders from the database: " + ex.Message);
-            }
+            _orderRepository = orderRepository;
         }
 
         public List<Order> GetRunningOrders()
@@ -82,27 +75,31 @@ namespace Chapeau.Services
             try
             {
                 List<OrderItem> items = _orderRepository.GetOrderItemsByOrderId(orderId);
-
-                decimal lowVat = items.Where(i => i.VATRate == 0.09m)
-                                      .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
-                decimal highVat = items.Where(i => i.VATRate == 0.21m)
-                                       .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
-                decimal total = items.Sum(i => i.Price * i.AmountOrdered * (1 + i.VATRate));
-
-                return new PaymentOrderViewModel
-                {
-                    OrderID = orderId,
-                    TableNumber = tableNumber,
-                    Items = items,
-                    LowVAT = lowVat,
-                    HighVAT = highVat,
-                    Total = total
-                };
+                return BuildPaymentViewModel(orderId, tableNumber, items);
             }
             catch (Exception ex)
             {
                 throw new Exception("Failed to build payment view model: " + ex.Message);
             }
+        }
+
+        private static PaymentOrderViewModel BuildPaymentViewModel(int orderId, int tableNumber, List<OrderItem> items)
+        {
+            decimal lowVat = items.Where(i => i.VATRate == 0.09m)
+                                  .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
+            decimal highVat = items.Where(i => i.VATRate == 0.21m)
+                                   .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
+            decimal total = items.Sum(i => i.Price * i.AmountOrdered * (1 + i.VATRate));
+
+            return new PaymentOrderViewModel
+            {
+                OrderID = orderId,
+                TableNumber = tableNumber,
+                Items = items,
+                LowVAT = lowVat,
+                HighVAT = highVat,
+                Total = total
+            };
         }
     }
 }

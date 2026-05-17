@@ -1,3 +1,4 @@
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -47,17 +48,7 @@ namespace Chapeau.Controllers
 
             if (employee != null)
             {
-                var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
-
-                var authProperties = new AuthenticationProperties
-                {
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    claimsPrincipal,
-                    authProperties);
+                await SignInEmployeeAsync(employee);
 
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {
@@ -69,6 +60,21 @@ namespace Chapeau.Controllers
 
             ModelState.AddModelError(string.Empty, "Invalid name or password");
             return View(model);
+        }
+
+        private async Task SignInEmployeeAsync(Employee employee)
+        {
+            var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
+
+            var authProperties = new AuthenticationProperties
+            {
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(MenuCardConstants.SessionDurationHours)
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                claimsPrincipal,
+                authProperties);
         }
 
         [AllowAnonymous]

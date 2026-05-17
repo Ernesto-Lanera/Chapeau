@@ -35,60 +35,51 @@ namespace Chapeau.Services
             return new ClaimsPrincipal(claimsIdentity);
         }
 
-        /// <summary>
-        /// Creates a list of claims for the employee.
-        /// Includes identity claims, role claims, and permission claims for authorization.
-        /// </summary>
         public List<Claim> CreateClaims(Employee employee)
         {
-            var claims = new List<Claim>
+            var claims = BuildBaseClaims(employee);
+            LoadPermissionClaims(claims, employee);
+            return claims;
+        }
+
+        private static List<Claim> BuildBaseClaims(Employee employee)
+        {
+            return new List<Claim>
             {
-                // Identity claims
                 new Claim(ClaimTypes.NameIdentifier, employee.EmployeeID.ToString()),
                 new Claim(ClaimTypes.Name, employee.Name),
                 new Claim(ClaimTypes.GivenName, employee.Name),
-
-                // Role claim for authorization (supports [Authorize(Roles = "Manager")])
                 new Claim(ClaimTypes.Role, employee.RoleID.ToString()),
-
-                // Custom claims
                 new Claim("EmployeeID", employee.EmployeeID.ToString()),
                 new Claim("EmployeeName", employee.Name),
                 new Claim("IsActive", employee.IsActive.ToString())
             };
+        }
 
-            // Load and add role-specific permissions from database
-            // If database lookup fails, use fallback permissions based on role
+        private void LoadPermissionClaims(List<Claim> claims, Employee employee)
+        {
             try
             {
                 var permissions = _roleRepository.GetRolePermissions(employee.RoleID);
 
                 if (permissions.Any())
                 {
-                    // Add each permission as a separate claim
                     foreach (var permission in permissions)
                     {
                         claims.Add(new Claim("Permission", permission));
-                        _logger.LogDebug("Added permission claim: {Permission} for employee {EmployeeID}", 
-                            permission, employee.EmployeeID);
                     }
                 }
                 else
                 {
-                    // Fallback: if no permissions found in database, use defaults
                     _logger.LogWarning("No permissions found in database for role {RoleID}, using defaults", employee.RoleID);
                     AddDefaultPermissionsForRole(claims, employee.RoleID);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to load permissions from database for employee {EmployeeID}, using fallback", 
-                    employee.EmployeeID);
-                // Fallback to default permissions if database lookup fails
+                _logger.LogWarning(ex, "Failed to load permissions for employee {EmployeeID}, using fallback", employee.EmployeeID);
                 AddDefaultPermissionsForRole(claims, employee.RoleID);
             }
-
-            return claims;
         }
 
         /// <summary>

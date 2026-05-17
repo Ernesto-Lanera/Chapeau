@@ -6,8 +6,15 @@ namespace Chapeau.Models
     {
         public int TableId { get; set; }
         public int TableNumber { get; set; }
-        public bool IsOccupied { get; set; }
-        public OrderStatus? OrderStatus { get; set; }
-        public int? OrderId { get; set; }
+        public bool IsOccupied => Orders.Count > 0;
+        public List<TableOrderInfo> Orders { get; set; } = new();
+    }
+
+    public class TableOrderInfo
+    {
+        public int OrderId { get; set; }
+        public OrderStatus OrderStatus { get; set; }
+        public bool HasFood { get; set; }
+        public bool HasDrink { get; set; }
     }
 }
