@@ -44,12 +44,10 @@ namespace Chapeau.Controllers
 
             if (employee != null)
             {
-                // Create claims principal using the ClaimsService
                 var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
 
                 var authProperties = new AuthenticationProperties
                 {
-                    IsPersistent = model.RememberMe,
                     ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
                 };
 
@@ -70,9 +68,15 @@ namespace Chapeau.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public IActionResult Logout()
+        {
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> LogoutConfirmed()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
