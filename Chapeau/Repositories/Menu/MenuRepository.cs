@@ -29,10 +29,13 @@ namespace Chapeau.Repositories.Menu
                     mi.Stock,
                     mi.IsActive,
                     mi.CategoryID,
-                    mi.ImagePath
+                    mi.ImagePath,
+                    c.CategoryID,
+                    c.Name AS CategoryName,
+                    c.MenuCardID
                 FROM MenuItems mi
                 INNER JOIN Categories c ON mi.CategoryID = c.CategoryID
-                WHERE 1 = 1";
+                WHERE mi.IsActive = 1";
 
             if (cardId.HasValue)
             {
@@ -228,7 +231,13 @@ namespace Chapeau.Repositories.Menu
                 RetailPrice = Convert.ToDecimal(reader["Price"]),
                 Stock = Convert.ToInt32(reader["Stock"]),
                 IsActive = Convert.ToBoolean(reader["IsActive"]),
-                CategoryID = Convert.ToInt32(reader["CategoryID"])
+                CategoryID = Convert.ToInt32(reader["CategoryID"]),
+                Category = new Models.Category
+                {
+                    CategoryID = Convert.ToInt32(reader["CategoryID"]),
+                    Name = reader["CategoryName"].ToString() ?? "",
+                    MenuCardID = Convert.ToInt32(reader["MenuCardID"])
+                }
             };
 
             if (reader["ImagePath"] != DBNull.Value)
