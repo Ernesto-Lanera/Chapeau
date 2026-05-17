@@ -7,6 +7,6 @@ namespace Chapeau.Repositories
         List<Order> GetRunningOrders();
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
         Order GetActiveOrderByTableId(int tableId);
-
+        List<TableStatus> GetAllTableStatuses();
     }
 }

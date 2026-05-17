@@ -52,6 +52,18 @@ namespace Chapeau.Services
             }
         }
 
+        public List<TableStatus> GetAllTableStatuses()
+        {
+            try
+            {
+                return _orderRepository.GetAllTableStatuses();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to retrieve table statuses: " + ex.Message);
+            }
+        }
+
         public PaymentOrderViewModel GetPaymentOrderViewModel(int orderId, int tableNumber)
         {
             try

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Chapeau.Models;
 using Chapeau.Repositories;
 using Chapeau.Emums;
+using System.Linq;
 
 public class OrderRepository : IOrderRepository
 {
@@ -93,6 +94,49 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+
+
+    public List<TableStatus> GetAllTableStatuses()
+    {
+        List<TableStatus> tables = new List<TableStatus>();
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = @"SELECT t.TableID, t.TableNumber,
+                    o.OrderID, o.OrderStatus
+                FROM Table_ t
+                LEFT JOIN Orders o ON o.OrderID = (
+                    SELECT TOP 1 o2.OrderID
+                    FROM Orders o2
+                    WHERE o2.TableID = t.TableID AND o2.OrderStatus <> @Paid
+                    ORDER BY o2.OrderDate DESC
+                )
+                WHERE t.TableNumber BETWEEN 1 AND 10
+                ORDER BY t.TableNumber";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        tables.Add(new TableStatus
+                        {
+                            TableId = (int)reader["TableID"],
+                            TableNumber = (int)reader["TableNumber"],
+                            IsOccupied = reader["OrderID"] != DBNull.Value,
+                            OrderId = reader["OrderID"] == DBNull.Value ? null : (int)reader["OrderID"],
+                            OrderStatus = reader["OrderStatus"] == DBNull.Value ? null : (OrderStatus?)(int)reader["OrderStatus"]
+                        });
+                    }
+                }
+            }
+        }
+        return tables;
+    }
 
     public List<OrderItem> GetOrderItemsByOrderId(int orderId)
     {

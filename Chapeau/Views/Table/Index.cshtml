@@ -1,0 +1,50 @@
+@model List<TableStatus>
+
+@{
+    ViewData["Title"] = "Table Overview";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Table Overview</h1>
+
+    <div class="row g-4">
+        @foreach (var table in Model.OrderBy(t => t.TableNumber))
+        {
+            <div class="col-md-4 col-lg-3">
+                <div class="card shadow-sm @(table.IsOccupied ? "border-warning" : "border-success")">
+                    <div class="card-body text-center">
+                        <h2 class="card-title mb-3">Table @table.TableNumber</h2>
+
+                        @if (table.IsOccupied)
+                        {
+                            <span class="badge bg-warning text-dark fs-6 mb-2">Occupied</span>
+                            <p class="card-text mb-1">
+                                <strong>Status:</strong>
+                                @switch (table.OrderStatus)
+                                {
+                                    case Chapeau.Emums.OrderStatus.Ordered:
+                                        <span class="text-primary">Ordered</span>
+                                        break;
+                                    case Chapeau.Emums.OrderStatus.BeingPrepared:
+                                        <span class="text-info">Being Prepared</span>
+                                        break;
+                                    case Chapeau.Emums.OrderStatus.ReadyToBeServed:
+                                        <span class="text-success">Ready to Serve</span>
+                                        break;
+                                    case Chapeau.Emums.OrderStatus.Served:
+                                        <span class="text-secondary">Served</span>
+                                        break;
+                                }
+                            </p>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success fs-6 mb-2">Free</span>
+                            <p class="card-text text-muted">No active order</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

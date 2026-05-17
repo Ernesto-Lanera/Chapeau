@@ -2,6 +2,7 @@ using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
@@ -17,6 +18,7 @@ namespace Chapeau.Controllers
             _claimsService = claimsService;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -29,6 +31,7 @@ namespace Chapeau.Controllers
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -68,6 +71,7 @@ namespace Chapeau.Controllers
             return View(model);
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Logout()
         {
@@ -79,9 +83,10 @@ namespace Chapeau.Controllers
         public async Task<IActionResult> LogoutConfirmed()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login", "Account");
         }
 
+        [AllowAnonymous]
         public IActionResult AccessDenied()
         {
             return View();
