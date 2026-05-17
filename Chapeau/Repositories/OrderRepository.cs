@@ -138,6 +138,23 @@ public class OrderRepository : IOrderRepository
         return tables;
     }
 
+
+    public void UpdateOrderStatus(int orderId, OrderStatus newStatus)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = "UPDATE Orders SET OrderStatus = @Status WHERE OrderID = @OrderID";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)newStatus);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
+
     public List<OrderItem> GetOrderItemsByOrderId(int orderId)
     {
         List<OrderItem> items = new List<OrderItem>();

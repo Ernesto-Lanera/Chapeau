@@ -1,3 +1,4 @@
+using Chapeau.Emums;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,14 @@ namespace Chapeau.Controllers
         {
             var tables = _orderService.GetAllTableStatuses();
             return View(tables);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAsServed(int orderId)
+        {
+            _orderService.MarkOrderAsServed(orderId);
+            return RedirectToAction(nameof(Index));
         }
     }
 }

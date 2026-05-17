@@ -10,5 +10,6 @@ namespace Chapeau.Services
         List<Order> GetRunningOrders();
         TimeSpan GetWaitingTime(Order order);
         List<TableStatus> GetAllTableStatuses();
+        void MarkOrderAsServed(int orderId);
     }
 }

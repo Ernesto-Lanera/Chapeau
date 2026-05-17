@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Repositories;
 using Chapeau.ViewModels;
@@ -61,6 +62,18 @@ namespace Chapeau.Services
             catch (Exception ex)
             {
                 throw new Exception("Failed to retrieve table statuses: " + ex.Message);
+            }
+        }
+
+        public void MarkOrderAsServed(int orderId)
+        {
+            try
+            {
+                _orderRepository.UpdateOrderStatus(orderId, OrderStatus.Served);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to mark order as served: " + ex.Message);
             }
         }
 

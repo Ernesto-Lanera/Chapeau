@@ -36,6 +36,16 @@
                                         break;
                                 }
                             </p>
+
+                            @if (table.OrderStatus == Chapeau.Emums.OrderStatus.ReadyToBeServed)
+                            {
+                                <form method="post" asp-action="MarkAsServed" asp-controller="Table">
+                                    <input type="hidden" name="orderId" value="@table.OrderId" />
+                                    <button type="submit" class="btn btn-success btn-sm mt-2">
+                                        <i class="bi bi-check2-circle me-1"></i>Mark as Served
+                                    </button>
+                                </form>
+                            }
                         }
                         else
                         {
