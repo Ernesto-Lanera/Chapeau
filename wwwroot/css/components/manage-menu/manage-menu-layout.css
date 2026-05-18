@@ -1,0 +1,54 @@
+/* Main layout */
+.page-content {
+    padding: 28px 24px;
+}
+
+body {
+    background-color: #f8fafc;
+}
+
+/* Title and header row */
+.page-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+/* Buttons */
+.btn-new {
+    background-color: #16a34a;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-new:hover {
+    background-color: #15803d;
+    color: white;
+}
+
+.btn-close-form {
+    background-color: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-close-form:hover {
+    background-color: #4b5563;
+    color: white;
+}

@@ -14,7 +14,7 @@
                     {
                         <button class="btn btn-sm btn-outline-primary px-3 filter-btn"
                                 data-filter="menucard"
-                                data-value="@menuCard.Value">
+                                data-value="@menuCard.Value.ToString()">
                             @menuCard.Text
                         </button>
                     }
@@ -146,7 +146,7 @@
                     } else {
                         const itemValue = item.getAttribute(`data-${filterType}`);
 
-                        if (itemValue === filterValue) {
+                        if (itemValue?.toString() === filterValue?.toString()) {
                             item.classList.remove('d-none');
                         } else {
                             item.classList.add('d-none');
@@ -157,4 +157,3 @@
         });
     });
 </script>
-

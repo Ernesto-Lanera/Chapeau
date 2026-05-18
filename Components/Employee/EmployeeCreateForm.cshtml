@@ -1,0 +1,60 @@
+@model Chapeau.Components.EmployeeCreateForm.EmployeeCreateFormModel
+
+<link rel="stylesheet" href="~/css/components/employee/employee-forms.css" />
+
+<div class="form-card">
+    <h3>Nieuwe Medewerker</h3>
+
+    <form method="post"
+          action="@Url.Action("Create", "Employee")"
+          class="employee-form preserve-scroll-form">
+
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <input type="text"
+                   name="Name"
+                   class="form-control"
+                   placeholder="Naam"
+                   value="@Model.DraftName"
+                   required="required" />
+        </div>
+
+        <div class="form-group">
+            <input type="password"
+                   name="PasswordHash"
+                   class="form-control"
+                   placeholder="Wachtwoord"
+                   required="required" />
+        </div>
+
+        <div class="form-group">
+            <select name="RoleID" class="form-select" required="required">
+                <option value="">-- Selecteer rol --</option>
+
+                @foreach (var role in Model.Roles)
+                {
+                    if (Model.DraftRoleId == role.RoleID)
+                    {
+                        <option value="@role.RoleID" selected="selected">@role.RoleName</option>
+                    }
+                    else
+                    {
+                        <option value="@role.RoleID">@role.RoleName</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary preserve-scroll">
+                Toevoegen
+            </button>
+
+            <a href="@Url.Action("Index", "Employee")"
+                   class="btn btn-secondary preserve-scroll">
+                Annuleren
+            </a>
+        </div>
+    </form>
+</div>
