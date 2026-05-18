@@ -1,0 +1,193 @@
+﻿body {
+    background-color: #f8fafc;
+}
+
+.page-content {
+    padding: 28px 24px;
+}
+
+.page-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.filter-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.filter-group select {
+    width: 140px;
+    height: 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    background-color: white;
+    font-size: 14px;
+    padding-left: 10px;
+}
+
+    .filter-group select[name="categoryId"] {
+        width: 360px;
+        max-width: 100%;
+        text-overflow: ellipsis;
+    }
+
+.stock-summary-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.stock-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+    .stock-pill svg {
+        width: 17px;
+        height: 17px;
+        stroke-width: 2;
+    }
+
+    .stock-pill.ok {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    .stock-pill.warn {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .stock-pill.danger {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+.stock-table-card {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.stock-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+}
+
+    .stock-table thead {
+        background-color: #f9fafb;
+    }
+
+    .stock-table th {
+        padding: 16px 22px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #111827;
+        text-align: left;
+    }
+
+    .stock-table td {
+        padding: 17px 22px;
+        border-top: 1px solid #f1f5f9;
+        color: #374151;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .stock-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+.stock-input {
+    width: 90px;
+    height: 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+}
+
+    .stock-input.is-invalid {
+        border-color: #dc2626;
+        background-color: #fee2e2;
+    }
+
+.qty-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stock-action-button {
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 7px 13px;
+    cursor: pointer;
+}
+
+.stock-plus {
+    background-color: #16a34a;
+}
+
+    .stock-plus:hover {
+        background-color: #15803d;
+    }
+
+.stock-minus {
+    background-color: #dc2626;
+}
+
+    .stock-minus:hover {
+        background-color: #b91c1c;
+    }
+
+.inline-stock-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+.sold-out-row td {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+
+.sold-out-row:hover td {
+    background-color: #f3f4f6;
+}
+
+.alert {
+    border-radius: 8px;
+    margin-bottom: 20px;
+}

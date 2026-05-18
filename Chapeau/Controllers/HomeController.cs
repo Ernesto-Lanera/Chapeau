@@ -2,6 +2,7 @@ using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -44,6 +45,7 @@ namespace Chapeau.Controllers
             }
         }
 
+        [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

@@ -1,0 +1,80 @@
+@model List<TableStatus>
+
+@{
+    ViewData["Title"] = "Table Overview";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Table Overview</h1>
+        <a asp-action="Index" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </a>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var table in Model.OrderBy(t => t.TableNumber))
+        {
+            <div class="col-md-4 col-lg-3">
+                <div class="card shadow-sm h-100 @(table.IsOccupied ? "border-warning" : "border-success")">
+                    <div class="card-body text-center d-flex flex-column">
+                        <h2 class="card-title mb-3">Table @table.TableNumber</h2>
+
+                        @if (table.IsOccupied)
+                        {
+                            <span class="badge bg-warning text-dark fs-6 mb-2">Occupied</span>
+
+                            @foreach (var order in table.Orders)
+                            {
+                                <div class="border rounded p-2 mb-2 bg-light">
+                                    <div class="mb-1">
+                                        @if (order.HasFood)
+                                        {
+                                            <span class="badge bg-danger me-1">Food</span>
+                                        }
+                                        @if (order.HasDrink)
+                                        {
+                                            <span class="badge bg-info text-dark me-1">Drink</span>
+                                        }
+                                    </div>
+                                    <p class="mb-1">
+                                        @switch (order.OrderStatus)
+                                        {
+                                            case Chapeau.Emums.OrderStatus.Ordered:
+                                                <span class="badge bg-primary">Ordered</span>
+                                                break;
+                                            case Chapeau.Emums.OrderStatus.BeingPrepared:
+                                                <span class="badge bg-info">Being Prepared</span>
+                                                break;
+                                            case Chapeau.Emums.OrderStatus.ReadyToBeServed:
+                                                <span class="badge bg-success">Ready to Serve</span>
+                                                break;
+                                            case Chapeau.Emums.OrderStatus.Served:
+                                                <span class="badge bg-secondary">Served</span>
+                                                break;
+                                        }
+                                    </p>
+
+                                    @if (order.OrderStatus == Chapeau.Emums.OrderStatus.ReadyToBeServed)
+                                    {
+                                        <form method="post" asp-action="MarkAsServed" asp-controller="Table">
+                                            <input type="hidden" name="orderId" value="@order.OrderId" />
+                                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                                <i class="bi bi-check2-circle me-1"></i>Mark as Served
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <span class="badge bg-success fs-6 mb-2">Free</span>
+                            <p class="card-text text-muted mt-auto">No active order</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
