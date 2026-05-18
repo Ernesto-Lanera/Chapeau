@@ -1,4 +1,5 @@
-﻿using Chapeau.Models;
+﻿using Chapeau.Emums;
+using Chapeau.Models;
 
 namespace Chapeau.Repositories
 {
@@ -7,6 +8,7 @@ namespace Chapeau.Repositories
         List<Order> GetRunningOrders();
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
         Order GetActiveOrderByTableId(int tableId);
-
+        List<TableStatus> GetAllTableStatuses();
+        void UpdateOrderStatus(int orderId, OrderStatus newStatus);
     }
 }

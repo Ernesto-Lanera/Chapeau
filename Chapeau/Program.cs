@@ -1,5 +1,6 @@
 using Chapeau.Repositories;
 using Chapeau.Services;
+using Microsoft.AspNetCore.Authorization;
 using System.Globalization;
 
 namespace Chapeau
@@ -14,7 +15,13 @@ namespace Chapeau
             CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
             CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
 
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews(options =>
+            {
+                var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+                options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
+            });
             builder.Services.AddLogging();
 
             // Add Response Compression
@@ -110,7 +117,7 @@ namespace Chapeau
             app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
+                pattern: "{controller=Account}/{action=Login}/{id?}")
                 .WithStaticAssets();
 
             app.Run();

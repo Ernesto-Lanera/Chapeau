@@ -1,7 +1,9 @@
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
@@ -17,6 +19,7 @@ namespace Chapeau.Controllers
             _claimsService = claimsService;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -49,6 +52,7 @@ namespace Chapeau.Controllers
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -64,61 +68,51 @@ namespace Chapeau.Controllers
 
             if (employee == null)
             {
-                ModelState.AddModelError(string.Empty, "Invalid name or password");
-                return View(model);
+                await SignInEmployeeAsync(employee);
+
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return Redirect(returnUrl);
+                }
+
+                return RedirectToAction("Index", "Home");
             }
 
+            ModelState.AddModelError(string.Empty, "Invalid name or password");
+            return View(model);
+        }
+
+        private async Task SignInEmployeeAsync(Employee employee)
+        {
             var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = model.RememberMe,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(MenuCardConstants.SessionDurationHours)
             };
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 claimsPrincipal,
-                authProperties
-            );
+                authProperties);
+        }
 
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-
-            if (employee.RoleID == 1)
-            {
-                return RedirectToAction("Index", "ManageMenu");
-            }
-
-            if (employee.RoleID == 3)
-            {
-                return RedirectToAction("Index", "Menu");
-            }
-
-            if (employee.RoleID == 4)
-            {
-                return RedirectToAction("Index", "Kitchen");
-            }
-
-            if (employee.RoleID == 5)
-            {
-                return RedirectToAction("Index", "Bar");
-            }
-
-            return RedirectToAction("Index", "Home");
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult Logout()
+        {
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> LogoutConfirmed()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
             return RedirectToAction("Login", "Account");
         }
 
+        [AllowAnonymous]
         public IActionResult AccessDenied()
         {
             return View();
