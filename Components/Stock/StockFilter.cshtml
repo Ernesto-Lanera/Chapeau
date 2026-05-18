@@ -1,0 +1,81 @@
+@model Chapeau.Components.StockFilter.StockFilterModel
+
+<link rel="stylesheet" href="~/css/components/stock/stock-filters.css" />
+
+<form id="stockFilterForm" method="get" action="@Url.Action("Index", "Stock")">
+    <div class="filter-row">
+        <div class="filter-group">
+            <label>Kaart</label>
+
+            <select name="cardId" id="cardFilter">
+                <option value="">Alle</option>
+
+                @foreach (var card in new[] { 
+                    new { Id = 1, Name = "Lunch" }, 
+                    new { Id = 2, Name = "Diner" }, 
+                    new { Id = 3, Name = "Dranken" } 
+                })
+                {
+                    if (Model.SelectedCardId.HasValue && Model.SelectedCardId.Value == card.Id)
+                    {
+                        <option value="@card.Id" selected="selected">@card.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@card.Id">@card.Name</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Categorie</label>
+
+            <select name="categoryId" id="categoryFilter">
+                <option value="">Alle</option>
+
+                @foreach (var category in Model.Categories)
+                {
+                    if (!Model.SelectedCardId.HasValue || category.MenuCardID == Model.SelectedCardId.Value)
+                    {
+                        string categoryName = GetCategoryDisplayName(category);
+
+                        if (Model.SelectedCategoryId.HasValue && Model.SelectedCategoryId.Value == category.CategoryID)
+                        {
+                            <option value="@category.CategoryID" selected="selected">@categoryName</option>
+                        }
+                        else
+                        {
+                            <option value="@category.CategoryID">@categoryName</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+    </div>
+</form>
+
+<script src="~/js/stock-filters.js"></script>
+
+@functions {
+    string GetMenuCardName(int menuCardId)
+    {
+        return menuCardId switch
+        {
+            1 => "Lunch",
+            2 => "Diner",
+            3 => "Dranken",
+            _ => "-"
+        };
+    }
+
+    string GetCategoryDisplayName(Chapeau.Models.Category category)
+    {
+        if (category.MenuCardID == 1 || category.MenuCardID == 2)
+        {
+            return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
+        }
+
+        return category.Name;
+    }
+}

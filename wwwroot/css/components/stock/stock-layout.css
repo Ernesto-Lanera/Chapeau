@@ -1,0 +1,23 @@
+/* Main layout */
+body {
+    background-color: #f8fafc;
+}
+
+.page-content {
+    padding: 28px 24px;
+}
+
+/* Title and header row */
+.page-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
