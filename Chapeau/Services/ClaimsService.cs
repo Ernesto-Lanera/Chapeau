@@ -1,13 +1,10 @@
 using Chapeau.Models;
 using Chapeau.Repositories;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 
 namespace Chapeau.Services
 {
-    /// <summary>
-    /// Service for creating and managing user claims for authentication and authorization.
-    /// Includes role claims and permission claims loaded from the database.
-    /// </summary>
     public interface IClaimsService
     {
         ClaimsPrincipal CreateClaimsPrincipal(Employee employee);
@@ -25,39 +22,37 @@ namespace Chapeau.Services
             _logger = logger;
         }
 
-        /// <summary>
-        /// Creates a ClaimsPrincipal for the authenticated employee.
-        /// </summary>
         public ClaimsPrincipal CreateClaimsPrincipal(Employee employee)
         {
             var claims = CreateClaims(employee);
-            var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
+
+            var claimsIdentity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
             return new ClaimsPrincipal(claimsIdentity);
         }
 
         public List<Claim> CreateClaims(Employee employee)
         {
-            var claims = BuildBaseClaims(employee);
-            LoadPermissionClaims(claims, employee);
-            return claims;
-        }
+            string roleName = GetRoleName(employee.RoleID);
 
-        private static List<Claim> BuildBaseClaims(Employee employee)
-        {
-            return new List<Claim>
+            var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, employee.EmployeeID.ToString()),
-                new Claim(ClaimTypes.Name, employee.Name),
-                new Claim(ClaimTypes.GivenName, employee.Name),
-                new Claim(ClaimTypes.Role, employee.RoleID.ToString()),
+                new Claim(ClaimTypes.Name, employee.Name ?? string.Empty),
+                new Claim(ClaimTypes.GivenName, employee.Name ?? string.Empty),
+
+                new Claim(ClaimTypes.Role, roleName),
+
                 new Claim("EmployeeID", employee.EmployeeID.ToString()),
-                new Claim("EmployeeName", employee.Name),
+                new Claim("EmployeeName", employee.Name ?? string.Empty),
+                new Claim("RoleID", employee.RoleID.ToString()),
+                new Claim("RoleName", roleName),
                 new Claim("IsActive", employee.IsActive.ToString())
             };
-        }
 
-        private void LoadPermissionClaims(List<Claim> claims, Employee employee)
-        {
             try
             {
                 var permissions = _roleRepository.GetRolePermissions(employee.RoleID);
@@ -67,43 +62,101 @@ namespace Chapeau.Services
                     foreach (var permission in permissions)
                     {
                         claims.Add(new Claim("Permission", permission));
+
+                        _logger.LogDebug(
+                            "Added permission claim: {Permission} for employee {EmployeeID}",
+                            permission,
+                            employee.EmployeeID
+                        );
                     }
                 }
                 else
                 {
-                    _logger.LogWarning("No permissions found in database for role {RoleID}, using defaults", employee.RoleID);
+                    _logger.LogWarning(
+                        "No permissions found in database for role {RoleID}, using defaults",
+                        employee.RoleID
+                    );
+
                     AddDefaultPermissionsForRole(claims, employee.RoleID);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to load permissions for employee {EmployeeID}, using fallback", employee.EmployeeID);
+                _logger.LogWarning(
+                    ex,
+                    "Failed to load permissions from database for employee {EmployeeID}, using fallback",
+                    employee.EmployeeID
+                );
+
                 AddDefaultPermissionsForRole(claims, employee.RoleID);
             }
+
+            return claims;
         }
 
-        /// <summary>
-        /// Fallback method that adds permissions based on role when database is unavailable.
-        /// </summary>
+        private string GetRoleName(int roleID)
+        {
+            return roleID switch
+            {
+                1 => "Manager",
+                3 => "Bediening",
+                4 => "Keuken",
+                5 => "Barman",
+                _ => "Onbekend"
+            };
+        }
+
         private void AddDefaultPermissionsForRole(List<Claim> claims, int roleID)
         {
             List<string> permissions = roleID switch
             {
-                1 => new List<string> { "ViewMenu", "TakeOrders" }, // Waiter
-                2 => new List<string> { "ViewMenu", "PrepareFood" }, // Kitchen
-                3 => new List<string> 
-                { 
-                    "ViewMenu", "TakeOrders", "PrepareFood", 
-                    "ManageEmployees", "ManageMenuItems", "ViewReports", "ManageRoles" 
-                }, // Manager
-                _ => new List<string> { "ViewMenu" }
+                1 => new List<string>
+                {
+                    "ViewMenu",
+                    "TakeOrders",
+                    "PrepareFood",
+                    "PrepareDrinks",
+                    "ManageEmployees",
+                    "ManageMenuItems",
+                    "ManageStock",
+                    "ViewReports",
+                    "ManageRoles",
+                    "ViewFinance"
+                },
+
+                3 => new List<string>
+                {
+                    "ViewMenu",
+                    "TakeOrders"
+                },
+
+                4 => new List<string>
+                {
+                    "ViewMenu",
+                    "PrepareFood"
+                },
+
+                5 => new List<string>
+                {
+                    "ViewMenu",
+                    "PrepareDrinks"
+                },
+
+                _ => new List<string>
+                {
+                    "ViewMenu"
+                }
             };
 
             foreach (var permission in permissions)
             {
                 claims.Add(new Claim("Permission", permission));
-                _logger.LogDebug("Added default permission claim: {Permission} for role {RoleID}", 
-                    permission, roleID);
+
+                _logger.LogDebug(
+                    "Added default permission claim: {Permission} for role {RoleID}",
+                    permission,
+                    roleID
+                );
             }
         }
     }

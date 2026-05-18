@@ -13,6 +13,8 @@ namespace Chapeau.Models
         public string PasswordHash { get; set; } = "";
 
         [Range(1, int.MaxValue, ErrorMessage = "Selecteer een geldige rol")]
+
+        public string RoleName { get; set; } = string.Empty;
         public int RoleID { get; set; }
 
         public bool IsActive { get; set; } = true;

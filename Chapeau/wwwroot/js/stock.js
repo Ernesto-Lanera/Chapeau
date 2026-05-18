@@ -1,76 +1,43 @@
-document.addEventListener("DOMContentLoaded", function () {
-    function debounce(fn, waitMs) {
-        let timer;
+﻿document.addEventListener("DOMContentLoaded", function () {
+    setupStockFilters();
+    setupStockForms();
+});
 
-        return function () {
-            const args = arguments;
+function setupStockFilters() {
+    const filterForm = document.getElementById("stockFilterForm");
+    const cardFilter = document.getElementById("cardFilter");
+    const categoryFilter = document.getElementById("categoryFilter");
 
-            clearTimeout(timer);
-
-            timer = setTimeout(function () {
-                fn.apply(null, args);
-            }, waitMs);
-        };
+    if (!filterForm || !cardFilter || !categoryFilter) {
+        return;
     }
 
-    function getStatusData(stock) {
-        if (stock <= 0) {
-            return {
-                cls: "danger",
-                text: "Uitverkocht"
-            };
-        }
+    cardFilter.addEventListener("change", function () {
+        categoryFilter.value = "";
+        filterForm.submit();
+    });
 
-        if (stock <= 10) {
-            return {
-                cls: "warn",
-                text: "Bijna op"
-            };
-        }
+    categoryFilter.addEventListener("change", function () {
+        filterForm.submit();
+    });
+}
 
-        return {
-            cls: "ok",
-            text: "Op voorraad"
-        };
-    }
-
-    function recalcTopCounters() {
-        let soldOut = 0;
-        let almostOut = 0;
-
-        document.querySelectorAll(".stock-current").forEach(function (input) {
-            let value = parseInt(input.value, 10);
-
-            if (isNaN(value) || value < 0) {
-                value = 0;
-            }
-
-            if (value === 0) {
-                soldOut++;
-            }
-            else if (value <= 10) {
-                almostOut++;
-            }
-        });
-
-        const soldOutCount = document.getElementById("soldOutCount");
-        const almostOutCount = document.getElementById("almostOutCount");
-
-        if (soldOutCount) {
-            soldOutCount.textContent = soldOut;
-        }
-
-        if (almostOutCount) {
-            almostOutCount.textContent = almostOut;
-        }
-    }
-
+function setupStockForms() {
     document.querySelectorAll(".stock-form").forEach(function (form) {
         const row = form.closest("tr");
+
+        if (!row) {
+            return;
+        }
+
         const currentInput = row.querySelector(".stock-current");
         const newStockInput = form.querySelector(".stock-new");
         const statusPill = row.querySelector(".stock-status");
         const statusText = row.querySelector(".stock-status-text");
+
+        if (!currentInput || !newStockInput || !statusPill || !statusText) {
+            return;
+        }
 
         function updateStatusUi(stock) {
             const status = getStatusData(stock);
@@ -82,8 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (stock === 0) {
                 row.classList.add("sold-out-row");
-            }
-            else {
+            } else {
                 row.classList.remove("sold-out-row");
             }
         }
@@ -123,18 +89,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 body: body.toString()
             })
-            .then(function (response) {
-                if (!response.ok) {
-                    currentInput.classList.add("is-invalid");
-                    return;
-                }
+                .then(function (response) {
+                    if (!response.ok) {
+                        currentInput.classList.add("is-invalid");
+                        return;
+                    }
 
-                updateStatusUi(stock);
-                recalcTopCounters();
-            })
-            .catch(function () {
-                currentInput.classList.add("is-invalid");
-            });
+                    updateStatusUi(stock);
+                    recalcTopCounters();
+                })
+                .catch(function () {
+                    currentInput.classList.add("is-invalid");
+                });
         }
 
         const autoSave = debounce(function () {
@@ -142,9 +108,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 200);
 
         currentInput.addEventListener("input", autoSave);
+
         currentInput.addEventListener("change", function () {
             saveStock();
         });
+
         currentInput.addEventListener("blur", function () {
             saveStock();
         });
@@ -161,4 +129,69 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
-});
+}
+
+function getStatusData(stock) {
+    if (stock <= 0) {
+        return {
+            cls: "danger",
+            text: "Uitverkocht"
+        };
+    }
+
+    if (stock <= 10) {
+        return {
+            cls: "warn",
+            text: "Bijna op"
+        };
+    }
+
+    return {
+        cls: "ok",
+        text: "Op voorraad"
+    };
+}
+
+function recalcTopCounters() {
+    let soldOut = 0;
+    let almostOut = 0;
+
+    document.querySelectorAll(".stock-current").forEach(function (input) {
+        let value = parseInt(input.value, 10);
+
+        if (isNaN(value) || value < 0) {
+            value = 0;
+        }
+
+        if (value === 0) {
+            soldOut++;
+        } else if (value <= 10) {
+            almostOut++;
+        }
+    });
+
+    const soldOutCount = document.getElementById("soldOutCount");
+    const almostOutCount = document.getElementById("almostOutCount");
+
+    if (soldOutCount) {
+        soldOutCount.textContent = soldOut;
+    }
+
+    if (almostOutCount) {
+        almostOutCount.textContent = almostOut;
+    }
+}
+
+function debounce(fn, waitMs) {
+    let timer;
+
+    return function () {
+        const args = arguments;
+
+        clearTimeout(timer);
+
+        timer = setTimeout(function () {
+            fn.apply(null, args);
+        }, waitMs);
+    };
+}

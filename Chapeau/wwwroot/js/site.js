@@ -13,19 +13,27 @@ function closeToast() {
     toast.style.transform = "translateX(30px)";
 
     setTimeout(function () {
-        toast.remove();
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
     }, 250);
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+function setupToastMessage() {
     const toast = document.getElementById("toastMessage");
 
-    if (toast) {
-        setTimeout(function () {
-            closeToast();
-        }, 3500);
+    if (!toast) {
+        return;
     }
-});
+
+    setTimeout(function () {
+        closeToast();
+    }, 3500);
+}
+
+// =========================
+// Scroll position
+// =========================
 
 const chapeauScrollStorageKey = "chapeau-scroll-position";
 
@@ -53,15 +61,7 @@ function restoreChapeauScrollPosition() {
     sessionStorage.removeItem(chapeauScrollStorageKey);
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    restoreChapeauScrollPosition();
-
-    document.querySelectorAll("form").forEach(function (form) {
-        form.addEventListener("submit", function () {
-            saveChapeauScrollPosition();
-        });
-    });
-
+function setupPreserveScroll() {
     document.querySelectorAll(".preserve-scroll").forEach(function (element) {
         element.addEventListener("click", function () {
             saveChapeauScrollPosition();
@@ -73,94 +73,112 @@ document.addEventListener("DOMContentLoaded", function () {
             saveChapeauScrollPosition();
         });
     });
+}
 
-    document.addEventListener("DOMContentLoaded", function () {
-        function removeElementWithFade(el) {
-            if (!el) {
-                return;
-            }
+// =========================
+// Flash alerts
+// =========================
 
-            el.style.transition = "opacity 250ms ease, transform 250ms ease";
-            el.style.opacity = "0";
-            el.style.transform = "translateY(-6px)";
+function removeElementWithFade(element) {
+    if (!element) {
+        return;
+    }
 
-            setTimeout(function () {
-                if (el && el.parentNode) {
-                    el.parentNode.removeChild(el);
-                }
-            }, 260);
+    element.style.transition = "opacity 250ms ease, transform 250ms ease";
+    element.style.opacity = "0";
+    element.style.transform = "translateY(-6px)";
+
+    setTimeout(function () {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
         }
+    }, 260);
+}
 
-        var flashAlerts = document.querySelectorAll(".flash-alert:not([data-autodismiss='false'])");
+function setupFlashAlerts() {
+    const flashAlerts = document.querySelectorAll(".flash-alert:not([data-autodismiss='false'])");
 
-        flashAlerts.forEach(function (alert) {
-            setTimeout(function () {
-                removeElementWithFade(alert);
-            }, 3500);
-        });
-
-        function ensureToastHost() {
-            var toastHost = document.getElementById("toastHost");
-
-            if (!toastHost) {
-                toastHost = document.createElement("div");
-                toastHost.id = "toastHost";
-                toastHost.className = "toast-host";
-                document.body.appendChild(toastHost);
-            }
-
-            return toastHost;
-        }
-
-        function removeToast(el) {
-            if (!el) {
-                return;
-            }
-
-            el.classList.add("toast-hide");
-
-            setTimeout(function () {
-                if (el && el.parentNode) {
-                    el.parentNode.removeChild(el);
-                }
-            }, 300);
-        }
-
-        window.showToast = function (message, type) {
-            var toastHost = ensureToastHost();
-
-            var toast = document.createElement("div");
-
-            if (type === "error") {
-                toast.className = "toast-message toast-error";
-            } else if (type === "warning") {
-                toast.className = "toast-message toast-warning";
-            } else {
-                toast.className = "toast-message toast-success";
-            }
-
-            toast.setAttribute("role", "alert");
-
-            var text = document.createElement("span");
-            text.textContent = message;
-
-            var closeButton = document.createElement("button");
-            closeButton.type = "button";
-            closeButton.className = "toast-close";
-            closeButton.innerHTML = "&times;";
-
-            closeButton.addEventListener("click", function () {
-                removeToast(toast);
-            });
-
-            toast.appendChild(text);
-            toast.appendChild(closeButton);
-
-            toastHost.appendChild(toast);
-
-            setTimeout(function () {
-                removeToast(toast);
-            }, 3500);
-        };
+    flashAlerts.forEach(function (alert) {
+        setTimeout(function () {
+            removeElementWithFade(alert);
+        }, 3500);
     });
+}
+
+// =========================
+// Dynamic toast function
+// =========================
+
+function ensureToastHost() {
+    let toastHost = document.getElementById("toastHost");
+
+    if (!toastHost) {
+        toastHost = document.createElement("div");
+        toastHost.id = "toastHost";
+        toastHost.className = "toast-host";
+        document.body.appendChild(toastHost);
+    }
+
+    return toastHost;
+}
+
+function removeToast(element) {
+    if (!element) {
+        return;
+    }
+
+    element.classList.add("toast-hide");
+
+    setTimeout(function () {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    }, 300);
+}
+
+window.showToast = function (message, type) {
+    const toastHost = ensureToastHost();
+    const toast = document.createElement("div");
+
+    if (type === "error") {
+        toast.className = "toast-message toast-error";
+    } else if (type === "warning") {
+        toast.className = "toast-message toast-warning";
+    } else {
+        toast.className = "toast-message toast-success";
+    }
+
+    toast.setAttribute("role", "alert");
+
+    const text = document.createElement("span");
+    text.textContent = message;
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "toast-close";
+    closeButton.innerHTML = "&times;";
+
+    closeButton.addEventListener("click", function () {
+        removeToast(toast);
+    });
+
+    toast.appendChild(text);
+    toast.appendChild(closeButton);
+
+    toastHost.appendChild(toast);
+
+    setTimeout(function () {
+        removeToast(toast);
+    }, 3500);
+};
+
+// =========================
+// Init
+// =========================
+
+document.addEventListener("DOMContentLoaded", function () {
+    restoreChapeauScrollPosition();
+    setupPreserveScroll();
+    setupToastMessage();
+    setupFlashAlerts();
 });

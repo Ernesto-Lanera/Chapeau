@@ -18,12 +18,32 @@ namespace Chapeau.Controllers
             _claimsService = claimsService;
         }
 
-        [AllowAnonymous]
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
         {
             if (User?.Identity?.IsAuthenticated ?? false)
             {
+                if (User.IsInRole("Manager") || User.HasClaim("RoleID", "1"))
+                {
+                    return RedirectToAction("Index", "ManageMenu");
+                }
+
+                if (User.IsInRole("Bediening") || User.HasClaim("RoleID", "3"))
+                {
+                    return RedirectToAction("Index", "Menu");
+                }
+
+                if (User.IsInRole("Keuken") || User.HasClaim("RoleID", "4"))
+                {
+                    return RedirectToAction("Index", "Kitchen");
+                }
+
+                if (User.IsInRole("Barman") || User.HasClaim("RoleID", "5"))
+                {
+                    return RedirectToAction("Index", "Bar");
+                }
+
                 return RedirectToAction("Index", "Home");
             }
 
@@ -31,9 +51,9 @@ namespace Chapeau.Controllers
             return View();
         }
 
-        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [AllowAnonymous]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
@@ -45,52 +65,66 @@ namespace Chapeau.Controllers
 
             var employee = await _authService.AuthenticateAsync(model.Name, model.Password);
 
-            if (employee != null)
+            if (employee == null)
             {
-                await SignInEmployeeAsync(employee);
-
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                {
-                    return Redirect(returnUrl);
-                }
-
-                return RedirectToAction("Index", "Home");
+                ModelState.AddModelError(string.Empty, "Ongeldige naam of wachtwoord.");
+                return View(model);
             }
 
-            ModelState.AddModelError(string.Empty, "Invalid name or password");
-            return View(model);
-        }
-
-        private async Task SignInEmployeeAsync(Employee employee)
-        {
             var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
 
             var authProperties = new AuthenticationProperties
             {
+                IsPersistent = model.RememberMe,
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
             };
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 claimsPrincipal,
-                authProperties);
-        }
+                authProperties
+            );
 
-        [AllowAnonymous]
-        [HttpGet]
-        public IActionResult Logout()
-        {
-            return View();
+            if (!string.IsNullOrWhiteSpace(returnUrl) &&
+                Url.IsLocalUrl(returnUrl) &&
+                !returnUrl.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase))
+            {
+                return Redirect(returnUrl);
+            }
+
+            if (employee.RoleID == 1)
+            {
+                return RedirectToAction("Index", "ManageMenu");
+            }
+
+            if (employee.RoleID == 3)
+            {
+                return RedirectToAction("Index", "Menu");
+            }
+
+            if (employee.RoleID == 4)
+            {
+                return RedirectToAction("Index", "Kitchen");
+            }
+
+            if (employee.RoleID == 5)
+            {
+                return RedirectToAction("Index", "Bar");
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LogoutConfirmed()
+        [Authorize]
+        public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
         }
 
+        [HttpGet]
         [AllowAnonymous]
         public IActionResult AccessDenied()
         {
