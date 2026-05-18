@@ -22,6 +22,26 @@ namespace Chapeau.Controllers
         {
             if (User?.Identity?.IsAuthenticated ?? false)
             {
+                if (User.IsInRole("Manager") || User.HasClaim("RoleID", "1"))
+                {
+                    return RedirectToAction("Index", "ManageMenu");
+                }
+
+                if (User.IsInRole("Bediening") || User.HasClaim("RoleID", "3"))
+                {
+                    return RedirectToAction("Index", "Menu");
+                }
+
+                if (User.IsInRole("Keuken") || User.HasClaim("RoleID", "4"))
+                {
+                    return RedirectToAction("Index", "Kitchen");
+                }
+
+                if (User.IsInRole("Barman") || User.HasClaim("RoleID", "5"))
+                {
+                    return RedirectToAction("Index", "Bar");
+                }
+
                 return RedirectToAction("Index", "Home");
             }
 
@@ -42,32 +62,52 @@ namespace Chapeau.Controllers
 
             var employee = await _authService.AuthenticateAsync(model.Name, model.Password);
 
-            if (employee != null)
+            if (employee == null)
             {
-                // Create claims principal using the ClaimsService
-                var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
-
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.RememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    claimsPrincipal,
-                    authProperties);
-
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                {
-                    return Redirect(returnUrl);
-                }
-
-                return RedirectToAction("Index", "Home");
+                ModelState.AddModelError(string.Empty, "Invalid name or password");
+                return View(model);
             }
 
-            ModelState.AddModelError(string.Empty, "Invalid name or password");
-            return View(model);
+            var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = model.RememberMe,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                claimsPrincipal,
+                authProperties
+            );
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            if (employee.RoleID == 1)
+            {
+                return RedirectToAction("Index", "ManageMenu");
+            }
+
+            if (employee.RoleID == 3)
+            {
+                return RedirectToAction("Index", "Menu");
+            }
+
+            if (employee.RoleID == 4)
+            {
+                return RedirectToAction("Index", "Kitchen");
+            }
+
+            if (employee.RoleID == 5)
+            {
+                return RedirectToAction("Index", "Bar");
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpPost]
@@ -75,7 +115,8 @@ namespace Chapeau.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index", "Home");
+
+            return RedirectToAction("Login", "Account");
         }
 
         public IActionResult AccessDenied()
