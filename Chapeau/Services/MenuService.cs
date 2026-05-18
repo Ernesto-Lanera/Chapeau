@@ -1,15 +1,19 @@
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Repositories.Menu;
+using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Services
 {
     public class MenuService
     {
         private readonly IMenuRepository _menuRepository;
+        private readonly ILogger<MenuService> _logger;
 
-        public MenuService(IMenuRepository menuRepository)
+        public MenuService(IMenuRepository menuRepository, ILogger<MenuService> logger)
         {
             _menuRepository = menuRepository;
+            _logger = logger;
         }
 
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
@@ -30,17 +34,16 @@ namespace Chapeau.Services
         public void AddMenuItem(MenuItem menuItem)
         {
             ValidateMenuItem(menuItem, isEdit: false);
-
             menuItem.IsActive = true;
-
             _menuRepository.AddMenuItem(menuItem);
+            _logger.LogInformation("Menu item added: {MenuItemName}", menuItem.Name);
         }
 
         public void UpdateMenuItem(MenuItem menuItem)
         {
             ValidateMenuItem(menuItem, isEdit: true);
-
             _menuRepository.UpdateMenuItem(menuItem);
+            _logger.LogInformation("Menu item updated: {MenuItemId}", menuItem.MenuItemID);
         }
 
         public void SetMenuItemActive(int menuItemId, bool active)
@@ -51,6 +54,7 @@ namespace Chapeau.Services
             }
 
             _menuRepository.SetMenuItemActive(menuItemId, active);
+            _logger.LogInformation("Menu item {MenuItemId} status changed to {Active}", menuItemId, active);
         }
 
         public void ChangeStock(int menuItemId, int stock)
@@ -66,6 +70,7 @@ namespace Chapeau.Services
             }
 
             _menuRepository.ChangeStock(menuItemId, stock);
+            _logger.LogInformation("Stock changed for menu item {MenuItemId} to {Stock}", menuItemId, stock);
         }
 
         private void ValidateMenuItem(MenuItem menuItem, bool isEdit)

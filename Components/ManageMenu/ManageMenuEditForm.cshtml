@@ -1,0 +1,141 @@
+@model Chapeau.Components.ManageMenuEditForm.ManageMenuEditFormModel
+
+<link rel="stylesheet" href="~/css/components/manage-menu/manage-menu-forms.css" />
+
+<div class="inline-edit-card">
+    <h3>Menu Item Bewerken</h3>
+
+    <form method="post"
+          action="@Url.Action("Edit", "ManageMenu")"
+          enctype="multipart/form-data"
+          class="menu-item-form preserve-scroll-form">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" name="MenuItemID" value="@Model.EditItem.MenuItemID" />
+        <input type="hidden" name="MenuCardID" value="@Model.SelectedMenuCardId" />
+
+        <div class="form-group">
+            <select class="form-select" disabled="disabled">
+                @foreach (var card in Model.MenuCards)
+                {
+                    if (card.Value == Model.SelectedMenuCardId.ToString())
+                    {
+                        <option value="@card.Value" selected="selected">@card.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@card.Value">@card.Text</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <input type="text"
+                   name="Name"
+                   class="form-control"
+                   placeholder="Naam"
+                   value="@Model.EditItem.Name"
+                   required="required" />
+        </div>
+
+        <div class="form-group">
+            <input type="text"
+                   name="RetailPrice"
+                   class="form-control"
+                   placeholder="Prijs (12,50)"
+                   value="@Model.EditItem.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))"
+                   required="required" />
+        </div>
+
+        <div class="form-group">
+            <input type="number"
+                   name="Stock"
+                   class="form-control"
+                   placeholder="Voorraad"
+                   value="@Model.EditItem.Stock"
+                   min="0"
+                   required="required" />
+        </div>
+
+        <div class="form-group">
+            <select name="CategoryID" class="form-select" required="required">
+                <option value="">-- Selecteer categorie --</option>
+
+                @foreach (var editCategory in Model.FormCategories)
+                {
+                    if (Model.EditItem.CategoryID == editCategory.CategoryID)
+                    {
+                        <option value="@editCategory.CategoryID" selected="selected">
+                            @GetCategoryDisplayName(editCategory)
+                        </option>
+                    }
+                    else
+                    {
+                        <option value="@editCategory.CategoryID">
+                            @GetCategoryDisplayName(editCategory)
+                        </option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="editImageUpload-@Model.EditItem.MenuItemID" class="form-label">Afbeelding optioneel</label>
+
+            <input type="file"
+                   id="editImageUpload-@Model.EditItem.MenuItemID"
+                   name="imageFile"
+                   accept="image/*"
+                   class="form-control" />
+
+            @if (!string.IsNullOrEmpty(Model.EditItem.ImagePath))
+            {
+                <div class="mt-2">
+                    <img src="@Model.EditItem.ImagePath"
+                         alt="@Model.EditItem.Name"
+                         style="max-width: 150px; max-height: 150px; border-radius: 6px;" />
+
+                    <div class="small text-muted mt-2">Huidige afbeelding</div>
+                </div>
+            }
+
+            <small class="form-text text-muted">JPG, PNG, WebP max. 10MB</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary preserve-scroll">
+                Bijwerken
+            </button>
+
+            <a href="@Url.Action("Index", "ManageMenu", new { cardId = Model.SelectedCardId, categoryId = Model.SelectedCategoryId })"
+               class="btn btn-secondary preserve-scroll">
+                Annuleren
+            </a>
+        </div>
+    </form>
+</div>
+
+@functions {
+    string GetMenuCardName(int menuCardId)
+    {
+        return menuCardId switch
+        {
+            1 => "Lunch",
+            2 => "Diner",
+            3 => "Dranken",
+            _ => "Onbekend"
+        };
+    }
+
+    string GetCategoryDisplayName(Chapeau.Models.Category category)
+    {
+        if (category.MenuCardID == 1 || category.MenuCardID == 2)
+        {
+            return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
+        }
+
+        return category.Name;
+    }
+}

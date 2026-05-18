@@ -1,0 +1,91 @@
+@model IEnumerable<Chapeau.Models.MenuItem>
+
+@{
+	ViewData["Title"] = "MenuBeheer";
+
+	int? selectedCardId = null;
+	int? selectedCategoryId = null;
+
+	if (ViewBag.SelectedCardId != null)
+	{
+		selectedCardId = Convert.ToInt32(ViewBag.SelectedCardId);
+	}
+
+	if (ViewBag.SelectedCategoryId != null)
+	{
+		selectedCategoryId = Convert.ToInt32(ViewBag.SelectedCategoryId);
+	}
+
+	var tableCategories = ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category>;
+	if (tableCategories == null)
+	{
+		tableCategories = Enumerable.Empty<Chapeau.Models.Category>();
+	}
+
+	var filterCategories = ViewBag.FilterCategories as IEnumerable<Chapeau.Models.Category>;
+	if (filterCategories == null)
+	{
+		filterCategories = tableCategories;
+	}
+
+	var menuCards = ViewBag.MenuCards as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+	if (menuCards == null)
+	{
+		menuCards = Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+	}
+
+	var editItem = ViewBag.EditItem as Chapeau.Models.MenuItem;
+
+	bool isEdit = editItem != null;
+	bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
+
+	int selectedMenuCardId = 0;
+
+	if (ViewBag.SelectedMenuCardId != null)
+	{
+		selectedMenuCardId = Convert.ToInt32(ViewBag.SelectedMenuCardId);
+	}
+
+	var formCategories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category>;
+	if (formCategories == null)
+	{
+		formCategories = Enumerable.Empty<Chapeau.Models.Category>();
+	}
+}
+
+<div class="page-content">
+
+	@await Component.InvokeAsync("ManageMenuHeader", new {
+		selectedCardId = selectedCardId,
+		selectedCategoryId = selectedCategoryId,
+		showCreate = showCreate
+	})
+
+	@await Component.InvokeAsync("ManageMenuFilter", new {
+		menuCards = menuCards,
+		filterCategories = filterCategories,
+		selectedCardId = selectedCardId,
+		selectedCategoryId = selectedCategoryId
+	})
+
+	@if (showCreate)
+	{
+		@await Component.InvokeAsync("ManageMenuCreateForm", new {
+			menuCards = menuCards,
+			formCategories = formCategories,
+			selectedCardId = selectedCardId,
+			selectedCategoryId = selectedCategoryId
+		})
+	}
+
+	@await Component.InvokeAsync("ManageMenuTable", new {
+		menuItems = Model,
+		allCategories = tableCategories,
+		editItem = editItem,
+		selectedCardId = selectedCardId,
+		selectedCategoryId = selectedCategoryId
+	})
+
+</div>
+
+<script src="~/js/manage-menu-form-filter.js"></script>

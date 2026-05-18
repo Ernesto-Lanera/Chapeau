@@ -11,6 +11,11 @@ namespace Chapeau.Constants
         public const string MenuItemDuplicateName = "Een menu-item met deze naam bestaat al.";
         public const string UpdateMenuItemAlreadyExists = "Een ander menu-item met deze naam bestaat al.";
 
+        public const string InvalidMenuCard = "Kies een geldige kaart.";
+        public const string InvalidCategory = "Kies een geldige categorie.";
+        public const string CategoryNotBelongsToCard = "Deze categorie hoort niet bij de gekozen kaart.";
+        public const string CanOnlyChangeCategoryWithinCard = "Je mag alleen een categorie kiezen binnen dezelfde kaart.";
+
         public const string EmployeeNotFound = "Medewerker niet gevonden.";
         public const string UsernameTaken = "Deze gebruikersnaam is al in gebruik. Probeer een ander.";
         public const string UpdateEmployeeActiveError = "Er is een fout opgetreden bij het bijwerken van de actieve status van de medewerker.";
@@ -25,5 +30,6 @@ namespace Chapeau.Constants
         public const string RetrieveStatusError = "Er is een fout opgetreden bij het ophalen van statussen.";
 
         public const string UnexpectedError = "Er is een onverwachte fout opgetreden. Probeer het later opnieuw.";
+        public const string ImageUploadError = "Fout bij upload van afbeelding.";
     }
 }

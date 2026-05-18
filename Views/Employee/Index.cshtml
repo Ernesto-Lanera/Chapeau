@@ -1,0 +1,66 @@
+@model IEnumerable<Chapeau.Models.Employee>
+
+@{
+	ViewData["Title"] = "MedewerkerBeheer";
+
+	var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>;
+
+	if (roles == null)
+	{
+		roles = Enumerable.Empty<Chapeau.Models.EmployeeRole>();
+	}
+
+	var editEmployee = ViewBag.EditEmployee as Chapeau.Models.Employee;
+
+	bool isEdit = editEmployee != null;
+	bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
+
+	string? draftJson = TempData["NewEmployeeDraft"] as string;
+	string draftName = "";
+	int draftRoleId = 0;
+
+	if (!string.IsNullOrWhiteSpace(draftJson))
+	{
+		try
+		{
+			using var doc = System.Text.Json.JsonDocument.Parse(draftJson);
+			var root = doc.RootElement;
+
+			if (root.TryGetProperty("Name", out var nameEl))
+			{
+				draftName = nameEl.GetString() ?? "";
+			}
+
+			if (root.TryGetProperty("RoleID", out var roleEl) && roleEl.TryGetInt32(out var rid))
+			{
+				draftRoleId = rid;
+			}
+		}
+		catch
+		{
+		}
+	}
+}
+
+@Html.Partial("_ToastMessage")
+
+<div class="page-content">
+
+	@await Component.InvokeAsync("EmployeeHeader", new { showCreate = showCreate })
+
+	@if (showCreate)
+	{
+		@await Component.InvokeAsync("EmployeeCreateForm", new {
+			roles = roles,
+			draftName = draftName,
+			draftRoleId = draftRoleId
+		})
+	}
+
+	@await Component.InvokeAsync("EmployeeTable", new {
+		employees = Model,
+		roles = roles,
+		editEmployee = editEmployee
+	})
+
+</div>
