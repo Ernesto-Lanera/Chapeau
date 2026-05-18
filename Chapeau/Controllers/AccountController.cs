@@ -1,4 +1,3 @@
-using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -68,7 +67,7 @@ namespace Chapeau.Controllers
 
             var authProperties = new AuthenticationProperties
             {
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(MenuCardConstants.SessionDurationHours)
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
             };
 
             await HttpContext.SignInAsync(

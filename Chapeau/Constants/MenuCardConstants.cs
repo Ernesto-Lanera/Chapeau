@@ -2,17 +2,26 @@ namespace Chapeau.Constants
 {
     public static class MenuCardConstants
     {
-        public const int LunchMenuCardId = 1;
-        public const int DinnerMenuCardId = 2;
-        public const int DrinksMenuCardId = 3;
+        public const int LunchCardId = 1;
+        public const int DinnerCardId = 2;
+        public const int DrinksCardId = 3;
 
-        public static int FoodMenuCard1 => LunchMenuCardId;
-        public static int FoodMenuCard2 => DinnerMenuCardId;
-        public static int DrinkMenuCard => DrinksMenuCardId;
+        public const string LunchCardName = "Lunch";
+        public const string DinnerCardName = "Diner";
+        public const string DrinksCardName = "Dranken";
 
-        public const int MinTableNumber = 1;
-        public const int MaxTableNumber = 10;
+        public static string GetMenuCardName(int menuCardId) => menuCardId switch
+        {
+            LunchCardId => LunchCardName,
+            DinnerCardId => DinnerCardName,
+            DrinksCardId => DrinksCardName,
+            _ => "Onbekend"
+        };
 
-        public const int SessionDurationHours = 8;
+        public static bool IsValidMenuCardId(int menuCardId) =>
+            menuCardId is LunchCardId or DinnerCardId or DrinksCardId;
+
+        public static IReadOnlyList<int> ValidCardIds =>
+            new[] { LunchCardId, DinnerCardId, DrinksCardId };
     }
 }

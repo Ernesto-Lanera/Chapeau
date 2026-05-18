@@ -89,11 +89,11 @@ public class OrderRepository : IOrderRepository
             using (SqlCommand command = new SqlCommand(query, connection))
             {
                 command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
-                command.Parameters.AddWithValue("@MinTable", MenuCardConstants.MinTableNumber);
-                command.Parameters.AddWithValue("@MaxTable", MenuCardConstants.MaxTableNumber);
-                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard1);
-                command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
-                command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
+                command.Parameters.AddWithValue("@MinTable", 1);
+                command.Parameters.AddWithValue("@MaxTable", 10);
+                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.LunchCardId);
+                command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.DinnerCardId);
+                command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinksCardId);
 
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
