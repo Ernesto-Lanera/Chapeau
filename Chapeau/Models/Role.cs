@@ -1,6 +1,6 @@
 namespace Chapeau.Models
 {
-    public class Role
+    public class EmployeeRole
     {
         public int RoleID { get; set; }
         public string RoleName { get; set; } = "";
