@@ -174,17 +174,24 @@ namespace Chapeau.Repositories.Menu
                     c.Name AS CategoryName,
                     c.MenuCardID
                 FROM MenuItems mi
-                INNER JOIN Categories c ON mi.CategoryID = c.CategoryID
-                WHERE mi.IsActive = 1";
+                INNER JOIN Categories c ON mi.CategoryID = c.CategoryID";
+
+            // WHERE clause gedeactiveerd - toon alle items, ook inactieve
+            var conditions = new List<string>();
 
             if (cardId.HasValue)
             {
-                query += " AND c.MenuCardID = @MenuCardID";
+                conditions.Add("c.MenuCardID = @MenuCardID");
             }
 
             if (categoryId.HasValue)
             {
-                query += " AND mi.CategoryID = @CategoryID";
+                conditions.Add("mi.CategoryID = @CategoryID");
+            }
+
+            if (conditions.Count > 0)
+            {
+                query += " WHERE " + string.Join(" AND ", conditions);
             }
 
             query += " ORDER BY c.MenuCardID, c.Name, mi.Name";
