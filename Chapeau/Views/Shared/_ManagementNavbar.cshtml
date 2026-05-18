@@ -73,6 +73,16 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                     <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Table" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Table"
+                           asp-action="Index">
+                            <i class="bi bi-grid-3x3-gap me-1"></i>
+                            Tafels
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Menu" ? "active" : "")"
                            asp-area=""
                            asp-controller="Menu"

@@ -36,29 +36,23 @@ namespace Chapeau.Services
 
         public List<Claim> CreateClaims(Employee employee)
         {
-            var claims = BuildBaseClaims(employee);
-            LoadPermissionClaims(claims, employee);
-            return claims;
-        }
+            string roleName = GetRoleName(employee.RoleID);
 
-        private static List<Claim> BuildBaseClaims(Employee employee)
-        {
-            return new List<Claim>
+            var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, employee.EmployeeID.ToString()),
-                new Claim(ClaimTypes.Name, employee.Name),
-                new Claim(ClaimTypes.GivenName, employee.Name),
-                new Claim(ClaimTypes.Role, employee.RoleID.ToString()),
+                new Claim(ClaimTypes.Name, employee.Name ?? string.Empty),
+                new Claim(ClaimTypes.GivenName, employee.Name ?? string.Empty),
+
+                new Claim(ClaimTypes.Role, roleName),
+
                 new Claim("EmployeeID", employee.EmployeeID.ToString()),
                 new Claim("EmployeeName", employee.Name ?? string.Empty),
                 new Claim("RoleID", employee.RoleID.ToString()),
                 new Claim("RoleName", roleName),
                 new Claim("IsActive", employee.IsActive.ToString())
             };
-        }
 
-        private void LoadPermissionClaims(List<Claim> claims, Employee employee)
-        {
             try
             {
                 var permissions = _roleRepository.GetRolePermissions(employee.RoleID);
@@ -68,19 +62,36 @@ namespace Chapeau.Services
                     foreach (var permission in permissions)
                     {
                         claims.Add(new Claim("Permission", permission));
+
+                        _logger.LogDebug(
+                            "Added permission claim: {Permission} for employee {EmployeeID}",
+                            permission,
+                            employee.EmployeeID
+                        );
                     }
                 }
                 else
                 {
-                    _logger.LogWarning("No permissions found in database for role {RoleID}, using defaults", employee.RoleID);
+                    _logger.LogWarning(
+                        "No permissions found in database for role {RoleID}, using defaults",
+                        employee.RoleID
+                    );
+
                     AddDefaultPermissionsForRole(claims, employee.RoleID);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to load permissions for employee {EmployeeID}, using fallback", employee.EmployeeID);
+                _logger.LogWarning(
+                    ex,
+                    "Failed to load permissions from database for employee {EmployeeID}, using fallback",
+                    employee.EmployeeID
+                );
+
                 AddDefaultPermissionsForRole(claims, employee.RoleID);
             }
+
+            return claims;
         }
 
         private string GetRoleName(int roleID)

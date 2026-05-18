@@ -91,7 +91,7 @@ public class OrderRepository : IOrderRepository
                 command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
                 command.Parameters.AddWithValue("@MinTable", MenuCardConstants.MinTableNumber);
                 command.Parameters.AddWithValue("@MaxTable", MenuCardConstants.MaxTableNumber);
-                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard1);
+                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
                 command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
                 command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
 

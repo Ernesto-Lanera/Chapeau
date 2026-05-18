@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using EmployeeModel = Chapeau.Models.Employee;
 
 namespace Chapeau.Repositories
 {
@@ -16,9 +18,9 @@ namespace Chapeau.Repositories
                 ?? throw new Exception("Database connection string is missing.");
         }
 
-        public List<Employee> GetEmployees()
+        public List<EmployeeModel> GetEmployees()
         {
-            var employees = new List<Employee>();
+            var employees = new List<EmployeeModel>();
 
             try
             {
@@ -53,7 +55,7 @@ namespace Chapeau.Repositories
             return employees;
         }
 
-        public Employee? GetEmployeeById(int employeeId)
+        public EmployeeModel? GetEmployeeById(int employeeId)
         {
             try
             {
@@ -90,7 +92,7 @@ namespace Chapeau.Repositories
             }
         }
 
-        public Employee? GetEmployeeByName(string name)
+        public EmployeeModel? GetEmployeeByName(string name)
         {
             try
             {
@@ -127,40 +129,44 @@ namespace Chapeau.Repositories
             }
         }
 
-        public async Task<Employee?> GetEmployeeByNameAsync(string name)
+        public async Task<EmployeeModel?> GetEmployeeByNameAsync(string name)
         {
             try
             {
-                using SqlConnection connection = new(_connectionString);
+                await using SqlConnection connection = new(_connectionString);
                 await connection.OpenAsync();
 
-                string query = "SELECT EmployeeID, Name, PasswordHash, RoleID, IsActive FROM Employee WHERE Name = @Name AND IsActive = 1";
-                using SqlCommand command = new(query, connection);
-                command.Parameters.AddWithValue("@Name", name);
+                string query = @"
+                    SELECT 
+                        e.EmployeeID,
+                        e.Name,
+                        e.PasswordHash,
+                        e.RoleID,
+                        e.IsActive,
+                        r.RoleName
+                    FROM Employee e
+                    INNER JOIN Roles r ON e.RoleID = r.RoleID
+                    WHERE e.Name = @Name";
 
-                using SqlDataReader reader = await command.ExecuteReaderAsync();
+                await using SqlCommand command = new(query, connection);
+                command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name;
 
-                if (await reader.ReadAsync())
+                await using SqlDataReader reader = await command.ExecuteReaderAsync();
+
+                if (!await reader.ReadAsync())
                 {
-                    return new Employee
-                    {
-                        EmployeeID = reader.GetInt32(reader.GetOrdinal("EmployeeID")),
-                        Name = reader.GetString(reader.GetOrdinal("Name")),
-                        PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
-                        RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
-                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
-                    };
+                    return null;
                 }
+
+                return MapEmployee(reader);
             }
             catch (Exception ex)
             {
-                throw new Exception($"An error occurred while retrieving employee: {ex.Message}", ex);
+                throw new Exception($"An error occurred while retrieving employee by name async: {ex.Message}", ex);
             }
-
-            return null;
         }
 
-        public void AddEmployee(Employee employee)
+        public void AddEmployee(EmployeeModel employee)
         {
             try
             {
@@ -169,7 +175,7 @@ namespace Chapeau.Repositories
 
                 string query = @"
                     INSERT INTO Employee 
-                        (Name, PasswordHash, RoleID, IsActive) 
+                        (Name, PasswordHash, RoleID, IsActive)
                     VALUES 
                         (@Name, @PasswordHash, @RoleID, @IsActive)";
 
@@ -188,7 +194,7 @@ namespace Chapeau.Repositories
             }
         }
 
-        public void UpdateEmployee(Employee employee)
+        public void UpdateEmployee(EmployeeModel employee)
         {
             try
             {
@@ -251,13 +257,13 @@ namespace Chapeau.Repositories
             }
             catch (Exception ex)
             {
-                throw new Exception($"An error occurred while updating the employee's active status: {ex.Message}", ex);
+                throw new Exception($"An error occurred while updating the employee active status: {ex.Message}", ex);
             }
         }
 
-        private static Employee MapEmployee(SqlDataReader reader)
+        private static EmployeeModel MapEmployee(SqlDataReader reader)
         {
-            return new Employee
+            return new EmployeeModel
             {
                 EmployeeID = Convert.ToInt32(reader["EmployeeID"]),
                 Name = reader["Name"].ToString() ?? string.Empty,

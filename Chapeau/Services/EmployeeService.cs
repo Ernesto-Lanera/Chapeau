@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
-using Chapeau.Models;
 using Chapeau.Repositories;
 using Chapeau.Utilities;
+using EmployeeModel = Chapeau.Models.Employee;
 
 namespace Chapeau.Services
 {
@@ -14,12 +15,12 @@ namespace Chapeau.Services
             _employeeRepository = employeeRepository;
         }
 
-        public List<Employee> GetEmployees()
+        public List<EmployeeModel> GetEmployees()
         {
             return _employeeRepository.GetEmployees();
         }
 
-        public Employee? GetEmployeeByName(string name)
+        public EmployeeModel? GetEmployeeByName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -29,14 +30,14 @@ namespace Chapeau.Services
             return _employeeRepository.GetEmployeeByName(name);
         }
 
-        public Employee? ValidateLogin(string name, string password)
+        public EmployeeModel? ValidateLogin(string name, string password)
         {
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
             {
                 return null;
             }
 
-            Employee? employee = _employeeRepository.GetEmployeeByName(name);
+            EmployeeModel? employee = _employeeRepository.GetEmployeeByName(name);
 
             if (employee == null)
             {
@@ -58,7 +59,7 @@ namespace Chapeau.Services
             return employee;
         }
 
-        public void AddEmployee(Employee employee)
+        public void AddEmployee(EmployeeModel employee)
         {
             if (employee == null)
             {
@@ -86,7 +87,7 @@ namespace Chapeau.Services
             _employeeRepository.AddEmployee(employee);
         }
 
-        public void UpdateEmployee(Employee employee)
+        public void UpdateEmployee(EmployeeModel employee)
         {
             if (employee == null)
             {
@@ -108,7 +109,7 @@ namespace Chapeau.Services
                 throw new ArgumentException("Kies een geldige rol.");
             }
 
-            Employee? existingEmployee = _employeeRepository.GetEmployeeById(employee.EmployeeID);
+            EmployeeModel? existingEmployee = _employeeRepository.GetEmployeeById(employee.EmployeeID);
 
             if (existingEmployee == null)
             {
