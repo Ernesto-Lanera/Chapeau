@@ -17,6 +17,7 @@ namespace Chapeau.Services
             _webHostEnvironment = webHostEnvironment;
         }
 
+        // Upload afbeelding naar server met validatie
         public async Task<(bool Success, string? Path, string? ErrorMessage)> UploadImageAsync(IFormFile? file)
         {
             if (file == null || file.Length == 0)

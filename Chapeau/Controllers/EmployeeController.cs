@@ -15,25 +15,20 @@ namespace Chapeau.Controllers
         private const string FlashSuccessKey = "FlashSuccess";
         private const string NewEmployeeDraftKey = "NewEmployeeDraft";
 
+        // Toont alle medewerkers met edit optie
         public IActionResult Index(int? editId, bool showCreate = false)
         {
             var employees = _employeeService.GetEmployees();
-
             ViewBag.Roles = GetRolesSafe();
-
-            ViewBag.EditEmployee = null;
-            ViewBag.IsEdit = false;
             ViewBag.ShowCreate = showCreate;
 
             if (editId.HasValue)
             {
-                var employee = employees.FirstOrDefault(e => e.EmployeeID == editId.Value);
-
+                var employee = employees.FirstOrDefault(e => e.EmployeeID == editId);
                 if (employee != null)
                 {
                     ViewBag.EditEmployee = employee;
                     ViewBag.IsEdit = true;
-                    ViewBag.ShowCreate = false;
                 }
                 else
                 {
@@ -53,12 +48,13 @@ namespace Chapeau.Controllers
             });
         }
 
+        // Maakt nieuwe medewerker aan
         [HttpPost]
         public IActionResult Create(Employee employee)
         {
             employee.IsActive = true;
 
-            ValidateEmployeeForCreate(employee);
+            ValidateEmployee(employee, isNew: true);
 
             if (!ModelState.IsValid)
             {
@@ -120,6 +116,7 @@ namespace Chapeau.Controllers
             });
         }
 
+        // Werkt medewerker bij
         [HttpPost]
         public IActionResult Edit(Employee employee)
         {
@@ -141,7 +138,7 @@ namespace Chapeau.Controllers
                 employee.PasswordHash = existingEmployee.PasswordHash;
             }
 
-            ValidateEmployeeForEdit(employee);
+            ValidateEmployee(employee, isNew: false);
 
             if (!ModelState.IsValid)
             {
@@ -181,6 +178,7 @@ namespace Chapeau.Controllers
             }
         }
 
+        // Zet medewerker status aan/uit
         [HttpPost]
         public IActionResult ToggleActive(int id, bool active)
         {
@@ -200,49 +198,22 @@ namespace Chapeau.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private void ValidateEmployeeForCreate(Employee employee)
+        // Valideert medwerkerinvoer
+        private void ValidateEmployee(Employee employee, bool isNew)
         {
             var roles = GetRolesSafe();
 
             if (string.IsNullOrWhiteSpace(employee.Name))
-            {
                 ModelState.AddModelError(nameof(Employee.Name), "Naam is verplicht.");
-            }
 
-            if (employee.RoleID <= 0)
-            {
+            if (employee.RoleID <= 0 || !roles.Any(r => r.RoleID == employee.RoleID))
                 ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
-            }
-            else if (!roles.Any(r => r.RoleID == employee.RoleID))
-            {
-                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een rol uit de lijst.");
-            }
 
-            if (string.IsNullOrWhiteSpace(employee.PasswordHash))
-            {
+            if (isNew && string.IsNullOrWhiteSpace(employee.PasswordHash))
                 ModelState.AddModelError(nameof(Employee.PasswordHash), "Wachtwoord/Pincode is verplicht.");
-            }
         }
 
-        private void ValidateEmployeeForEdit(Employee employee)
-        {
-            var roles = GetRolesSafe();
-
-            if (string.IsNullOrWhiteSpace(employee.Name))
-            {
-                ModelState.AddModelError(nameof(Employee.Name), "Naam is verplicht.");
-            }
-
-            if (employee.RoleID <= 0)
-            {
-                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
-            }
-            else if (!roles.Any(r => r.RoleID == employee.RoleID))
-            {
-                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een rol uit de lijst.");
-            }
-        }
-
+        // Haalt rollen veilig op
         private List<EmployeeRole> GetRolesSafe()
         {
             try
@@ -256,6 +227,7 @@ namespace Chapeau.Controllers
             }
         }
 
+        // Verzamelt validatie fouten
         private string GetModelStateErrors()
         {
             var errors = ModelState.Values
