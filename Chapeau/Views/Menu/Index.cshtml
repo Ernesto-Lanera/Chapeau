@@ -1,8 +1,8 @@
 ﻿@model IEnumerable<Chapeau.Models.MenuItem>
 
-<link rel="stylesheet" href="~/css/pos-layout.css" />
+<div class="container-fluid d-flex flex-column overflow-hidden bg-light p-0" style="height: calc(100vh - 75px);">
 
-<div class="pos-master-container">
+
     
     <div class="d-flex align-items-center bg-white border-bottom p-2 shadow-sm z-1 m-0 flex-shrink-0">
         <div class="d-flex align-items-center gap-3 overflow-x-auto text-nowrap w-100 hide-scrollbar">
@@ -106,7 +106,7 @@
         </div>
 
     </div>
-</div>
+
 
 @section Scripts {
     <script src="~/js/MenuFilter.js"></script>
