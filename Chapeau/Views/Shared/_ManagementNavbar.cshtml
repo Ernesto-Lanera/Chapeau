@@ -102,6 +102,16 @@
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Payment" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Payment"
+                           asp-action="Index">
+                            <i class="bi bi-cash me-1"></i>
+                            Betaling
+                        </a>
+                    </li>
+
                 </ul>
             }
             else if (User.Identity?.IsAuthenticated == true &&
