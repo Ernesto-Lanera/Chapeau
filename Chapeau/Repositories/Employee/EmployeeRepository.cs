@@ -261,6 +261,20 @@ namespace Chapeau.Repositories
             }
         }
 
+        public bool TestConnection()
+        {
+            try
+            {
+                using SqlConnection connection = new(_connectionString);
+                connection.Open();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static EmployeeModel MapEmployee(SqlDataReader reader)
         {
             return new EmployeeModel

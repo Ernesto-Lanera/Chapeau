@@ -12,10 +12,12 @@ namespace Chapeau.Services
     public class AuthService : IAuthService
     {
         private readonly EmployeeRepository _employeeRepository;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(EmployeeRepository employeeRepository)
+        public AuthService(EmployeeRepository employeeRepository, ILogger<AuthService> logger)
         {
             _employeeRepository = employeeRepository;
+            _logger = logger;
         }
 
         public async Task<Employee?> AuthenticateAsync(string username, string password)
@@ -31,7 +33,7 @@ namespace Chapeau.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AUTH] Error: {ex.Message}");
+                _logger.LogError(ex, "Authentication failed for user {Username}", username);
             }
 
             return null;

@@ -1,3 +1,4 @@
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Repositories;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -24,10 +25,8 @@ namespace Chapeau.Services
 
         public ClaimsPrincipal CreateClaimsPrincipal(Employee employee)
         {
-            var claims = CreateClaims(employee);
-
             var claimsIdentity = new ClaimsIdentity(
-                claims,
+                CreateClaims(employee),
                 CookieAuthenticationDefaults.AuthenticationScheme
             );
 
@@ -38,37 +37,38 @@ namespace Chapeau.Services
         {
             string roleName = GetRoleName(employee.RoleID);
 
-            var claims = new List<Claim>
+            var claims = BuildBaseClaims(employee, roleName);
+
+            AddPermissionClaims(claims, employee);
+
+            return claims;
+        }
+
+        private static List<Claim> BuildBaseClaims(Employee employee, string roleName)
+        {
+            return new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, employee.EmployeeID.ToString()),
                 new Claim(ClaimTypes.Name, employee.Name ?? string.Empty),
                 new Claim(ClaimTypes.GivenName, employee.Name ?? string.Empty),
-
                 new Claim(ClaimTypes.Role, roleName),
-
-                new Claim("EmployeeID", employee.EmployeeID.ToString()),
-                new Claim("EmployeeName", employee.Name ?? string.Empty),
-                new Claim("RoleID", employee.RoleID.ToString()),
-                new Claim("RoleName", roleName),
-                new Claim("IsActive", employee.IsActive.ToString())
+                new Claim(ClaimTypeConstants.EmployeeId, employee.EmployeeID.ToString()),
+                new Claim(ClaimTypeConstants.EmployeeName, employee.Name ?? string.Empty),
+                new Claim(ClaimTypeConstants.RoleId, employee.RoleID.ToString()),
+                new Claim(ClaimTypeConstants.RoleName, roleName),
+                new Claim(ClaimTypeConstants.IsActive, employee.IsActive.ToString())
             };
+        }
 
+        private void AddPermissionClaims(List<Claim> claims, Employee employee)
+        {
             try
             {
                 var permissions = _roleRepository.GetRolePermissions(employee.RoleID);
 
                 if (permissions.Any())
                 {
-                    foreach (var permission in permissions)
-                    {
-                        claims.Add(new Claim("Permission", permission));
-
-                        _logger.LogDebug(
-                            "Added permission claim: {Permission} for employee {EmployeeID}",
-                            permission,
-                            employee.EmployeeID
-                        );
-                    }
+                    AddPermissionClaimsFromList(claims, permissions, employee);
                 }
                 else
                 {
@@ -90,67 +90,41 @@ namespace Chapeau.Services
 
                 AddDefaultPermissionsForRole(claims, employee.RoleID);
             }
-
-            return claims;
         }
 
-        private string GetRoleName(int roleID)
+        private void AddPermissionClaimsFromList(List<Claim> claims, List<string> permissions, Employee employee)
+        {
+            foreach (var permission in permissions)
+            {
+                claims.Add(new Claim(ClaimTypeConstants.Permission, permission));
+
+                _logger.LogDebug(
+                    "Added permission claim: {Permission} for employee {EmployeeID}",
+                    permission,
+                    employee.EmployeeID
+                );
+            }
+        }
+
+        private static string GetRoleName(int roleID)
         {
             return roleID switch
             {
-                1 => "Manager",
-                3 => "Bediening",
-                4 => "Keuken",
-                5 => "Barman",
-                _ => "Onbekend"
+                RoleConstants.ManagerId => RoleConstants.ManagerName,
+                RoleConstants.BedieningId => RoleConstants.BedieningName,
+                RoleConstants.KeukenId => RoleConstants.KeukenName,
+                RoleConstants.BarmanId => RoleConstants.BarmanName,
+                _ => RoleConstants.UnknownName
             };
         }
 
         private void AddDefaultPermissionsForRole(List<Claim> claims, int roleID)
         {
-            List<string> permissions = roleID switch
-            {
-                1 => new List<string>
-                {
-                    "ViewMenu",
-                    "TakeOrders",
-                    "PrepareFood",
-                    "PrepareDrinks",
-                    "ManageEmployees",
-                    "ManageMenuItems",
-                    "ManageStock",
-                    "ViewReports",
-                    "ManageRoles",
-                    "ViewFinance"
-                },
-
-                3 => new List<string>
-                {
-                    "ViewMenu",
-                    "TakeOrders"
-                },
-
-                4 => new List<string>
-                {
-                    "ViewMenu",
-                    "PrepareFood"
-                },
-
-                5 => new List<string>
-                {
-                    "ViewMenu",
-                    "PrepareDrinks"
-                },
-
-                _ => new List<string>
-                {
-                    "ViewMenu"
-                }
-            };
+            var permissions = GetDefaultPermissions(roleID);
 
             foreach (var permission in permissions)
             {
-                claims.Add(new Claim("Permission", permission));
+                claims.Add(new Claim(ClaimTypeConstants.Permission, permission));
 
                 _logger.LogDebug(
                     "Added default permission claim: {Permission} for role {RoleID}",
@@ -158,6 +132,49 @@ namespace Chapeau.Services
                     roleID
                 );
             }
+        }
+
+        private static List<string> GetDefaultPermissions(int roleID)
+        {
+            return roleID switch
+            {
+                RoleConstants.ManagerId => new List<string>
+                {
+                    PermissionConstants.ViewMenu,
+                    PermissionConstants.TakeOrders,
+                    PermissionConstants.PrepareFood,
+                    PermissionConstants.PrepareDrinks,
+                    PermissionConstants.ManageEmployees,
+                    PermissionConstants.ManageMenuItems,
+                    PermissionConstants.ManageStock,
+                    PermissionConstants.ViewReports,
+                    PermissionConstants.ManageRoles,
+                    PermissionConstants.ViewFinance
+                },
+
+                RoleConstants.BedieningId => new List<string>
+                {
+                    PermissionConstants.ViewMenu,
+                    PermissionConstants.TakeOrders
+                },
+
+                RoleConstants.KeukenId => new List<string>
+                {
+                    PermissionConstants.ViewMenu,
+                    PermissionConstants.PrepareFood
+                },
+
+                RoleConstants.BarmanId => new List<string>
+                {
+                    PermissionConstants.ViewMenu,
+                    PermissionConstants.PrepareDrinks
+                },
+
+                _ => new List<string>
+                {
+                    PermissionConstants.ViewMenu
+                }
+            };
         }
     }
 }

@@ -1,3 +1,5 @@
+using Chapeau.Constants;
+using Chapeau.Extensions;
 using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -23,32 +25,32 @@ namespace Chapeau.Controllers
         public IActionResult Login(string? returnUrl = null)
         {
             if (User?.Identity?.IsAuthenticated ?? false)
-            {
-                if (User.IsInRole("Manager") || User.HasClaim("RoleID", "1"))
-                {
-                    return RedirectToAction("Index", "ManageMenu");
-                }
-
-                if (User.IsInRole("Bediening") || User.HasClaim("RoleID", "3"))
-                {
-                    return RedirectToAction("Index", "Menu");
-                }
-
-                if (User.IsInRole("Keuken") || User.HasClaim("RoleID", "4"))
-                {
-                    return RedirectToAction("Index", "Kitchen");
-                }
-
-                if (User.IsInRole("Barman") || User.HasClaim("RoleID", "5"))
-                {
-                    return RedirectToAction("Index", "Bar");
-                }
-
-                return RedirectToAction("Index", "Home");
-            }
+                return GetRedirectForAuthenticatedUser();
 
             ViewData["ReturnUrl"] = returnUrl;
             return View();
+        }
+
+        private IActionResult GetRedirectForAuthenticatedUser()
+        {
+            foreach (var (roleId, controller) in GetRoleRedirects())
+            {
+                if (User.HasClaim(ClaimTypeConstants.RoleId, roleId))
+                    return RedirectToAction("Index", controller);
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        private static (string, string)[] GetRoleRedirects()
+        {
+            return new[]
+            {
+                (RoleConstants.ManagerId.ToString(), "ManageMenu"),
+                (RoleConstants.BedieningId.ToString(), "Menu"),
+                (RoleConstants.KeukenId.ToString(), "Kitchen"),
+                (RoleConstants.BarmanId.ToString(), "Bar")
+            };
         }
 
         [HttpPost]
@@ -58,25 +60,31 @@ namespace Chapeau.Controllers
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             var employee = await _authService.AuthenticateAsync(model.Name, model.Password);
 
             if (employee == null)
             {
-                ModelState.AddModelError(string.Empty, "Ongeldige naam of wachtwoord.");
+                ModelState.AddModelError(string.Empty, AuthConstants.InvalidCredentialsError);
                 return View(model);
             }
 
+            await SignInUserAsync(employee, model.RememberMe);
+
+            if (IsValidReturnUrl(returnUrl)) return Redirect(returnUrl);
+
+            return RedirectToDashboard(employee.RoleID);
+        }
+
+        private async Task SignInUserAsync(Employee employee, bool isPersistent)
+        {
             var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = model.RememberMe,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                IsPersistent = isPersistent,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(AuthConstants.SessionDurationHours)
             };
 
             await HttpContext.SignInAsync(
@@ -84,35 +92,26 @@ namespace Chapeau.Controllers
                 claimsPrincipal,
                 authProperties
             );
+        }
 
-            if (!string.IsNullOrWhiteSpace(returnUrl) &&
-                Url.IsLocalUrl(returnUrl) &&
-                !returnUrl.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase))
+        private static bool IsValidReturnUrl(string? returnUrl)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl)
+                && Uri.TryCreate(returnUrl, UriKind.Relative, out _);
+        }
+
+        private static IActionResult RedirectToDashboard(int roleId)
+        {
+            string controller = roleId switch
             {
-                return Redirect(returnUrl);
-            }
+                RoleConstants.ManagerId => "ManageMenu",
+                RoleConstants.BedieningId => "Menu",
+                RoleConstants.KeukenId => "Kitchen",
+                RoleConstants.BarmanId => "Bar",
+                _ => "Home"
+            };
 
-            if (employee.RoleID == 1)
-            {
-                return RedirectToAction("Index", "ManageMenu");
-            }
-
-            if (employee.RoleID == 3)
-            {
-                return RedirectToAction("Index", "Menu");
-            }
-
-            if (employee.RoleID == 4)
-            {
-                return RedirectToAction("Index", "Kitchen");
-            }
-
-            if (employee.RoleID == 5)
-            {
-                return RedirectToAction("Index", "Bar");
-            }
-
-            return RedirectToAction("Index", "Home");
+            return new RedirectToActionResult("Index", controller, null);
         }
 
         [HttpPost]

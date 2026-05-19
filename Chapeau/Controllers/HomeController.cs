@@ -1,48 +1,37 @@
 using Chapeau.Constants;
-using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 
 namespace Chapeau.Controllers
 {
-    public class HomeController(IConfiguration configuration, EmployeeService employeeService) : Controller
+    public class HomeController(EmployeeService employeeService) : Controller
     {
-        private readonly IConfiguration _configuration = configuration;
         private readonly EmployeeService _employeeService = employeeService;
 
         public IActionResult Index()
         {
-            SetDatabaseStatus();
+            string dbStatus = GetDatabaseStatus();
 
+            ViewBag.DbStatus = dbStatus;
             return View();
+        }
+
+        private string GetDatabaseStatus()
+        {
+            bool isConnected = _employeeService.TestConnection();
+
+            return isConnected
+                ? AuthConstants.DatabaseConnected
+                : AuthConstants.DatabaseNotConnectedPrefix + "Controleer de verbindingsreeks.";
         }
 
         public IActionResult Privacy()
         {
             return View();
-        }
-
-        private void SetDatabaseStatus()
-        {
-            try
-            {
-                string connectionString = _configuration.GetConnectionString("ChapeauDatabaseSQL")
-                    ?? throw new InvalidOperationException("Connection string 'ChapeauDatabaseSQL' ontbreekt.");
-
-                using SqlConnection connection = new(connectionString);
-                connection.Open();
-
-                ViewBag.DbStatus = "Verbonden met de database.";
-            }
-            catch (Exception ex)
-            {
-                ViewBag.DbStatus = $"Niet verbonden met de database: {ex.Message}";
-            }
         }
 
         [AllowAnonymous]

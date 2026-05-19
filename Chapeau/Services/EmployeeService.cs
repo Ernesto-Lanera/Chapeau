@@ -128,6 +128,11 @@ namespace Chapeau.Services
             _employeeRepository.UpdateEmployee(employee);
         }
 
+        public bool TestConnection()
+        {
+            return _employeeRepository.TestConnection();
+        }
+
         public void SetEmployeeActive(int id, bool active)
         {
             if (id <= 0)
