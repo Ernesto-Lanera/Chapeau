@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
 using Chapeau.Repositories;
 using Chapeau.Utilities;
 using EmployeeModel = Chapeau.Models.Employee;
 
-namespace Chapeau.Services
+namespace Chapeau.Services.Overview
 {
     public class EmployeeService
     {
@@ -136,6 +134,11 @@ namespace Chapeau.Services
             }
 
             _employeeRepository.SetEmployeeActive(id, active);
+        }
+
+        public bool TestConnection()
+        {
+            return _employeeRepository.TestConnection();
         }
 
         private static bool IsAlreadyHashed(string password)

@@ -1,0 +1,15 @@
+@model HomeViewModel
+
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welkom bij Chapeau</h1>
+
+    <div class="alert @(Model.IsDatabaseConnected ? "alert-success" : "alert-danger") mt-4">
+        <strong>Database status:</strong> @Model.DatabaseStatus
+    </div>
+
+    <p>Chapeau is uw beheerplatform voor menu's en voorraden.</p>
+</div>

@@ -1,48 +1,35 @@
-using Chapeau.Constants;
-using Chapeau.Models;
-using Chapeau.Services;
+using Chapeau.Services.Overview;
 using Chapeau.ViewModels;
+using Chapeau.ViewModels.Overview;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 
 namespace Chapeau.Controllers
 {
-    public class HomeController(IConfiguration configuration, EmployeeService employeeService) : Controller
+    public class HomeController(EmployeeService employeeService) : Controller
     {
-        private readonly IConfiguration _configuration = configuration;
         private readonly EmployeeService _employeeService = employeeService;
 
         public IActionResult Index()
         {
-            SetDatabaseStatus();
+            bool isConnected = _employeeService.TestConnection();
 
-            return View();
+            var viewModel = new HomeViewModel
+            {
+                IsDatabaseConnected = isConnected,
+                DatabaseStatus = isConnected
+                    ? "Verbonden met de database."
+                    : "Niet verbonden met de database: Controleer de verbindingsreeks."
+            };
+
+            return View(viewModel);
         }
 
         public IActionResult Privacy()
         {
             return View();
-        }
-
-        private void SetDatabaseStatus()
-        {
-            try
-            {
-                string connectionString = _configuration.GetConnectionString("ChapeauDatabaseSQL")
-                    ?? throw new InvalidOperationException("Connection string 'ChapeauDatabaseSQL' ontbreekt.");
-
-                using SqlConnection connection = new(connectionString);
-                connection.Open();
-
-                ViewBag.DbStatus = "Verbonden met de database.";
-            }
-            catch (Exception ex)
-            {
-                ViewBag.DbStatus = $"Niet verbonden met de database: {ex.Message}";
-            }
         }
 
         [AllowAnonymous]

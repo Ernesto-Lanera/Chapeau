@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Permissies Bewerken";
+
+    var role = ViewBag.Role as Chapeau.Models.EmployeeRole;
+    var allPermissions = ViewBag.AllPermissions as List<string> ?? new List<string>();
+    var currentPermissions = ViewBag.CurrentPermissions as List<string> ?? new List<string>();
+}
+
+<partial name="_ToastMessage" />
+
+<div class="page-content">
+    <div class="page-title-row">
+        <h2 class="page-title">Permissies voor @role?.RoleName</h2>
+
+        <a href="@Url.Action("Index", "RolePermissions")"
+           class="btn-close-form">
+            Terug
+        </a>
+    </div>
+
+    <div class="form-card">
+        <form method="post"
+              action="@Url.Action("Edit", "RolePermissions", new { id = role?.RoleID })">
+
+            @Html.AntiForgeryToken()
+
+            <div class="permission-checklist">
+                @foreach (var permission in allPermissions)
+                {
+                    bool isChecked = currentPermissions.Contains(permission);
+
+                    <div class="form-check mb-2">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               name="selectedPermissions"
+                               value="@permission"
+                               id="perm_@permission"
+                               @(isChecked ? "checked=\"checked\"" : "") />
+                        <label class="form-check-label" for="perm_@permission">
+                            @permission
+                        </label>
+                    </div>
+                }
+            </div>
+
+            <div class="form-actions mt-3">
+                <button type="submit" class="btn btn-primary">
+                    Opslaan
+                </button>
+
+                <a href="@Url.Action("Index", "RolePermissions")"
+                   class="btn btn-secondary">
+                    Annuleren
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
