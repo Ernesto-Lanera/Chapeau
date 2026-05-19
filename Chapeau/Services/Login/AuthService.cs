@@ -2,7 +2,7 @@ using Chapeau.Models;
 using Chapeau.Repositories;
 using Chapeau.Utilities;
 
-namespace Chapeau.Services
+namespace Chapeau.Services.Login
 {
     public interface IAuthService
     {

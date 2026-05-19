@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Chapeau.Models
+namespace Chapeau.Models.Login
 {
     public class LoginViewModel
     {
@@ -12,5 +12,9 @@ namespace Chapeau.Models
         public string Password { get; set; } = string.Empty;
 
         public bool RememberMe { get; set; }
+
+        public string? ReturnUrl { get; set; }
+
+        public string? ErrorMessage { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-namespace Chapeau.Constants
+namespace Chapeau.Constants.Login
 {
     public static class RoleConstants
     {

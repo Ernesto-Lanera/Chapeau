@@ -1,7 +1,7 @@
-using Chapeau.Constants;
+using Chapeau.Constants.Login;
 using Chapeau.Extensions;
 using Chapeau.Models;
-using Chapeau.Services;
+using Chapeau.Services.Login;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -13,11 +13,16 @@ namespace Chapeau.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IClaimsService _claimsService;
+        private readonly IDashboardRouterService _dashboardRouter;
 
-        public AccountController(IAuthService authService, IClaimsService claimsService)
+        public AccountController(
+            IAuthService authService,
+            IClaimsService claimsService,
+            IDashboardRouterService dashboardRouter)
         {
             _authService = authService;
             _claimsService = claimsService;
+            _dashboardRouter = dashboardRouter;
         }
 
         [HttpGet]
@@ -25,56 +30,38 @@ namespace Chapeau.Controllers
         public IActionResult Login(string? returnUrl = null)
         {
             if (User?.Identity?.IsAuthenticated ?? false)
-                return GetRedirectForAuthenticatedUser();
-
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
-        }
-
-        private IActionResult GetRedirectForAuthenticatedUser()
-        {
-            foreach (var (roleId, controller) in GetRoleRedirects())
             {
-                if (User.HasClaim(ClaimTypeConstants.RoleId, roleId))
-                    return RedirectToAction("Index", controller);
+                var controller = _dashboardRouter.GetDashboardControllerFromClaim(
+                    User.FindFirst(ClaimTypeConstants.RoleId)?.Value);
+
+                return RedirectToAction("Index", controller);
             }
 
-            return RedirectToAction("Index", "Home");
-        }
-
-        private static (string, string)[] GetRoleRedirects()
-        {
-            return new[]
-            {
-                (RoleConstants.ManagerId.ToString(), "ManageMenu"),
-                (RoleConstants.BedieningId.ToString(), "Menu"),
-                (RoleConstants.KeukenId.ToString(), "Kitchen"),
-                (RoleConstants.BarmanId.ToString(), "Bar")
-            };
+            return View(new Models.Login.LoginViewModel { ReturnUrl = returnUrl });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> Login(Models.Login.LoginViewModel model)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
             if (!ModelState.IsValid) return View(model);
 
             var employee = await _authService.AuthenticateAsync(model.Name, model.Password);
 
             if (employee == null)
             {
-                ModelState.AddModelError(string.Empty, AuthConstants.InvalidCredentialsError);
+                model.ErrorMessage = AuthConstants.InvalidCredentialsError;
+                ModelState.AddModelError(string.Empty, model.ErrorMessage);
                 return View(model);
             }
 
             await SignInUserAsync(employee, model.RememberMe);
 
-            if (IsValidReturnUrl(returnUrl)) return Redirect(returnUrl);
+            if (IsValidReturnUrl(model.ReturnUrl)) return Redirect(model.ReturnUrl);
 
-            return RedirectToDashboard(employee.RoleID);
+            var controller = _dashboardRouter.GetDashboardController(employee.RoleID);
+            return RedirectToAction("Index", controller);
         }
 
         private async Task SignInUserAsync(Employee employee, bool isPersistent)
@@ -98,20 +85,6 @@ namespace Chapeau.Controllers
         {
             return !string.IsNullOrWhiteSpace(returnUrl)
                 && Uri.TryCreate(returnUrl, UriKind.Relative, out _);
-        }
-
-        private static IActionResult RedirectToDashboard(int roleId)
-        {
-            string controller = roleId switch
-            {
-                RoleConstants.ManagerId => "ManageMenu",
-                RoleConstants.BedieningId => "Menu",
-                RoleConstants.KeukenId => "Kitchen",
-                RoleConstants.BarmanId => "Bar",
-                _ => "Home"
-            };
-
-            return new RedirectToActionResult("Index", controller, null);
         }
 
         [HttpPost]

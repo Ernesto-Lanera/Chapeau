@@ -1,10 +1,10 @@
-using Chapeau.Constants;
+using Chapeau.Constants.Login;
 using Chapeau.Models;
 using Chapeau.Repositories;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 
-namespace Chapeau.Services
+namespace Chapeau.Services.Login
 {
     public interface IClaimsService
     {

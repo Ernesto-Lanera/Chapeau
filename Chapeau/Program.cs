@@ -22,6 +22,12 @@ namespace Chapeau
                     .Build();
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
             });
+
+            builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
+            {
+                options.ViewLocationFormats.Add("Views/Login/{0}.cshtml");
+                options.ViewLocationFormats.Add("Views/Overview/{0}.cshtml");
+            });
             builder.Services.AddLogging();
 
             // Add Response Compression
@@ -89,12 +95,14 @@ namespace Chapeau
 
             // Register Services
             builder.Services.AddScoped<Services.MenuService>();
-            builder.Services.AddScoped<Services.EmployeeService>();
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
 
-            builder.Services.AddScoped<Services.IAuthService, Services.AuthService>();
-            builder.Services.AddScoped<Services.IClaimsService, Services.ClaimsService>();
+            builder.Services.AddScoped<Services.Login.IAuthService, Services.Login.AuthService>();
+            builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
+            builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
+
+            builder.Services.AddScoped<Services.Overview.EmployeeService>();
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())

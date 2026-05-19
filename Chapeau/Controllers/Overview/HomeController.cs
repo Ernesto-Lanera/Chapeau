@@ -1,6 +1,6 @@
-using Chapeau.Constants;
-using Chapeau.Services;
+using Chapeau.Services.Overview;
 using Chapeau.ViewModels;
+using Chapeau.ViewModels.Overview;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -14,19 +14,17 @@ namespace Chapeau.Controllers
 
         public IActionResult Index()
         {
-            string dbStatus = GetDatabaseStatus();
-
-            ViewBag.DbStatus = dbStatus;
-            return View();
-        }
-
-        private string GetDatabaseStatus()
-        {
             bool isConnected = _employeeService.TestConnection();
 
-            return isConnected
-                ? AuthConstants.DatabaseConnected
-                : AuthConstants.DatabaseNotConnectedPrefix + "Controleer de verbindingsreeks.";
+            var viewModel = new HomeViewModel
+            {
+                IsDatabaseConnected = isConnected,
+                DatabaseStatus = isConnected
+                    ? "Verbonden met de database."
+                    : "Niet verbonden met de database: Controleer de verbindingsreeks."
+            };
+
+            return View(viewModel);
         }
 
         public IActionResult Privacy()
