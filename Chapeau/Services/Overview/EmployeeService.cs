@@ -28,35 +28,6 @@ namespace Chapeau.Services.Overview
             return _employeeRepository.GetEmployeeByName(name);
         }
 
-        public EmployeeModel? ValidateLogin(string name, string password)
-        {
-            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
-            {
-                return null;
-            }
-
-            EmployeeModel? employee = _employeeRepository.GetEmployeeByName(name);
-
-            if (employee == null)
-            {
-                return null;
-            }
-
-            if (!employee.IsActive)
-            {
-                return null;
-            }
-
-            bool passwordIsValid = PasswordHasher.VerifyPassword(password, employee.PasswordHash);
-
-            if (!passwordIsValid)
-            {
-                return null;
-            }
-
-            return employee;
-        }
-
         public void AddEmployee(EmployeeModel employee)
         {
             if (employee == null)
