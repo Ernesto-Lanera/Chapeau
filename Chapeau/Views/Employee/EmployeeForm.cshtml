@@ -1,96 +1,108 @@
 ﻿@model Chapeau.Models.Employee
 
 @{
-    bool isEdit = false;
+    bool isEdit = ViewBag.IsEdit != null && (bool)ViewBag.IsEdit;
 
-    if (ViewBag.IsEdit != null)
-    {
-        isEdit = (bool)ViewBag.IsEdit;
-    }
+    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>
+        ?? Enumerable.Empty<Chapeau.Models.EmployeeRole>();
 
-    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>;
-
-    if (roles == null)
-    {
-        roles = Enumerable.Empty<Chapeau.Models.EmployeeRole>();
-    }
-
-    string formAction = isEdit ? "Update" : "Create";
+    string formAction = isEdit ? "Edit" : "Create";
     string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
-    string buttonClass = "btn-primary";
+    string passwordPlaceholder = isEdit
+        ? "Nieuw wachtwoord/pincode, leeg laten = behouden"
+        : "Wachtwoord/pincode";
 }
 
-<form method="post" action="@Url.Action(formAction, "Employee")">
+<form asp-controller="Employee"
+      asp-action="@formAction"
+      method="post"
+      class="employee-form preserve-scroll-form">
+
+    @Html.AntiForgeryToken()
+
     @if (isEdit)
     {
-        <input type="hidden" name="EmployeeID" value="@Model.EmployeeID" />
-        <input type="hidden" name="IsActive" value="@Model.IsActive.ToString().ToLower()" />
+        <input type="hidden" asp-for="EmployeeID" />
+        <input type="hidden" asp-for="IsActive" />
     }
     else
     {
         <input type="hidden" name="IsActive" value="true" />
     }
 
-    <div class="row g-3">
-        <div class="col-md-6">
-            <input type="text"
-                   name="Name"
-                   value="@Model.Name"
-                   class="form-control"
-                   placeholder="Naam"
-                   required="required" />
+    <div class="employee-form-grid">
+        <div class="form-group">
+            <label asp-for="Name" class="form-label">Naam</label>
 
-            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+            <input asp-for="Name"
+                   class="form-control"
+                   placeholder="Bijvoorbeeld: Jan Jansen"
+                   autocomplete="name"
+                   required />
+
+            <span asp-validation-for="Name" class="text-danger"></span>
         </div>
 
-        <div class="col-md-6">
+        <div class="form-group">
+            <label for="PasswordHash" class="form-label">
+                @(isEdit ? "Nieuw wachtwoord/pincode" : "Wachtwoord/pincode")
+            </label>
+
             @if (isEdit)
             {
                 <input type="password"
+                       id="PasswordHash"
                        name="PasswordHash"
-                       value=""
                        class="form-control"
-                       placeholder="Nieuw wachtwoord/pincode, leeg laten = behouden" />
+                       placeholder="@passwordPlaceholder"
+                       autocomplete="new-password" />
             }
             else
             {
                 <input type="password"
+                       id="PasswordHash"
                        name="PasswordHash"
-                       value=""
                        class="form-control"
-                       placeholder="Wachtwoord/pincode"
-                       required="required" />
+                       placeholder="@passwordPlaceholder"
+                       autocomplete="new-password"
+                       required />
             }
 
-            @Html.ValidationMessageFor(m => m.PasswordHash, "", new { @class = "text-danger" })
+            <span asp-validation-for="PasswordHash" class="text-danger"></span>
+
+            @if (isEdit)
+            {
+                <small class="form-text text-muted">
+                    Laat dit veld leeg als het bestaande wachtwoord behouden moet blijven.
+                </small>
+            }
         </div>
 
-        <div class="col-md-6">
-            <select name="RoleID" class="form-select" required="required">
-                <option value="">Kies rol</option>
+        <div class="form-group">
+            <label asp-for="RoleID" class="form-label">Rol</label>
+
+            <select asp-for="RoleID" class="form-select" required>
+                <option value="">-- Selecteer rol --</option>
 
                 @foreach (var role in roles)
                 {
-                    if (Model.RoleID == role.RoleID)
-                    {
-                        <option value="@role.RoleID" selected="selected">@role.RoleName</option>
-                    }
-                    else
-                    {
-                        <option value="@role.RoleID">@role.RoleName</option>
-                    }
+                    <option value="@role.RoleID">
+                        @role.RoleName
+                    </option>
                 }
             </select>
 
-            @Html.ValidationMessageFor(m => m.RoleID, "", new { @class = "text-danger" })
+            <span asp-validation-for="RoleID" class="text-danger"></span>
         </div>
 
-        <div class="col-12">
-            <button type="submit" class="btn @buttonClass">
+        <div class="employee-form-actions">
+            <button type="submit" class="btn btn-primary">
                 @buttonText
             </button>
 
-            <a href="@Url.Action("Index", "Employee")" class="btn btn-secondary">
+            <a asp-controller="Employee"
+               asp-action="Index"
+               class="btn btn-secondary preserve-scroll">
                 Annuleren
             </a>
         </div>

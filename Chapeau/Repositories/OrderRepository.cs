@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Repositories;
 using Chapeau.Emums;
+using System.Linq;
 
 public class OrderRepository : IOrderRepository
 {
@@ -15,7 +17,7 @@ public class OrderRepository : IOrderRepository
         _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
         ?? throw new Exception("Database connection string is missing.");
     }
-    //running orders van mart, niet aan komen carlo
+
     public List<Order> GetRunningOrders()
     {
         List<Order> orders = new List<Order>();
@@ -38,16 +40,7 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
-                        Order order = new Order
-                        {
-                            OrderId = (int)reader["OrderID"],
-                            TableId = (int)reader["TableID"],
-                            TableNumber = (int)reader["TableNumber"],
-                            GuestName = reader["GuestName"] == DBNull.Value ? null : reader["GuestName"].ToString(),
-                            OrderDate = (DateTime)reader["OrderDate"],
-                            OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
-                        };
-                        orders.Add(order);
+                        orders.Add(MapOrder(reader));
                     }
                 }
             }
@@ -55,7 +48,6 @@ public class OrderRepository : IOrderRepository
         return orders;
     }
 
-   
     public Order? GetActiveOrderByTableId(int tableId)
     {
         using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -77,15 +69,7 @@ public class OrderRepository : IOrderRepository
                 {
                     if (reader.Read())
                     {
-                        return new Order
-                        {
-                            OrderId = (int)reader["OrderID"],
-                            TableId = (int)reader["TableID"],
-                            TableNumber = (int)reader["TableNumber"],
-                            GuestName = reader["GuestName"] == DBNull.Value ? null : reader["GuestName"].ToString(),
-                            OrderDate = (DateTime)reader["OrderDate"],
-                            OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
-                        };
+                        return MapOrder(reader);
                     }
                     return null;
                 }
@@ -93,6 +77,51 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    public List<TableStatus> GetAllTableStatuses()
+    {
+        Dictionary<int, TableStatus> tableDict = new Dictionary<int, TableStatus>();
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = BuildTableStatusQuery();
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
+                command.Parameters.AddWithValue("@MinTable", MenuCardConstants.MinTableNumber);
+                command.Parameters.AddWithValue("@MaxTable", MenuCardConstants.MaxTableNumber);
+                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
+                command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
+                command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        MapTableRow(reader, tableDict);
+                    }
+                }
+            }
+        }
+        return tableDict.Values.OrderBy(t => t.TableNumber).ToList();
+    }
+
+    public void UpdateOrderStatus(int orderId, OrderStatus newStatus)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = "UPDATE Orders SET OrderStatus = @Status WHERE OrderID = @OrderID";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)newStatus);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
 
     public List<OrderItem> GetOrderItemsByOrderId(int orderId)
     {
@@ -115,17 +144,7 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
-                        OrderItem item = new OrderItem
-                        {
-                            OrderItemId = (int)reader["OrderItemID"],
-                            OrderId = (int)reader["OrderID"],
-                            MenuItemId = (int)reader["MenuItemID"],
-                            AmountOrdered = (int)reader["AmountOrdered"],
-                            Name = reader["Name"].ToString(),
-                            Price = (decimal)reader["Price"],
-                            VATRate = (decimal)reader["VATRate"]
-                        };
-                        items.Add(item);
+                        items.Add(MapOrderItem(reader));
                     }
                 }
             }
@@ -133,4 +152,78 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    private static string BuildTableStatusQuery()
+    {
+        return $@"SELECT t.TableID, t.TableNumber,
+                o.OrderID, o.OrderStatus,
+                CAST(CASE WHEN EXISTS (
+                    SELECT 1 FROM OrderItem oi
+                    JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                    JOIN Categories c ON c.CategoryID = m.CategoryID
+                    WHERE oi.OrderID = o.OrderID AND c.MenuCardID IN (@FoodCard1, @FoodCard2)
+                ) THEN 1 ELSE 0 END AS BIT) as HasFood,
+                CAST(CASE WHEN EXISTS (
+                    SELECT 1 FROM OrderItem oi
+                    JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                    JOIN Categories c ON c.CategoryID = m.CategoryID
+                    WHERE oi.OrderID = o.OrderID AND c.MenuCardID = @DrinkCard
+                ) THEN 1 ELSE 0 END AS BIT) as HasDrink
+            FROM Table_ t
+            LEFT JOIN Orders o ON o.TableID = t.TableID AND o.OrderStatus <> @Paid
+            WHERE t.TableNumber BETWEEN @MinTable AND @MaxTable
+            ORDER BY t.TableNumber, o.OrderDate";
+    }
+
+    private static void MapTableRow(SqlDataReader reader, Dictionary<int, TableStatus> tableDict)
+    {
+        int tableId = (int)reader["TableID"];
+        int tableNumber = (int)reader["TableNumber"];
+
+        if (!tableDict.ContainsKey(tableId))
+        {
+            tableDict[tableId] = new TableStatus
+            {
+                TableId = tableId,
+                TableNumber = tableNumber
+            };
+        }
+
+        if (reader["OrderID"] != DBNull.Value)
+        {
+            tableDict[tableId].Orders.Add(new TableOrderInfo
+            {
+                OrderId = (int)reader["OrderID"],
+                OrderStatus = (OrderStatus)(int)reader["OrderStatus"],
+                HasFood = (bool)reader["HasFood"],
+                HasDrink = (bool)reader["HasDrink"]
+            });
+        }
+    }
+
+    private static Order MapOrder(SqlDataReader reader)
+    {
+        return new Order
+        {
+            OrderId = (int)reader["OrderID"],
+            TableId = (int)reader["TableID"],
+            TableNumber = (int)reader["TableNumber"],
+            GuestName = reader["GuestName"] == DBNull.Value ? null : reader["GuestName"].ToString(),
+            OrderDate = (DateTime)reader["OrderDate"],
+            OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
+        };
+    }
+
+    private static OrderItem MapOrderItem(SqlDataReader reader)
+    {
+        return new OrderItem
+        {
+            OrderItemId = (int)reader["OrderItemID"],
+            OrderId = (int)reader["OrderID"],
+            MenuItemId = (int)reader["MenuItemID"],
+            AmountOrdered = (int)reader["AmountOrdered"],
+            Name = reader["Name"].ToString(),
+            Price = (decimal)reader["Price"],
+            VATRate = (decimal)reader["VATRate"]
+        };
+    }
 }

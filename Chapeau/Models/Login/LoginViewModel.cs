@@ -1,17 +1,20 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Chapeau.Models
+namespace Chapeau.Models.Login
 {
     public class LoginViewModel
     {
-        [Required(ErrorMessage = "Employee name is required")]
+        [Required(ErrorMessage = "Naam is verplicht")]
         public string Name { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Password is required")]
+        [Required(ErrorMessage = "Wachtwoord is verplicht")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
+
+        public string? ReturnUrl { get; set; }
+
+        public string? ErrorMessage { get; set; }
     }
 }

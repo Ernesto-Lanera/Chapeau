@@ -1,0 +1,157 @@
+﻿<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow app-navbar">
+    <div class="container-fluid">
+
+        <a class="navbar-brand fw-semibold app-brand"
+           asp-area=""
+           asp-controller="Home"
+           asp-action="Index">
+            Restaurant Chapeau
+        </a>
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNav"
+                aria-controls="mainNav"
+                aria-expanded="false"
+                aria-label="Navigatie in-/uitschakelen">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+
+            @if (User.Identity?.IsAuthenticated == true &&
+                 (User.IsInRole("Manager") || User.HasClaim("RoleID", "1")))
+            {
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageMenu" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="ManageMenu"
+                           asp-action="Index">
+                            <i class="bi bi-tools me-1"></i>
+                            Menubeheer
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employee" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Employee"
+                           asp-action="Index">
+                            <i class="bi bi-person me-1"></i>
+                            Medewerkers
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Stock"
+                           asp-action="Index">
+                            <i class="bi bi-box-seam me-1"></i>
+                            Voorraad
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Finance"
+                           asp-action="Index">
+                            <i class="bi bi-graph-up me-1"></i>
+                            Financieel
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RolePermissions" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="RolePermissions"
+                           asp-action="Index">
+                            <i class="bi bi-shield-lock me-1"></i>
+                            Permissies
+                        </a>
+                    </li>
+
+                </ul>
+            }
+            else if (User.Identity?.IsAuthenticated == true &&
+                     (User.IsInRole("Bediening") || User.HasClaim("RoleID", "3")))
+            {
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Table" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Table"
+                           asp-action="Index">
+                            <i class="bi bi-grid-3x3-gap me-1"></i>
+                            Tafels
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Menu" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Menu"
+                           asp-action="Index">
+                            <i class="bi bi-card-list me-1"></i>
+                            Menu
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Payment" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Payment"
+                           asp-action="Index">
+                            <i class="bi bi-cash me-1"></i>
+                            Betaling
+                        </a>
+                    </li>
+
+                </ul>
+            }
+            else if (User.Identity?.IsAuthenticated == true &&
+                     (User.IsInRole("Keuken") || User.HasClaim("RoleID", "4")))
+            {
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Kitchen" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Kitchen"
+                           asp-action="Index">
+                            <i class="bi bi-egg-fried me-1"></i>
+                            Keuken
+                        </a>
+                    </li>
+
+                </ul>
+            }
+            else if (User.Identity?.IsAuthenticated == true &&
+                     (User.IsInRole("Barman") || User.HasClaim("RoleID", "5")))
+            {
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Bar" ? "active" : "")"
+                           asp-area=""
+                           asp-controller="Bar"
+                           asp-action="Index">
+                            <i class="bi bi-cup-straw me-1"></i>
+                            Bar
+                        </a>
+                    </li>
+
+                </ul>
+            }
+
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                @await Component.InvokeAsync("LoginStatus")
+            </ul>
+        </div>
+    </div>
+</nav>

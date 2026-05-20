@@ -9,5 +9,7 @@ namespace Chapeau.Services
         PaymentOrderViewModel GetPaymentOrderViewModel(int orderID, int tableNumber);
         List<Order> GetRunningOrders();
         TimeSpan GetWaitingTime(Order order);
+        List<TableStatus> GetAllTableStatuses();
+        void MarkOrderAsServed(int orderId);
     }
 }
