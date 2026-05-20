@@ -3,44 +3,30 @@
 @{
     ViewData["Title"] = "MedewerkerBeheer";
 
-    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>;
-
-    if (roles == null)
-    {
-        roles = Enumerable.Empty<Chapeau.Models.EmployeeRole>();
-    }
-
+    // Rollen laden en indexeren
+    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>
+        ?? Enumerable.Empty<Chapeau.Models.EmployeeRole>();
     var roleNameById = roles.ToDictionary(r => r.RoleID, r => r.RoleName);
 
+    // Formulier state
     var editEmployee = ViewBag.EditEmployee as Chapeau.Models.Employee;
-
     bool isEdit = editEmployee != null;
     bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
 
-    string? draftJson = TempData["NewEmployeeDraft"] as string;
+    // Draft gegevens uit TempData ophalen
     string draftName = "";
     int draftRoleId = 0;
 
-    if (!string.IsNullOrWhiteSpace(draftJson))
+    if (TempData["NewEmployeeDraft"] is string draftJson && !string.IsNullOrWhiteSpace(draftJson))
     {
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(draftJson);
             var root = doc.RootElement;
-
-            if (root.TryGetProperty("Name", out var nameEl))
-            {
-                draftName = nameEl.GetString() ?? "";
-            }
-
-            if (root.TryGetProperty("RoleID", out var roleEl) && roleEl.TryGetInt32(out var rid))
-            {
-                draftRoleId = rid;
-            }
+            draftName = root.TryGetProperty("Name", out var n) ? n.GetString() ?? "" : "";
+            draftRoleId = root.TryGetProperty("RoleID", out var r) && r.TryGetInt32(out var rid) ? rid : 0;
         }
-        catch
-        {
-        }
+        catch { }
     }
 }
 
@@ -141,12 +127,14 @@
             <tbody>
                 @foreach (var employee in Model)
                 {
+                    // Gebruikersnaam genereren uit voornaam + ID
                     var usernameBase = (employee.Name ?? "")
                         .Split(' ', StringSplitOptions.RemoveEmptyEntries)
                         .FirstOrDefault()?.ToLowerInvariant() ?? "user";
 
                     string username = $"{usernameBase}{employee.EmployeeID:000}";
 
+                    // Rol naam opzoeken
                     string roleName = roleNameById.TryGetValue(employee.RoleID, out var rn)
                         ? rn ?? employee.RoleID.ToString()
                         : employee.RoleID.ToString();
@@ -248,6 +236,7 @@
 
                     @if (isEdit && editEmployee != null && editEmployee.EmployeeID == employee.EmployeeID)
                     {
+                        // Inline edit formulier voor geselecteerde medewerker
                         <tr class="inline-edit-row">
                             <td colspan="5">
                                 <div class="inline-edit-card">
@@ -315,4 +304,7 @@
             </tbody>
         </table>
     </div>
-</div>
+
+@section Scripts {
+    <script src="~/js/employee.js" asp-append-version="true"></script>
+}</div>

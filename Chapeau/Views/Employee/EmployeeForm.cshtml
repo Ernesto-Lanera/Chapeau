@@ -2,14 +2,13 @@
 
 @{
     bool isEdit = ViewBag.IsEdit != null && (bool)ViewBag.IsEdit;
-
-    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>
+    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole> 
         ?? Enumerable.Empty<Chapeau.Models.EmployeeRole>();
 
     string formAction = isEdit ? "Edit" : "Create";
     string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
-    string passwordPlaceholder = isEdit
-        ? "Nieuw wachtwoord/pincode, leeg laten = behouden"
+    string passwordPlaceholder = isEdit 
+        ? "Nieuw wachtwoord/pincode, leeg laten = behouden" 
         : "Wachtwoord/pincode";
 }
 

@@ -1,23 +1,22 @@
 using Chapeau.Repositories;
 using Chapeau.Utilities;
+using Microsoft.Extensions.Logging;
 using EmployeeModel = Chapeau.Models.Employee;
 
 namespace Chapeau.Services.Overview
 {
-    public class EmployeeService
+    public class EmployeeService(EmployeeRepository employeeRepository, ILogger<EmployeeService> logger)
     {
-        private readonly EmployeeRepository _employeeRepository;
+        private readonly EmployeeRepository _employeeRepository = employeeRepository;
+        private readonly ILogger<EmployeeService> _logger = logger;
 
-        public EmployeeService(EmployeeRepository employeeRepository)
-        {
-            _employeeRepository = employeeRepository;
-        }
-
+        // Haalt alle medewerkers uit de database
         public List<EmployeeModel> GetEmployees()
         {
             return _employeeRepository.GetEmployees();
         }
 
+        // Zoekt medewerker op naam
         public EmployeeModel? GetEmployeeByName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -28,104 +27,79 @@ namespace Chapeau.Services.Overview
             return _employeeRepository.GetEmployeeByName(name);
         }
 
+        // Valideert login gegevens en retourneert medewerker als geldig
         public EmployeeModel? ValidateLogin(string name, string password)
         {
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
-            {
                 return null;
-            }
 
-            EmployeeModel? employee = _employeeRepository.GetEmployeeByName(name);
-
-            if (employee == null)
-            {
+            var employee = _employeeRepository.GetEmployeeByName(name);
+            if (employee?.IsActive != true)
                 return null;
-            }
 
-            if (!employee.IsActive)
+            if (!PasswordHasher.VerifyPassword(password, employee.PasswordHash))
             {
-                return null;
-            }
-
-            bool passwordIsValid = PasswordHasher.VerifyPassword(password, employee.PasswordHash);
-
-            if (!passwordIsValid)
-            {
+                _logger.LogWarning("Failed login attempt for employee: {EmployeeName}", name);
                 return null;
             }
 
             return employee;
         }
 
+        // Voegt nieuwe medewerker toe met wachtwoord hashing
         public void AddEmployee(EmployeeModel employee)
         {
-            if (employee == null)
-            {
-                throw new ArgumentNullException(nameof(employee));
-            }
+            ArgumentNullException.ThrowIfNull(employee);
 
             if (string.IsNullOrWhiteSpace(employee.Name))
-            {
                 throw new ArgumentException("Naam is verplicht.");
-            }
 
             if (employee.RoleID <= 0)
-            {
                 throw new ArgumentException("Kies een geldige rol.");
-            }
 
             if (string.IsNullOrWhiteSpace(employee.PasswordHash))
-            {
                 throw new ArgumentException("Wachtwoord is verplicht.");
-            }
 
             employee.PasswordHash = PasswordHasher.HashPassword(employee.PasswordHash);
             employee.IsActive = true;
 
             _employeeRepository.AddEmployee(employee);
+            _logger.LogInformation("Employee created: {EmployeeName} (Role: {RoleID})", employee.Name, employee.RoleID);
         }
 
+        // Werkt bestaande medewerker bij, voorkomt wachtwoord overwrite als niet gewijzigd
         public void UpdateEmployee(EmployeeModel employee)
         {
-            if (employee == null)
-            {
-                throw new ArgumentNullException(nameof(employee));
-            }
+            ArgumentNullException.ThrowIfNull(employee);
 
             if (employee.EmployeeID <= 0)
-            {
                 throw new ArgumentException("Ongeldige medewerker.");
-            }
 
             if (string.IsNullOrWhiteSpace(employee.Name))
-            {
                 throw new ArgumentException("Naam is verplicht.");
-            }
 
             if (employee.RoleID <= 0)
-            {
                 throw new ArgumentException("Kies een geldige rol.");
-            }
 
-            EmployeeModel? existingEmployee = _employeeRepository.GetEmployeeById(employee.EmployeeID);
+            var existingEmployee = _employeeRepository.GetEmployeeById(employee.EmployeeID)
+                ?? throw new ArgumentException("Medewerker bestaat niet.");
 
-            if (existingEmployee == null)
-            {
-                throw new ArgumentException("Medewerker bestaat niet.");
-            }
-
+            // Behoud bestaand wachtwoord als niets ingevuld
             if (string.IsNullOrWhiteSpace(employee.PasswordHash))
             {
                 employee.PasswordHash = existingEmployee.PasswordHash;
             }
             else if (!IsAlreadyHashed(employee.PasswordHash))
             {
+                // Hash alleen als het nog niet gehashed is
                 employee.PasswordHash = PasswordHasher.HashPassword(employee.PasswordHash);
             }
 
             _employeeRepository.UpdateEmployee(employee);
+            _logger.LogInformation("Employee updated: {EmployeeID} - {EmployeeName}", employee.EmployeeID, employee.Name);
         }
 
+        // Zet medewerker actief of inactief
         public void SetEmployeeActive(int id, bool active)
         {
             if (id <= 0)
@@ -136,11 +110,13 @@ namespace Chapeau.Services.Overview
             _employeeRepository.SetEmployeeActive(id, active);
         }
 
+        // Test database connectie
         public bool TestConnection()
         {
             return _employeeRepository.TestConnection();
         }
 
+        // Check of wachtwoord al gehashed is (64 chars base64)
         private static bool IsAlreadyHashed(string password)
         {
             return password.Length == 64 && IsValidBase64(password);

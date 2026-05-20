@@ -3,61 +3,52 @@
 @{
     ViewData["Title"] = "VoorraadBeheer";
 
-    var categories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category>;
+    // Categorieën en kaarten laden
+    var categories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category> 
+        ?? ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category> 
+        ?? Enumerable.Empty<Chapeau.Models.Category>();
 
-    if (categories == null)
-    {
-        categories = ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category>;
-    }
+    // Huidige selecties uit filters ophalen
+    int? selectedCardId = ViewBag.SelectedCardId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCardId) : null;
+    int? selectedCategoryId = ViewBag.SelectedCategoryId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCategoryId) : null;
 
-    if (categories == null)
-    {
-        categories = Enumerable.Empty<Chapeau.Models.Category>();
-    }
+    // Beschikbare kaarten
+    var cards = new[] { new { Id = 1, Name = "Lunch" }, new { Id = 2, Name = "Diner" }, new { Id = 3, Name = "Dranken" } };
 
-    int? selectedCardId = null;
-    int? selectedCategoryId = null;
-
-    if (ViewBag.SelectedCardId != null)
-    {
-        selectedCardId = Convert.ToInt32(ViewBag.SelectedCardId);
-    }
-
-    if (ViewBag.SelectedCategoryId != null)
-    {
-        selectedCategoryId = Convert.ToInt32(ViewBag.SelectedCategoryId);
-    }
-
-    var cards = new[]
-    {
-        new { Id = 1, Name = "Lunch" },
-        new { Id = 2, Name = "Diner" },
-        new { Id = 3, Name = "Dranken" }
-    };
-
+    // Voorraad statistieken
     int soldOutCount = Model.Count(x => x.Stock == 0);
     int almostOutCount = Model.Count(x => x.Stock > 0 && x.Stock <= 10);
 
-    string GetMenuCardName(int menuCardId)
+    // Kaart naam van ID
+    string GetMenuCardName(int id) => id switch
     {
-        return menuCardId switch
-        {
-            1 => "Lunch",
-            2 => "Diner",
-            3 => "Dranken",
-            _ => "-"
-        };
-    }
+        1 => "Lunch",
+        2 => "Diner",
+        3 => "Dranken",
+        _ => "-"
+    };
 
-    string GetCategoryDisplayName(Chapeau.Models.Category category)
+    // Categorie naam met kaart context
+    string GetCategoryDisplayName(Chapeau.Models.Category category) =>
+        (category.MenuCardID == 1 || category.MenuCardID == 2)
+            ? $"{category.Name} ({GetMenuCardName(category.MenuCardID)})"
+            : category.Name;
+
+    // Voorraad status klasse
+    string GetStockStatus(int stock) => stock switch
     {
-        if (category.MenuCardID == 1 || category.MenuCardID == 2)
-        {
-            return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
-        }
+        0 => "danger",
+        <= 10 => "warn",
+        _ => "ok"
+    };
 
-        return category.Name;
-    }
+    // Voorraad status tekst
+    string GetStockStatusText(int stock) => stock switch
+    {
+        0 => "Uitverkocht",
+        <= 10 => "Bijna op",
+        _ => "Op voorraad"
+    };
 }
 
 <div class="page-content">
@@ -167,36 +158,12 @@
             <tbody>
                 @foreach (var item in Model)
                 {
-                    var itemCategory = item.Category;
-
-                    if (itemCategory == null)
-                    {
-                        itemCategory = categories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
-                    }
-
-                    string cardName = "-";
-                    string categoryName = "Onbekend";
-
-                    if (itemCategory != null)
-                    {
-                        cardName = GetMenuCardName(itemCategory.MenuCardID);
-                        categoryName = GetCategoryDisplayName(itemCategory);
-                    }
-
-                    string pillClass = "ok";
-                    string pillText = "Op voorraad";
-
-                    if (item.Stock == 0)
-                    {
-                        pillClass = "danger";
-                        pillText = "Uitverkocht";
-                    }
-                    else if (item.Stock <= 10)
-                    {
-                        pillClass = "warn";
-                        pillText = "Bijna op";
-                    }
-
+                    // Categorie en kaart opzoeken voor deze rij
+                    var itemCategory = item.Category ?? categories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
+                    string cardName = itemCategory != null ? GetMenuCardName(itemCategory.MenuCardID) : "-";
+                    string categoryName = itemCategory != null ? GetCategoryDisplayName(itemCategory) : "Onbekend";
+                    string pillClass = GetStockStatus(item.Stock);
+                    string pillText = GetStockStatusText(item.Stock);
                     string rowClass = item.Stock == 0 ? "sold-out-row" : "";
 
                     <tr class="@rowClass">
@@ -251,4 +218,7 @@
             </tbody>
         </table>
     </div>
-</div>
+
+@section Scripts {
+    <script src="~/js/stock.js" asp-append-version="true"></script>
+}</div>
