@@ -52,6 +52,8 @@
         formCategories = Enumerable.Empty<Chapeau.Models.Category>();
     }
 
+    const int DrinksCardId = 3;
+
     string GetMenuCardName(int menuCardId)
     {
         return menuCardId switch
@@ -222,6 +224,21 @@
                             </option>
                         }
                     </select>
+                </div>
+
+                <div class="form-group" id="createIsAlcoholicGroup" style="display: none;">
+                    <div class="form-check">
+                        <input type="checkbox"
+                               id="createIsAlcoholicCheck"
+                               name="IsAlcoholic"
+                               class="form-check-input" />
+                        <label for="createIsAlcoholicCheck" class="form-check-label">
+                            Alcoholische drank (21% VAT)
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        Vink aan indien dit product alcoholhoudend is
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -449,6 +466,22 @@
                                             </select>
                                         </div>
 
+                                        <div class="form-group" id="editIsAlcoholicGroup-@editItem.MenuItemID" style="display: none;">
+                                            <div class="form-check">
+                                                <input type="checkbox"
+                                                       id="editIsAlcoholicCheck-@editItem.MenuItemID"
+                                                       name="IsAlcoholic"
+                                                       class="form-check-input"
+                                                       @(editItem.IsAlcoholic ? "checked" : "") />
+                                                <label for="editIsAlcoholicCheck-@editItem.MenuItemID" class="form-check-label">
+                                                    Alcoholische drank (21% VAT)
+                                                </label>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">
+                                                Vink aan indien dit product alcoholhoudend is
+                                            </small>
+                                        </div>
+
                                         <div class="form-group">
                                             <label for="editImageUpload-@editItem.MenuItemID" class="form-label">
                                                 Afbeelding optioneel
@@ -493,4 +526,9 @@
             </tbody>
         </table>
     </div>
+
 </div>
+
+@section Scripts {
+    <script src="~/js/manage-menu-alcoholic.js"></script>
+}
