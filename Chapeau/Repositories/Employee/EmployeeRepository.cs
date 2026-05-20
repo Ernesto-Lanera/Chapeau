@@ -2,22 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using Chapeau.Constants;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using EmployeeModel = Chapeau.Models.Employee;
 
 namespace Chapeau.Repositories
 {
-    public class EmployeeRepository
+    public class EmployeeRepository(IConfiguration configuration, ILogger<EmployeeRepository> logger)
     {
-        private readonly string _connectionString;
+        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+            ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
 
-        public EmployeeRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-                ?? throw new Exception("Database connection string is missing.");
-        }
+        private readonly ILogger<EmployeeRepository> _logger = logger;
 
+        // Haalt alle medewerkers op
         public List<EmployeeModel> GetEmployees()
         {
             var employees = new List<EmployeeModel>();
@@ -55,6 +55,7 @@ namespace Chapeau.Repositories
             return employees;
         }
 
+        // Haalt medewerker op via ID
         public EmployeeModel? GetEmployeeById(int employeeId)
         {
             try
@@ -92,6 +93,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        // Zoekt medewerker op naam
         public EmployeeModel? GetEmployeeByName(string name)
         {
             try
@@ -166,6 +168,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        // Voegt nieuw medewerker toe
         public void AddEmployee(EmployeeModel employee)
         {
             try
@@ -194,6 +197,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        // Werkt medewerker bij
         public void UpdateEmployee(EmployeeModel employee)
         {
             try
@@ -231,6 +235,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        // Zet medewerker actief of inactief
         public void SetEmployeeActive(int id, bool active)
         {
             try
@@ -261,6 +266,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        // Test database connectie
         public bool TestConnection()
         {
             try
@@ -275,6 +281,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        // Helper: mapt database rij naar EmployeeModel
         private static EmployeeModel MapEmployee(SqlDataReader reader)
         {
             return new EmployeeModel

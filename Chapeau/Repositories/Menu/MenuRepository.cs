@@ -6,18 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Repositories.Menu
 {
-    public class MenuRepository : IMenuRepository
+    public class MenuRepository(IConfiguration configuration, ILogger<MenuRepository> logger) : IMenuRepository
     {
-        private readonly string _connectionString;
-        private readonly ILogger<MenuRepository> _logger;
+        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+            ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
+        private readonly ILogger<MenuRepository> _logger = logger;
 
-        public MenuRepository(IConfiguration configuration, ILogger<MenuRepository> logger)
-        {
-            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-                ?? throw new Exception(ErrorMessages.ConnectionStringMissing);
-            _logger = logger;
-        }
-
+        // Haalt menu-items op met optionele filter
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
         {
             var menuItems = new List<MenuItem>();
@@ -39,6 +34,7 @@ namespace Chapeau.Repositories.Menu
             return menuItems;
         }
 
+        // Haalt specifiek menu-item op via ID
         public MenuItem? GetMenuItemById(int menuItemId)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -68,6 +64,7 @@ namespace Chapeau.Repositories.Menu
             return null;
         }
 
+        // Voegt nieuw menu-item toe
         public void AddMenuItem(MenuItem menuItem)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -83,8 +80,10 @@ namespace Chapeau.Repositories.Menu
             AddMenuItemParameters(command, menuItem);
 
             command.ExecuteNonQuery();
+            _logger.LogInformation("Menu item created: {MenuItemName} (Price: {Price})", menuItem.Name, menuItem.RetailPrice);
         }
 
+        // Werkt menu-item bij
         public void UpdateMenuItem(MenuItem menuItem)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -104,15 +103,11 @@ namespace Chapeau.Repositories.Menu
             command.Parameters.AddWithValue("@MenuItemID", menuItem.MenuItemID);
             AddMenuItemParameters(command, menuItem);
 
-            int rowsAffected = command.ExecuteNonQuery();
-
-            if (rowsAffected == 0)
-            {
-                _logger.LogWarning("Menu item not found during update: {MenuItemId}", menuItem.MenuItemID);
-                throw new InvalidOperationException(ErrorMessages.MenuItemNotFound);
-            }
+            command.ExecuteNonQuery();
+            _logger.LogInformation("Menu item updated: {MenuItemID} - {MenuItemName}", menuItem.MenuItemID, menuItem.Name);
         }
 
+        // Zet menu-item actief of inactief
         public void SetMenuItemActive(int menuItemId, bool active)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -136,6 +131,7 @@ namespace Chapeau.Repositories.Menu
             }
         }
 
+        // Werkt voorraad bij
         public void ChangeStock(int menuItemId, int stock)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -159,6 +155,7 @@ namespace Chapeau.Repositories.Menu
             }
         }
 
+        // Helper: bouwt query voor ophalen menu-items
         private static string BuildGetMenuItemsQuery(int? cardId, int? categoryId)
         {
             string query = @"
@@ -199,6 +196,7 @@ namespace Chapeau.Repositories.Menu
             return query;
         }
 
+        // Helper: voegt query parameters toe
         private static void AddMenuItemsQueryParameters(SqlCommand command, int? cardId, int? categoryId)
         {
             if (cardId.HasValue)
@@ -212,6 +210,7 @@ namespace Chapeau.Repositories.Menu
             }
         }
 
+        // Helper: voegt menu-item parameters toe aan command
         private static void AddMenuItemParameters(SqlCommand command, MenuItem menuItem)
         {
             command.Parameters.AddWithValue("@Name", menuItem.Name);
@@ -230,6 +229,7 @@ namespace Chapeau.Repositories.Menu
             }
         }
 
+        // Helper: leest menu-item van database
         private MenuItem ReadMenuItem(SqlDataReader reader)
         {
             var menuItem = new MenuItem

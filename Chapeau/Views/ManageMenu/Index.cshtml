@@ -3,54 +3,24 @@
 @{
     ViewData["Title"] = "MenuBeheer";
 
-    int? selectedCardId = null;
-    int? selectedCategoryId = null;
+    // Kaarten en categorieën laden
+    var menuCards = ViewBag.MenuCards as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> 
+        ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var tableCategories = ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category> 
+        ?? Enumerable.Empty<Chapeau.Models.Category>();
+    var filterCategories = ViewBag.FilterCategories as IEnumerable<Chapeau.Models.Category> ?? tableCategories;
+    var formCategories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category> 
+        ?? Enumerable.Empty<Chapeau.Models.Category>();
 
-    if (ViewBag.SelectedCardId != null)
-    {
-        selectedCardId = Convert.ToInt32(ViewBag.SelectedCardId);
-    }
+    // Huidige selecties uit filters ophalen
+    int? selectedCardId = ViewBag.SelectedCardId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCardId) : null;
+    int? selectedCategoryId = ViewBag.SelectedCategoryId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCategoryId) : null;
+    int selectedMenuCardId = ViewBag.SelectedMenuCardId != null ? Convert.ToInt32(ViewBag.SelectedMenuCardId) : 0;
 
-    if (ViewBag.SelectedCategoryId != null)
-    {
-        selectedCategoryId = Convert.ToInt32(ViewBag.SelectedCategoryId);
-    }
-
-    var tableCategories = ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category>;
-    if (tableCategories == null)
-    {
-        tableCategories = Enumerable.Empty<Chapeau.Models.Category>();
-    }
-
-    var filterCategories = ViewBag.FilterCategories as IEnumerable<Chapeau.Models.Category>;
-    if (filterCategories == null)
-    {
-        filterCategories = tableCategories;
-    }
-
-    var menuCards = ViewBag.MenuCards as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
-    if (menuCards == null)
-    {
-        menuCards = Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-    }
-
+    // Formulier state (create/edit modus)
     var editItem = ViewBag.EditItem as Chapeau.Models.MenuItem;
-
     bool isEdit = editItem != null;
     bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
-
-    int selectedMenuCardId = 0;
-
-    if (ViewBag.SelectedMenuCardId != null)
-    {
-        selectedMenuCardId = Convert.ToInt32(ViewBag.SelectedMenuCardId);
-    }
-
-    var formCategories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category>;
-    if (formCategories == null)
-    {
-        formCategories = Enumerable.Empty<Chapeau.Models.Category>();
-    }
 
     const int DrinksCardId = 3;
 
@@ -71,7 +41,6 @@
         {
             return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
         }
-
         return category.Name;
     }
 }
@@ -283,6 +252,7 @@
             <tbody>
                 @foreach (var item in Model)
                 {
+                    // Categorie en kaart opzoeken voor deze rij
                     var category = tableCategories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
                     string categoryName = category != null ? GetCategoryDisplayName(category) : "-";
                     string cardName = category != null ? GetMenuCardName(category.MenuCardID) : "-";
@@ -383,6 +353,7 @@
 
                     @if (isEdit && editItem != null && editItem.MenuItemID == item.MenuItemID)
                     {
+                        // Inline edit formulier voor geselecteerde item
                         <tr class="inline-edit-row">
                             <td colspan="6">
                                 <div class="inline-edit-card">

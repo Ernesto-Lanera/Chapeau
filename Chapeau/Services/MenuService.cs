@@ -16,11 +16,13 @@ namespace Chapeau.Services
             _logger = logger;
         }
 
+        // Haalt menu-items op gefilterd op kaart en categorie
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
         {
             return _menuRepository.GetMenuItems(cardId, categoryId);
         }
 
+        // Haalt specifiek menu-item op via ID
         public MenuItem? GetMenuItemById(int menuItemId)
         {
             if (menuItemId <= 0)
@@ -31,6 +33,7 @@ namespace Chapeau.Services
             return _menuRepository.GetMenuItemById(menuItemId);
         }
 
+        // Voegt nieuw menu-item toe met standaard instellingen
         public void AddMenuItem(MenuItem menuItem)
         {
             ValidateMenuItem(menuItem, isEdit: false);
@@ -39,6 +42,7 @@ namespace Chapeau.Services
             _logger.LogInformation("Menu item added: {MenuItemName}", menuItem.Name);
         }
 
+        // Werkt bestaand menu-item bij
         public void UpdateMenuItem(MenuItem menuItem)
         {
             ValidateMenuItem(menuItem, isEdit: true);
@@ -46,6 +50,7 @@ namespace Chapeau.Services
             _logger.LogInformation("Menu item updated: {MenuItemId}", menuItem.MenuItemID);
         }
 
+        // Zet menu-item actief of inactief
         public void SetMenuItemActive(int menuItemId, bool active)
         {
             if (menuItemId <= 0)
@@ -57,6 +62,7 @@ namespace Chapeau.Services
             _logger.LogInformation("Menu item {MenuItemId} status changed to {Active}", menuItemId, active);
         }
 
+        // Werkt voorraad bij
         public void ChangeStock(int menuItemId, int stock)
         {
             if (menuItemId <= 0)
@@ -73,6 +79,7 @@ namespace Chapeau.Services
             _logger.LogInformation("Stock changed for menu item {MenuItemId} to {Stock}", menuItemId, stock);
         }
 
+        // Valideert menu-item fields
         private void ValidateMenuItem(MenuItem menuItem, bool isEdit)
         {
             if (menuItem == null)
