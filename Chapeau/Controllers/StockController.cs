@@ -1,3 +1,4 @@
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -13,139 +14,84 @@ namespace Chapeau.Controllers
         private const string FlashErrorKey = "FlashError";
         private const string FlashSuccessKey = "FlashSuccess";
 
+        // Toont alle menu-items met voorraad overzicht
         public IActionResult Index(int? cardId, int? categoryId)
         {
-            try
+            var categories = _categoryService.GetCategories();
+
+            // Validate that selected category belongs to selected card
+            if (cardId.HasValue && categoryId.HasValue)
             {
-                var categories = _categoryService.GetCategories();
+                var categoryBelongsToCard = categories.Any(c => 
+                    c.CategoryID == categoryId.Value && c.MenuCardID == cardId.Value);
 
-                if (cardId.HasValue && categoryId.HasValue)
-                {
-                    bool categoryBelongsToCard = categories.Any(category =>
-                        category.CategoryID == categoryId.Value &&
-                        category.MenuCardID == cardId.Value);
-
-                    if (!categoryBelongsToCard)
-                    {
-                        categoryId = null;
-                    }
-                }
-
-                var menuItems = _menuService.GetMenuItems(cardId, categoryId);
-
-                ViewBag.SelectedCardId = cardId;
-                ViewBag.SelectedCategoryId = categoryId;
-
-                ViewBag.Categories = categories;
-                ViewBag.AllCategories = categories;
-                ViewBag.FilterCategories = categories;
-                ViewBag.MenuCards = GetMenuCards();
-
-                return View(menuItems);
+                if (!categoryBelongsToCard)
+                    categoryId = null;
             }
-            catch (Exception ex)
-            {
-                TempData[FlashErrorKey] = $"Fout bij laden voorraad: {ex.Message}";
 
-                ViewBag.SelectedCardId = cardId;
-                ViewBag.SelectedCategoryId = categoryId;
+            var menuItems = _menuService.GetMenuItems(cardId, categoryId);
 
-                ViewBag.Categories = new List<Category>();
-                ViewBag.AllCategories = new List<Category>();
-                ViewBag.FilterCategories = new List<Category>();
-                ViewBag.MenuCards = GetMenuCards();
+            PopulateViewBag(cardId, categoryId, categories);
 
-                return View(new List<MenuItem>());
-            }
+            return View(menuItems);
         }
 
+        // Werkt voorraad bij voor menu-item
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Update(int id, int newStock, int? cardId, int? categoryId)
         {
+            if (!ValidateStockRequest(id, newStock))
+                return BadRequest();
+
             try
             {
-                if (id <= 0)
-                {
-                    return BadRequest();
-                }
-
-                if (newStock < 0)
-                {
-                    return BadRequest();
-                }
-
                 _menuService.ChangeStock(id, newStock);
 
-                if (Request.Headers["X-Requested-With"] == "fetch")
-                {
+                if (IsAjaxRequest())
                     return Ok(new { success = true });
-                }
 
                 TempData[FlashSuccessKey] = "Voorraad succesvol bijgewerkt.";
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
             }
             catch (Exception ex)
             {
-                if (Request.Headers["X-Requested-With"] == "fetch")
-                {
+                if (IsAjaxRequest())
                     return BadRequest(new { success = false, message = ex.Message });
-                }
 
-                TempData[FlashErrorKey] = $"Fout bij bijwerken voorraad: {ex.Message}";
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult ChangeStock(int id, int stock, int? cardId, int? categoryId)
-        {
-            try
-            {
-                if (id <= 0)
-                {
-                    TempData[FlashErrorKey] = "Ongeldig menu item.";
-                    return RedirectToAction(nameof(Index), new { cardId, categoryId });
-                }
-
-                if (stock < 0)
-                {
-                    TempData[FlashErrorKey] = "Voorraad mag niet negatief zijn.";
-                    return RedirectToAction(nameof(Index), new { cardId, categoryId });
-                }
-
-                _menuService.ChangeStock(id, stock);
-
-                TempData[FlashSuccessKey] = "Voorraad succesvol bijgewerkt.";
-            }
-            catch (Exception ex)
-            {
                 TempData[FlashErrorKey] = $"Fout bij bijwerken voorraad: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index), new { cardId, categoryId });
         }
 
-        private List<SelectListItem> GetMenuCards()
+        // Valideert voorraad verzoek
+        private bool ValidateStockRequest(int id, int stock)
+        {
+            return id > 0 && stock >= 0;
+        }
+
+        // Controleert of verzoek via AJAX komt
+        private bool IsAjaxRequest() => 
+            Request.Headers["X-Requested-With"] == "fetch";
+
+        // Vult ViewBag met filteropties
+        private void PopulateViewBag(int? cardId, int? categoryId, IEnumerable<Category> categories)
+        {
+            ViewBag.SelectedCardId = cardId;
+            ViewBag.SelectedCategoryId = categoryId;
+            ViewBag.Categories = categories;
+            ViewBag.AllCategories = categories;
+            ViewBag.MenuCards = GetMenuCards();
+        }
+
+        // Retourneert dropdown list van menukaarten
+        private static List<SelectListItem> GetMenuCards()
         {
             return new List<SelectListItem>
             {
-                new SelectListItem
-                {
-                    Value = "1",
-                    Text = "Lunch"
-                },
-                new SelectListItem
-                {
-                    Value = "2",
-                    Text = "Diner"
-                },
-                new SelectListItem
-                {
-                    Value = "3",
-                    Text = "Dranken"
-                }
+                new(MenuCardConstants.LunchCardName, MenuCardConstants.LunchCardId.ToString()),
+                new(MenuCardConstants.DinnerCardName, MenuCardConstants.DinnerCardId.ToString()),
+                new(MenuCardConstants.DrinksCardName, MenuCardConstants.DrinksCardId.ToString())
             };
         }
     }

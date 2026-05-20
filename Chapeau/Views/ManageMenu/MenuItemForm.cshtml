@@ -1,29 +1,15 @@
 @model Chapeau.Models.MenuItem
 
 @{
-    bool isEdit = false;
+    bool isEdit = ViewBag.IsEdit != null && (bool)ViewBag.IsEdit;
 
-    if (ViewBag.IsEdit != null)
-    {
-        isEdit = (bool)ViewBag.IsEdit;
-    }
+    var categories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category> 
+        ?? Enumerable.Empty<Chapeau.Models.Category>();
+    var menuCards = ViewBag.MenuCards as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> 
+        ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 
-    var categories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category>;
-
-    if (categories == null)
-    {
-        categories = Enumerable.Empty<Chapeau.Models.Category>();
-    }
-
-    var menuCards = ViewBag.MenuCards as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
-
-    if (menuCards == null)
-    {
-        menuCards = Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-    }
-
+    // Bepaal geselecteerde kaart
     int selectedMenuCardId = 0;
-
     if (ViewBag.SelectedMenuCardId != null)
     {
         selectedMenuCardId = Convert.ToInt32(ViewBag.SelectedMenuCardId);
@@ -31,25 +17,17 @@
 
     if (selectedMenuCardId <= 0)
     {
-        var firstCard = menuCards.FirstOrDefault();
-
-        if (firstCard != null && int.TryParse(firstCard.Value, out int parsedCardId))
+        if (isEdit)
         {
-            selectedMenuCardId = parsedCardId;
+            var currentCategory = categories.FirstOrDefault(c => c.CategoryID == Model.CategoryID);
+            selectedMenuCardId = currentCategory?.MenuCardID ?? 1;
         }
         else
         {
-            selectedMenuCardId = 1;
-        }
-    }
-
-    if (isEdit)
-    {
-        var currentCategory = categories.FirstOrDefault(c => c.CategoryID == Model.CategoryID);
-
-        if (currentCategory != null)
-        {
-            selectedMenuCardId = currentCategory.MenuCardID;
+            if (int.TryParse(menuCards.FirstOrDefault()?.Value, out int parsedId))
+                selectedMenuCardId = parsedId;
+            else
+                selectedMenuCardId = 1;
         }
     }
 
@@ -57,21 +35,17 @@
     string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
     string searchValue = ViewBag.Search as string ?? "";
 
-    string GetMenuCardName(int menuCardId)
+    // Helpers
+    string GetMenuCardName(int id) => id switch
     {
-        return menuCardId switch
-        {
-            1 => "Lunch",
-            2 => "Diner",
-            3 => "Dranken",
-            _ => "Onbekend"
-        };
-    }
+        1 => "Lunch",
+        2 => "Diner",
+        3 => "Dranken",
+        _ => "Onbekend"
+    };
 
-    string GetCategoryDisplayName(Chapeau.Models.Category category)
-    {
-        return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
-    }
+    string GetCategoryDisplayName(Chapeau.Models.Category category) =>
+        $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
 }
 
 <form id="menuItemEditCreateForm"
@@ -258,76 +232,3 @@
         </a>
     </div>
 </form>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const cardSelect = document.getElementById('menuCardSelect');
-        const categorySelect = document.getElementById('categorySelect');
-        const form = document.getElementById('menuItemEditCreateForm');
-
-        function filterCategories() {
-            if (!cardSelect || !categorySelect) {
-                return;
-            }
-
-            const selectedCardId = cardSelect.value;
-
-            Array.from(categorySelect.options).forEach(function (option) {
-                if (option.value === '') {
-                    option.hidden = false;
-                    return;
-                }
-
-                const optionCardId = option.getAttribute('data-cardid');
-
-                if (!selectedCardId) {
-                    option.hidden = false;
-                    return;
-                }
-
-                option.hidden = optionCardId !== selectedCardId;
-            });
-
-            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-
-            if (selectedOption && selectedOption.hidden) {
-                categorySelect.value = '';
-            }
-        }
-
-        if (cardSelect && categorySelect) {
-            filterCategories();
-
-            cardSelect.addEventListener('change', function () {
-                categorySelect.value = '';
-                filterCategories();
-            });
-        }
-
-        if (form) {
-            form.addEventListener('submit', function (e) {
-                if (!categorySelect || !categorySelect.value) {
-                    alert('Selecteer een geldige categorie.');
-                    e.preventDefault();
-                    return false;
-                }
-
-                if (!cardSelect) {
-                    return true;
-                }
-
-                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-
-                if (selectedOption) {
-                    const optionCardId = selectedOption.getAttribute('data-cardid');
-
-                    if (optionCardId !== cardSelect.value) {
-                        alert('De geselecteerde categorie hoort niet bij deze kaart.');
-                        e.preventDefault();
-                        return false;
-                    }
-                }
-            });
-        }
-    });
-</script>
