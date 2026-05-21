@@ -28,24 +28,34 @@
                         <thead class="table-dark">
                             <tr>
                                 <th>Item</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>VAT Rate</th>
                                 <th>Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in Model.Items)
                             {
+                                var subtotal = item.Price * item.AmountOrdered;
+                                var vatAmount = subtotal * item.VATRate;
+                                var totalWithVat = subtotal + vatAmount;
+                                
                                 <tr>
                                     <td>@item.Name</td>
                                     <td>@item.AmountOrdered</td>
                                     <td>€@item.Price.ToString("F2")</td>
-                                    <td>€@(item.Price * item.AmountOrdered).ToString("F2")</td>
+                                    <td>@((item.VATRate * 100).ToString("F0"))%</td>
+                                    <td>
+                                        <small>Excl.: €@subtotal.ToString("F2")</small><br />
+                                        <small>VAT: €@vatAmount.ToString("F2")</small><br />
+                                        <strong>€@totalWithVat.ToString("F2")</strong>
+                                    </td>
                                 </tr>
                                 @if (!string.IsNullOrEmpty(item.Comment))
                                 {
                                     <tr>
-                                        <td colspan="4"><em>Comment: @item.Comment</em></td>
+                                        <td colspan="5"><em>Comment: @item.Comment</em></td>
                                     </tr>
                                 }
                             }
@@ -57,10 +67,11 @@
                         <div class="col-md-4">
                             <div class="card bg-light">
                                 <div class="card-body">
+                                    <h6>VAT Breakdown:</h6>
                                     <p><strong>Low VAT (6%):</strong> €@Model.LowVAT.ToString("F2")</p>
                                     <p><strong>High VAT (21%):</strong> €@Model.HighVAT.ToString("F2")</p>
                                     <hr />
-                                    <h5><strong>Total: €@Model.Total.ToString("F2")</strong></h5>
+                                    <h5><strong>Total (incl. VAT): €@Model.Total.ToString("F2")</strong></h5>
                                 </div>
                             </div>
                         </div>
@@ -87,5 +98,3 @@
         </div>
     }
 </div>
-
-}
