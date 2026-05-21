@@ -39,7 +39,7 @@ namespace Chapeau.Controllers
 
         // Maakt nieuw menu-item aan met optionele afbeelding
         [HttpPost]
-        public async Task<IActionResult> Create(MenuItem item, IFormFile? imageFile)
+        public async Task<IActionResult> Create(MenuItem item, IFormFile? imageFile, int? cardId, int? categoryId)
         {
             RemoveRetailPriceValidation();
             item.RetailPrice = ParseRetailPrice();
@@ -48,19 +48,19 @@ namespace Chapeau.Controllers
             int menuCardId = ParseMenuCardId();
 
             if (!await ProcessImageUpload(imageFile, item))
-                return RedirectToCreate(menuCardId);
+                return RedirectToCreate(menuCardId, cardId, categoryId);
 
             ValidateMenuItemForCreate(item, menuCardId);
 
             if (!ModelState.IsValid)
-                return HandleValidationError(menuCardId);
+                return HandleValidationError(menuCardId, cardId, categoryId);
 
-            return await ExecuteCreate(item, menuCardId);
+            return await ExecuteCreate(item, menuCardId, cardId, categoryId);
         }
 
         // Werkt bestaand menu-item bij
         [HttpPost]
-        public async Task<IActionResult> Edit(MenuItem item, IFormFile? imageFile)
+        public async Task<IActionResult> Edit(MenuItem item, IFormFile? imageFile, int? cardId, int? categoryId)
         {
             RemoveRetailPriceValidation();
             item.RetailPrice = ParseRetailPrice();
@@ -75,14 +75,14 @@ namespace Chapeau.Controllers
             item.IsActive = existingItem.IsActive;
 
             if (!await ProcessImageUpload(imageFile, item, existingItem))
-                return RedirectToEdit(item.MenuItemID);
+                return RedirectToEdit(item.MenuItemID, cardId, categoryId);
 
             ValidateMenuItemForEdit(item);
 
             if (!ModelState.IsValid)
-                return HandleEditValidationError(item.MenuItemID);
+                return HandleEditValidationError(item.MenuItemID, cardId, categoryId);
 
-            return await ExecuteEdit(item);
+            return await ExecuteEdit(item, cardId, categoryId);
         }
 
         // Zet menu-item status aan/uit
@@ -208,72 +208,72 @@ namespace Chapeau.Controllers
         }
 
         // Voert aanmaken uit met error handling
-        private async Task<IActionResult> ExecuteCreate(MenuItem item, int menuCardId)
+        private async Task<IActionResult> ExecuteCreate(MenuItem item, int menuCardId, int? cardId, int? categoryId)
         {
             try
             {
                 _menuService.AddMenuItem(item);
                 SetFlashSuccess($"Menu-item '{item.Name}' is succesvol toegevoegd!");
-                return RedirectToAction(nameof(Index), new { cardId = menuCardId });
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
             }
             catch (InvalidOperationException ex)
             {
                 SetFlashError(ex.Message);
-                return RedirectToCreate(menuCardId);
+                return RedirectToCreate(menuCardId, cardId, categoryId);
             }
             catch (ArgumentException ex)
             {
                 SetFlashError(ex.Message);
-                return RedirectToCreate(menuCardId);
+                return RedirectToCreate(menuCardId, cardId, categoryId);
             }
             catch (Exception)
             {
                 SetFlashError(ErrorMessages.UnexpectedError);
-                return RedirectToCreate(menuCardId);
+                return RedirectToCreate(menuCardId, cardId, categoryId);
             }
         }
 
-        private async Task<IActionResult> ExecuteEdit(MenuItem item)
+        private async Task<IActionResult> ExecuteEdit(MenuItem item, int? cardId, int? categoryId)
         {
             try
             {
                 _menuService.UpdateMenuItem(item);
                 SetFlashSuccess($"Menu-item '{item.Name}' is succesvol bijgewerkt!");
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { cardId, categoryId });
             }
             catch (InvalidOperationException ex)
             {
                 SetFlashError(ex.Message);
-                return RedirectToEdit(item.MenuItemID);
+                return RedirectToEdit(item.MenuItemID, cardId, categoryId);
             }
             catch (ArgumentException ex)
             {
                 SetFlashError(ex.Message);
-                return RedirectToEdit(item.MenuItemID);
+                return RedirectToEdit(item.MenuItemID, cardId, categoryId);
             }
             catch (Exception)
             {
                 SetFlashError(ErrorMessages.UnexpectedError);
-                return RedirectToEdit(item.MenuItemID);
+                return RedirectToEdit(item.MenuItemID, cardId, categoryId);
             }
         }
 
-        private IActionResult RedirectToCreate(int menuCardId) =>
-            RedirectToAction(nameof(Index), new { cardId = menuCardId, showCreate = true });
+        private IActionResult RedirectToCreate(int menuCardId, int? cardId, int? categoryId) =>
+            RedirectToAction(nameof(Index), new { cardId, categoryId, showCreate = true });
 
-        private IActionResult RedirectToEdit(int menuItemId) =>
-            RedirectToAction(nameof(Index), new { editId = menuItemId });
+        private IActionResult RedirectToEdit(int menuItemId, int? cardId, int? categoryId) =>
+            RedirectToAction(nameof(Index), new { editId = menuItemId, cardId, categoryId });
 
-        private IActionResult HandleValidationError(int menuCardId)
+        private IActionResult HandleValidationError(int menuCardId, int? cardId, int? categoryId)
         {
             SetFlashError(GetModelStateErrors());
-            return RedirectToCreate(menuCardId);
+            return RedirectToCreate(menuCardId, cardId, categoryId);
         }
 
-        private IActionResult HandleEditValidationError(int menuItemId)
+        private IActionResult HandleEditValidationError(int menuItemId, int? cardId, int? categoryId)
         {
             SetFlashError(GetModelStateErrors());
-            return RedirectToEdit(menuItemId);
+            return RedirectToEdit(menuItemId, cardId, categoryId);
         }
 
         // Valideert naam uniekheid bij aanmaken
