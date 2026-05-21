@@ -20,23 +20,28 @@
 
         const formId = form.id || form.action;
         let checkboxGroup = null;
+        let checkbox = null;
 
         // Bepaal welke checkbox container
         if (selectElement.id === 'createCategorySelect') {
             checkboxGroup = document.getElementById('createIsAlcoholicGroup');
+            checkbox = document.getElementById('createIsAlcoholicCheck');
         } else {
             // Voor edit formulieren
             const menuItemInput = form.querySelector('input[name="MenuItemID"]');
             if (menuItemInput) {
                 const itemId = menuItemInput.value;
                 checkboxGroup = document.getElementById(`editIsAlcoholicGroup-${itemId}`);
+                checkbox = document.getElementById(`editIsAlcoholicCheck-${itemId}`);
             }
         }
 
         // Toon/verberg de checkbox
         if (checkboxGroup) {
-            checkboxGroup.style.display = isAlcoholic ? 'block' : 'none';
-            console.log('Checkbox group updated:', checkboxGroup.id, 'display:', isAlcoholic ? 'block' : 'none');
+            // Als checkbox is aangevinkt, toon altijd
+            const isChecked = checkbox && checkbox.checked;
+            checkboxGroup.style.display = (isAlcoholic || isChecked) ? 'block' : 'none';
+            console.log('Checkbox group updated:', checkboxGroup.id, 'display:', (isAlcoholic || isChecked) ? 'block' : 'none');
         } else {
             console.log('Checkbox group not found');
         }
@@ -60,8 +65,20 @@
             select.addEventListener('change', function () {
                 toggleAlcoholicCheckbox(this);
             });
-            // Initiële state
+            // Initiële state - belangrijk voor edit formulieren
             setTimeout(() => toggleAlcoholicCheckbox(select), 100);
+        });
+
+        // Ook luisteren naar checkbox changes zodat het visibility onmiddellijk updates
+        const allCheckboxes = document.querySelectorAll('input[name="IsAlcoholic"][type="checkbox"]');
+        allCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const form = this.closest('form');
+                const categorySelect = form.querySelector('select[name="CategoryID"]');
+                if (categorySelect) {
+                    toggleAlcoholicCheckbox(categorySelect);
+                }
+            });
         });
     }
 

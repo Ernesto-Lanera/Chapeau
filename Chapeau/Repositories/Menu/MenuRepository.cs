@@ -48,7 +48,8 @@ namespace Chapeau.Repositories.Menu
                     Stock,
                     IsActive,
                     CategoryID,
-                    ImagePath
+                    ImagePath,
+                    IsAlcoholic
                 FROM MenuItems
                 WHERE MenuItemID = @MenuItemID";
 
@@ -72,9 +73,9 @@ namespace Chapeau.Repositories.Menu
 
             string query = @"
                 INSERT INTO MenuItems
-                    (Name, Price, Stock, IsActive, CategoryID, ImagePath)
+                    (Name, Price, Stock, IsActive, CategoryID, ImagePath, IsAlcoholic)
                 VALUES
-                    (@Name, @Price, @Stock, @IsActive, @CategoryID, @ImagePath)";
+                    (@Name, @Price, @Stock, @IsActive, @CategoryID, @ImagePath, @IsAlcoholic)";
 
             using SqlCommand command = new SqlCommand(query, connection);
             AddMenuItemParameters(command, menuItem);
@@ -96,7 +97,8 @@ namespace Chapeau.Repositories.Menu
                     Price = @Price,
                     Stock = @Stock,
                     CategoryID = @CategoryID,
-                    ImagePath = @ImagePath
+                    ImagePath = @ImagePath,
+                    IsAlcoholic = @IsAlcoholic
                 WHERE MenuItemID = @MenuItemID";
 
             using SqlCommand command = new SqlCommand(query, connection);
@@ -167,6 +169,7 @@ namespace Chapeau.Repositories.Menu
                     mi.IsActive,
                     mi.CategoryID,
                     mi.ImagePath,
+                    mi.IsAlcoholic,
                     c.CategoryID,
                     c.Name AS CategoryName,
                     c.MenuCardID
@@ -218,6 +221,7 @@ namespace Chapeau.Repositories.Menu
             command.Parameters.AddWithValue("@Stock", menuItem.Stock);
             command.Parameters.AddWithValue("@IsActive", menuItem.IsActive);
             command.Parameters.AddWithValue("@CategoryID", menuItem.CategoryID);
+            command.Parameters.AddWithValue("@IsAlcoholic", menuItem.IsAlcoholic);
 
             if (string.IsNullOrWhiteSpace(menuItem.ImagePath))
             {
@@ -240,6 +244,7 @@ namespace Chapeau.Repositories.Menu
                 Stock = Convert.ToInt32(reader["Stock"]),
                 IsActive = Convert.ToBoolean(reader["IsActive"]),
                 CategoryID = Convert.ToInt32(reader["CategoryID"]),
+                IsAlcoholic = reader["IsAlcoholic"] != DBNull.Value && Convert.ToBoolean(reader["IsAlcoholic"]),
                 Category = new Models.Category
                 {
                     CategoryID = Convert.ToInt32(reader["CategoryID"]),

@@ -131,6 +131,9 @@
 
                 @Html.AntiForgeryToken()
 
+                <input type="hidden" name="cardId" value="@selectedCardId" />
+                <input type="hidden" name="categoryId" value="@selectedCategoryId" />
+
                 <div class="form-group">
                     <select id="createMenuCardSelect"
                             name="MenuCardID"
@@ -199,8 +202,8 @@
                     <div class="form-check">
                         <input type="checkbox"
                                id="createIsAlcoholicCheck"
-                               name="IsAlcoholic"
                                class="form-check-input" />
+                        <input type="hidden" name="IsAlcoholic" id="createIsAlcoholicHidden" value="false" />
                         <label for="createIsAlcoholicCheck" class="form-check-label">
                             Alcoholische drank (21% VAT)
                         </label>
@@ -368,6 +371,8 @@
 
                                         <input type="hidden" name="MenuItemID" value="@editItem.MenuItemID" />
                                         <input type="hidden" name="MenuCardID" value="@selectedMenuCardId" />
+                                        <input type="hidden" name="cardId" value="@selectedCardId" />
+                                        <input type="hidden" name="categoryId" value="@selectedCategoryId" />
 
                                         <div class="form-group">
                                             <select class="form-select" disabled="disabled">
@@ -441,9 +446,9 @@
                                             <div class="form-check">
                                                 <input type="checkbox"
                                                        id="editIsAlcoholicCheck-@editItem.MenuItemID"
-                                                       name="IsAlcoholic"
                                                        class="form-check-input"
                                                        @(editItem.IsAlcoholic ? "checked" : "") />
+                                                <input type="hidden" name="IsAlcoholic" id="editIsAlcoholicHidden-@editItem.MenuItemID" value="@(editItem.IsAlcoholic ? "true" : "false")" />
                                                 <label for="editIsAlcoholicCheck-@editItem.MenuItemID" class="form-check-label">
                                                     Alcoholische drank (21% VAT)
                                                 </label>
@@ -501,5 +506,8 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/alcoholic-checkbox.js"></script>
     <script src="~/js/manage-menu-alcoholic.js"></script>
+    <script src="~/js/manage-menu.js"></script>
+    <script src="~/js/menu-item-form.js"></script>
 }
