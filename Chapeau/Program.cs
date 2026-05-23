@@ -1,4 +1,5 @@
 using Chapeau.Repositories;
+using Chapeau.Repositories.Financial;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Globalization;
@@ -81,13 +82,11 @@ namespace Chapeau
                     policy.RequireRole("Kitchen"));
             });
 
-            // Register Repositories
-            builder.Services.AddControllersWithViews();
+            // Register repositories and services
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
-            builder.Services.AddLogging();
 
-            // Register Repositories - Map interfaces to implementations
+            // Map interfaces to implementations
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
             builder.Services.AddScoped<Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
@@ -103,6 +102,10 @@ namespace Chapeau
             builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
 
             builder.Services.AddScoped<Services.Overview.EmployeeService>();
+
+            // Register Financial services and repositories
+            builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
+            builder.Services.AddScoped<IFinancialService, FinancialService>();
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())
