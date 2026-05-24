@@ -1,242 +1,58 @@
-@model IEnumerable<Chapeau.Models.MenuItem>
+@model Chapeau.ViewModels.MenuManagementViewModel
+@using System.Globalization
 
 @{
-    ViewData["Title"] = "MenuBeheer";
-
-    // Kaarten en categorieën laden
-    var menuCards = ViewBag.MenuCards as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> 
-        ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-    var tableCategories = ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category> 
-        ?? Enumerable.Empty<Chapeau.Models.Category>();
-    var filterCategories = ViewBag.FilterCategories as IEnumerable<Chapeau.Models.Category> ?? tableCategories;
-    var formCategories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category> 
-        ?? Enumerable.Empty<Chapeau.Models.Category>();
-
-    // Huidige selecties uit filters ophalen
-    int? selectedCardId = ViewBag.SelectedCardId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCardId) : null;
-    int? selectedCategoryId = ViewBag.SelectedCategoryId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCategoryId) : null;
-    int selectedMenuCardId = ViewBag.SelectedMenuCardId != null ? Convert.ToInt32(ViewBag.SelectedMenuCardId) : 0;
-
-    // Formulier state (create/edit modus)
-    var editItem = ViewBag.EditItem as Chapeau.Models.MenuItem;
-    bool isEdit = editItem != null;
-    bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
-
-    const int DrinksCardId = 3;
-
-    string GetMenuCardName(int menuCardId)
-    {
-        return menuCardId switch
-        {
-            1 => "Lunch",
-            2 => "Diner",
-            3 => "Dranken",
-            _ => "Onbekend"
-        };
-    }
-
-    string GetCategoryDisplayName(Chapeau.Models.Category category)
-    {
-        if (category.MenuCardID == 1 || category.MenuCardID == 2)
-        {
-            return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
-        }
-        return category.Name;
-    }
+    ViewData["Title"] = "Menu Beheer";
+    CultureInfo culture = CultureInfo.GetCultureInfo("nl-NL");
 }
 
 <div class="page-content">
     <div class="page-title-row">
         <h2 class="page-title">Menu Beheer</h2>
-
-        @if (showCreate)
+        @if (Model.ShowCreate)
         {
-            <a href="@Url.Action("Index", "ManageMenu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
-               class="btn-close-form preserve-scroll">
-                Sluiten
-            </a>
+            <a asp-action="Index" asp-route-cardId="@Model.SelectedCardId"
+               asp-route-categoryId="@Model.SelectedCategoryId"
+               class="btn-close-form preserve-scroll">Sluiten</a>
         }
         else
         {
-            <a href="@Url.Action("Index", "ManageMenu", new { showCreate = true, cardId = selectedCardId, categoryId = selectedCategoryId })"
-               class="btn-new preserve-scroll">
-                + Nieuw Item
-            </a>
+            <a asp-action="Index" asp-route-showCreate="true" asp-route-cardId="@Model.SelectedCardId"
+               asp-route-categoryId="@Model.SelectedCategoryId"
+               class="btn-new preserve-scroll">+ Nieuw Item</a>
         }
     </div>
 
-    <form id="manageMenuFilterForm"
-          method="get"
-          action="@Url.Action("Index", "ManageMenu")"
-          class="preserve-scroll-form">
+    <form id="manageMenuFilterForm" asp-action="Index" method="get" class="preserve-scroll-form">
         <div class="filter-row">
             <div class="filter-group">
                 <label for="cardFilter">Kaart</label>
-
                 <select id="cardFilter" name="cardId">
                     <option value="">Alle</option>
-
-                    @foreach (var card in menuCards)
+                    @foreach (var card in Model.MenuCards)
                     {
-                        if (selectedCardId.HasValue && selectedCardId.Value.ToString() == card.Value)
-                        {
-                            <option value="@card.Value" selected="selected">@card.Text</option>
-                        }
-                        else
-                        {
-                            <option value="@card.Value">@card.Text</option>
-                        }
+                        <option value="@card.MenuCardID" selected="@(Model.SelectedCardId == card.MenuCardID)">@card.Name</option>
                     }
                 </select>
             </div>
-
             <div class="filter-group">
                 <label for="categoryFilter">Categorie</label>
-
                 <select id="categoryFilter" name="categoryId">
                     <option value="">Alle</option>
-
-                    @foreach (var category in filterCategories)
+                    @foreach (var category in Model.FilterCategories)
                     {
-                        if (!selectedCardId.HasValue || category.MenuCardID == selectedCardId.Value)
-                        {
-                            if (selectedCategoryId.HasValue && selectedCategoryId.Value == category.CategoryID)
-                            {
-                                <option value="@category.CategoryID" selected="selected">
-                                    @GetCategoryDisplayName(category)
-                                </option>
-                            }
-                            else
-                            {
-                                <option value="@category.CategoryID">
-                                    @GetCategoryDisplayName(category)
-                                </option>
-                            }
-                        }
+                        <option value="@category.CategoryID" selected="@(Model.SelectedCategoryId == category.CategoryID)">
+                            @category.DisplayName
+                        </option>
                     }
                 </select>
             </div>
         </div>
     </form>
 
-    @if (showCreate)
+    @if (Model.ShowCreate)
     {
-        <div class="form-card">
-            <h3>Nieuw Menu Item</h3>
-
-            <form method="post"
-                  action="@Url.Action("Create", "ManageMenu")"
-                  enctype="multipart/form-data"
-                  class="menu-item-form preserve-scroll-form">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden" name="cardId" value="@selectedCardId" />
-                <input type="hidden" name="categoryId" value="@selectedCategoryId" />
-
-                <div class="form-group">
-                    <select id="createMenuCardSelect"
-                            name="MenuCardID"
-                            class="form-select"
-                            required="required">
-                        <option value="">-- Selecteer kaart --</option>
-
-                        @foreach (var card in menuCards)
-                        {
-                            if (selectedCardId.HasValue && card.Value == selectedCardId.Value.ToString())
-                            {
-                                <option value="@card.Value" selected="selected">@card.Text</option>
-                            }
-                            else
-                            {
-                                <option value="@card.Value">@card.Text</option>
-                            }
-                        }
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <input type="text"
-                           name="Name"
-                           class="form-control"
-                           placeholder="Naam"
-                           required="required" />
-                </div>
-
-                <div class="form-group">
-                    <input type="text"
-                           name="RetailPrice"
-                           class="form-control"
-                           placeholder="Prijs (12,50)"
-                           required="required" />
-                </div>
-
-                <div class="form-group">
-                    <input type="number"
-                           name="Stock"
-                           class="form-control"
-                           placeholder="Voorraad"
-                           value="0"
-                           min="0"
-                           required="required" />
-                </div>
-
-                <div class="form-group">
-                    <select id="createCategorySelect"
-                            name="CategoryID"
-                            class="form-select"
-                            required="required">
-                        <option value="">-- Selecteer categorie --</option>
-
-                        @foreach (var category in formCategories)
-                        {
-                            <option value="@category.CategoryID"
-                                    data-cardid="@category.MenuCardID">
-                                @GetCategoryDisplayName(category)
-                            </option>
-                        }
-                    </select>
-                </div>
-
-                <div class="form-group" id="createIsAlcoholicGroup" style="display: none;">
-                    <div class="form-check">
-                        <input type="checkbox"
-                               id="createIsAlcoholicCheck"
-                               class="form-check-input" />
-                        <input type="hidden" name="IsAlcoholic" id="createIsAlcoholicHidden" value="false" />
-                        <label for="createIsAlcoholicCheck" class="form-check-label">
-                            Alcoholische drank (21% VAT)
-                        </label>
-                    </div>
-                    <small class="text-muted d-block mt-1">
-                        Vink aan indien dit product alcoholhoudend is
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label for="createImageUpload" class="form-label">Afbeelding optioneel</label>
-
-                    <input type="file"
-                           id="createImageUpload"
-                           name="imageFile"
-                           accept="image/*"
-                           class="form-control" />
-
-                    <small class="form-text text-muted">JPG, PNG, WebP max. 10MB</small>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary preserve-scroll">
-                        Toevoegen
-                    </button>
-
-                    <a href="@Url.Action("Index", "ManageMenu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
-                       class="btn btn-secondary preserve-scroll">
-                        Annuleren
-                    </a>
-                </div>
-            </form>
-        </div>
+        <partial name="_MenuItemForm" model="Model" />
     }
 
     <div class="menu-table-card">
@@ -251,101 +67,54 @@
                     <th>Acties</th>
                 </tr>
             </thead>
-
             <tbody>
-                @foreach (var item in Model)
+                @foreach (var item in Model.MenuItems)
                 {
-                    // Categorie en kaart opzoeken voor deze rij
-                    var category = tableCategories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
-                    string categoryName = category != null ? GetCategoryDisplayName(category) : "-";
-                    string cardName = category != null ? GetMenuCardName(category.MenuCardID) : "-";
-                    string rowClass = item.IsActive ? "" : "inactive-row";
-
-                    <tr class="@rowClass">
+                    <tr class="@(!item.IsActive ? "inactive-row" : string.Empty)">
                         <td>@item.Name</td>
-                        <td>€ @item.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))</td>
-                        <td>@cardName</td>
-                        <td>@categoryName</td>
-
+                        <td>€ @item.RetailPrice.ToString("F2", culture)</td>
+                        <td>@item.Category.MenuCardName</td>
+                        <td>@item.Category.DisplayName</td>
                         <td>
-                            @if (item.IsActive)
-                            {
-                                <span class="status-badge status-active">Actief</span>
-                            }
-                            else
-                            {
-                                <span class="status-badge status-inactive">Inactief</span>
-                            }
+                            <span class="status-badge @(item.IsActive ? "status-active" : "status-inactive")">
+                                @(item.IsActive ? "Actief" : "Inactief")
+                            </span>
                         </td>
-
                         <td>
                             <div class="action-cell">
-                                <a href="@Url.Action("Index", "ManageMenu", new { editId = item.MenuItemID, cardId = selectedCardId, categoryId = selectedCategoryId })"
-                                   class="action-icon action-edit preserve-scroll"
-                                   title="Bewerken">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
+                                <a asp-action="Index" asp-route-editId="@item.MenuItemID"
+                                   asp-route-cardId="@Model.SelectedCardId" asp-route-categoryId="@Model.SelectedCategoryId"
+                                   class="action-icon action-edit preserve-scroll" title="Bewerken">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
                                               d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              d="M19.5 7.125L16.875 4.5" />
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L16.875 4.5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round"
                                               d="M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                     </svg>
                                 </a>
-
-                                <form method="post"
-                                      action="@Url.Action("ToggleActive", "ManageMenu")"
-                                      class="inline-action-form preserve-scroll-form">
-
+                                <form asp-action="ToggleActive" method="post" class="inline-action-form preserve-scroll-form">
                                     @Html.AntiForgeryToken()
-
                                     <input type="hidden" name="id" value="@item.MenuItemID" />
-                                    <input type="hidden" name="cardId" value="@selectedCardId" />
-                                    <input type="hidden" name="categoryId" value="@selectedCategoryId" />
-
+                                    <input type="hidden" name="cardId" value="@Model.SelectedCardId" />
+                                    <input type="hidden" name="categoryId" value="@Model.SelectedCategoryId" />
                                     @if (item.IsActive)
                                     {
                                         <input type="hidden" name="active" value="false" />
-
-                                        <button type="submit"
-                                                class="action-icon action-inactive preserve-scroll"
-                                                title="Deactiveren">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M12 3v9" />
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
+                                        <button type="submit" class="action-icon action-inactive preserve-scroll" title="Deactiveren">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v9" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
                                             </svg>
                                         </button>
                                     }
                                     else
                                     {
                                         <input type="hidden" name="active" value="true" />
-
-                                        <button type="submit"
-                                                class="action-icon action-active preserve-scroll"
-                                                title="Activeren">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M12 3v9" />
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
+                                        <button type="submit" class="action-icon action-active preserve-scroll" title="Activeren">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v9" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
                                             </svg>
                                         </button>
                                     }
@@ -353,148 +122,11 @@
                             </div>
                         </td>
                     </tr>
-
-                    @if (isEdit && editItem != null && editItem.MenuItemID == item.MenuItemID)
+                    @if (Model.EditItem?.MenuItemID == item.MenuItemID)
                     {
-                        // Inline edit formulier voor geselecteerde item
-                        <tr class="inline-edit-row">
+                        <tr class="edit-row">
                             <td colspan="6">
-                                <div class="inline-edit-card">
-                                    <h3>Menu Item Bewerken</h3>
-
-                                    <form method="post"
-                                          action="@Url.Action("Edit", "ManageMenu")"
-                                          enctype="multipart/form-data"
-                                          class="menu-item-form preserve-scroll-form">
-
-                                        @Html.AntiForgeryToken()
-
-                                        <input type="hidden" name="MenuItemID" value="@editItem.MenuItemID" />
-                                        <input type="hidden" name="MenuCardID" value="@selectedMenuCardId" />
-                                        <input type="hidden" name="cardId" value="@selectedCardId" />
-                                        <input type="hidden" name="categoryId" value="@selectedCategoryId" />
-
-                                        <div class="form-group">
-                                            <select class="form-select" disabled="disabled">
-                                                @foreach (var card in menuCards)
-                                                {
-                                                    if (card.Value == selectedMenuCardId.ToString())
-                                                    {
-                                                        <option value="@card.Value" selected="selected">@card.Text</option>
-                                                    }
-                                                    else
-                                                    {
-                                                        <option value="@card.Value">@card.Text</option>
-                                                    }
-                                                }
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <input type="text"
-                                                   name="Name"
-                                                   class="form-control"
-                                                   placeholder="Naam"
-                                                   value="@editItem.Name"
-                                                   required="required" />
-                                        </div>
-
-                                        <div class="form-group">
-                                            <input type="text"
-                                                   name="RetailPrice"
-                                                   class="form-control"
-                                                   placeholder="Prijs (12,50)"
-                                                   value="@editItem.RetailPrice.ToString("F2", new System.Globalization.CultureInfo("nl-NL"))"
-                                                   required="required" />
-                                        </div>
-
-                                        <div class="form-group">
-                                            <input type="number"
-                                                   name="Stock"
-                                                   class="form-control"
-                                                   placeholder="Voorraad"
-                                                   value="@editItem.Stock"
-                                                   min="0"
-                                                   required="required" />
-                                        </div>
-
-                                        <div class="form-group">
-                                            <select name="CategoryID"
-                                                    class="form-select"
-                                                    required="required">
-                                                <option value="">-- Selecteer categorie --</option>
-
-                                                @foreach (var editCategory in formCategories)
-                                                {
-                                                    if (editItem.CategoryID == editCategory.CategoryID)
-                                                    {
-                                                        <option value="@editCategory.CategoryID" selected="selected">
-                                                            @GetCategoryDisplayName(editCategory)
-                                                        </option>
-                                                    }
-                                                    else
-                                                    {
-                                                        <option value="@editCategory.CategoryID">
-                                                            @GetCategoryDisplayName(editCategory)
-                                                        </option>
-                                                    }
-                                                }
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group" id="editIsAlcoholicGroup-@editItem.MenuItemID" style="display: none;">
-                                            <div class="form-check">
-                                                <input type="checkbox"
-                                                       id="editIsAlcoholicCheck-@editItem.MenuItemID"
-                                                       class="form-check-input"
-                                                       @(editItem.IsAlcoholic ? "checked" : "") />
-                                                <input type="hidden" name="IsAlcoholic" id="editIsAlcoholicHidden-@editItem.MenuItemID" value="@(editItem.IsAlcoholic ? "true" : "false")" />
-                                                <label for="editIsAlcoholicCheck-@editItem.MenuItemID" class="form-check-label">
-                                                    Alcoholische drank (21% VAT)
-                                                </label>
-                                            </div>
-                                            <small class="text-muted d-block mt-1">
-                                                Vink aan indien dit product alcoholhoudend is
-                                            </small>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label for="editImageUpload-@editItem.MenuItemID" class="form-label">
-                                                Afbeelding optioneel
-                                            </label>
-
-                                            <input type="file"
-                                                   id="editImageUpload-@editItem.MenuItemID"
-                                                   name="imageFile"
-                                                   accept="image/*"
-                                                   class="form-control" />
-
-                                            @if (!string.IsNullOrEmpty(editItem.ImagePath))
-                                            {
-                                                <div class="mt-2">
-                                                    <img src="@editItem.ImagePath"
-                                                         alt="@editItem.Name"
-                                                         class="menu-item-preview-image" />
-
-                                                    <div class="small text-muted mt-2">Huidige afbeelding</div>
-                                                </div>
-                                            }
-
-                                            <small class="form-text text-muted">JPG, PNG, WebP max. 10MB</small>
-                                        </div>
-
-                                        <div class="form-actions">
-                                            <button type="submit" class="btn btn-primary preserve-scroll">
-                                                Bijwerken
-                                            </button>
-
-                                            <a href="@Url.Action("Index", "ManageMenu", new { cardId = selectedCardId, categoryId = selectedCategoryId })"
-                                               class="btn btn-secondary preserve-scroll">
-                                                Annuleren
-                                            </a>
-                                        </div>
-                                    </form>
-                                </div>
+                                <partial name="_MenuItemForm" model="Model" />
                             </td>
                         </tr>
                     }
@@ -502,12 +134,8 @@
             </tbody>
         </table>
     </div>
-
 </div>
 
 @section Scripts {
-    <script src="~/js/alcoholic-checkbox.js"></script>
-    <script src="~/js/manage-menu-alcoholic.js"></script>
-    <script src="~/js/manage-menu.js"></script>
-    <script src="~/js/menu-item-form.js"></script>
+    <script src="~/js/manage-menu.js" asp-append-version="true"></script>
 }

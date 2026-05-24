@@ -8,6 +8,7 @@ namespace Chapeau.Constants
         public const string AddMenuItemError = "Er is een fout opgetreden bij het toevoegen van het menu-item.";
         public const string UpdateMenuItemError = "Er is een fout opgetreden bij het bijwerken van het menu-item.";
         public const string MenuItemNotFound = "Menu-item niet gevonden.";
+        public const string InactiveMenuItemStockChangeNotAllowed = "De voorraad van een inactief menu-item kan niet worden gewijzigd.";
         public const string MenuItemDuplicateName = "Een menu-item met deze naam bestaat al.";
         public const string UpdateMenuItemAlreadyExists = "Een ander menu-item met deze naam bestaat al.";
 
@@ -17,7 +18,7 @@ namespace Chapeau.Constants
         public const string CanOnlyChangeCategoryWithinCard = "Je mag alleen een categorie kiezen binnen dezelfde kaart.";
 
         public const string EmployeeNotFound = "Medewerker niet gevonden.";
-        public const string UsernameTaken = "Deze gebruikersnaam is al in gebruik. Probeer een ander.";
+        public const string UsernameTaken = "Deze naam is al in gebruik. Probeer een andere.";
         public const string UpdateEmployeeActiveError = "Er is een fout opgetreden bij het bijwerken van de actieve status van de medewerker.";
 
         public const string RetrieveCategoriesError = "Er is een fout opgetreden bij het ophalen van categorieën.";

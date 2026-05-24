@@ -1,4 +1,5 @@
 using Chapeau.Constants;
+using Chapeau.Constants.Login;
 using Chapeau.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,9 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace Chapeau.Controllers
 {
     [Authorize(Policy = "CanManageRoles")]
-    public class RolePermissionsController(RoleRepository roleRepository) : Controller
+    public class RolePermissionsController(IRoleRepository roleRepository) : Controller
     {
-        private readonly RoleRepository _roleRepository = roleRepository;
+        private readonly IRoleRepository _roleRepository = roleRepository;
 
         private const string FlashErrorKey = "FlashError";
         private const string FlashSuccessKey = "FlashSuccess";
@@ -60,7 +61,7 @@ namespace Chapeau.Controllers
             try
             {
                 _roleRepository.SetRolePermissions(id, selectedPermissions ?? new List<string>());
-                TempData[FlashSuccessKey] = $"Permissies voor '{role.RoleName}' succesvol bijgewerkt.";
+                TempData[FlashSuccessKey] = $"Permissies voor '{role.RoleName}' bijgewerkt. De medewerker moet opnieuw inloggen om gewijzigde rechten te gebruiken.";
             }
             catch
             {
@@ -75,21 +76,22 @@ namespace Chapeau.Controllers
             var dbPermissions = _roleRepository.GetAllPermissionNames();
             var defaultPermissions = new List<string>
             {
-                "ViewMenu",
-                "TakeOrders",
-                "PrepareFood",
-                "PrepareDrinks",
-                "ManageEmployees",
-                "ManageMenuItems",
-                "ManageStock",
-                "ViewReports",
-                "ManageRoles",
-                "ViewFinance"
+                PermissionConstants.ViewMenu,
+                PermissionConstants.TakeOrders,
+                PermissionConstants.PrepareFood,
+                PermissionConstants.PrepareDrinks,
+                PermissionConstants.ManageEmployees,
+                PermissionConstants.ManageMenuItems,
+                PermissionConstants.ManageStock,
+                PermissionConstants.ViewFinance,
+                PermissionConstants.ManageRoles
             };
 
-            return dbPermissions.Count > 0
-                ? dbPermissions.Union(defaultPermissions).OrderBy(p => p).ToList()
-                : defaultPermissions;
+            return dbPermissions
+                .Where(permission => permission != PermissionConstants.LegacyViewReports)
+                .Union(defaultPermissions)
+                .OrderBy(permission => permission)
+                .ToList();
         }
     }
 }

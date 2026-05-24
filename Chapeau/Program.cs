@@ -1,4 +1,5 @@
 using Chapeau.Repositories;
+using Chapeau.Constants.Login;
 using Chapeau.Repositories.Financial;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -65,8 +66,19 @@ namespace Chapeau
                 options.AddPolicy("CanManageMenuItems", policy =>
                     policy.RequireClaim("Permission", "ManageMenuItems"));
 
+                options.AddPolicy("CanManageStock", policy =>
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.ManageStock));
+
+                options.AddPolicy("CanViewFinance", policy =>
+                    policy.RequireAssertion(context =>
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.LegacyViewReports)));
+
+                // Backwards compatible policy for older non-management controller examples.
                 options.AddPolicy("CanViewReports", policy =>
-                    policy.RequireClaim("Permission", "ViewReports"));
+                    policy.RequireAssertion(context =>
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.LegacyViewReports)));
 
                 options.AddPolicy("CanManageRoles", policy =>
                     policy.RequireClaim("Permission", "ManageRoles"));
@@ -86,13 +98,20 @@ namespace Chapeau
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
 
-            // Map interfaces to implementations
+            // Scenario 5: repositories via interfaces
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
-            builder.Services.AddScoped<Repositories.EmployeeRepository>();
+            builder.Services.AddScoped<Repositories.IEmployeeRepository, Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
-            builder.Services.AddScoped<Repositories.RoleRepository>();
+            builder.Services.AddScoped<Repositories.IRoleRepository, Repositories.RoleRepository>();
 
-            // Register Services
+            // Scenario 5: application services via interfaces
+            builder.Services.AddScoped<Services.IMenuService, Services.MenuService>();
+            builder.Services.AddScoped<Services.IStockService, Services.StockService>();
+            builder.Services.AddScoped<Services.ICategoryService, Services.CategoryService>();
+            builder.Services.AddScoped<Services.IImageService, Services.ImageService>();
+            builder.Services.AddScoped<Services.Overview.IEmployeeService, Services.Overview.EmployeeService>();
+
+            // Concrete registrations remain for existing non-management controllers.
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
@@ -100,8 +119,6 @@ namespace Chapeau
             builder.Services.AddScoped<Services.Login.IAuthService, Services.Login.AuthService>();
             builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
             builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
-
-            builder.Services.AddScoped<Services.Overview.EmployeeService>();
 
             // Register Financial services and repositories
             builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();

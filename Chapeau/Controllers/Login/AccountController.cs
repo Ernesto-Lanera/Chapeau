@@ -47,15 +47,19 @@ namespace Chapeau.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var employee = await _authService.AuthenticateAsync(model.Name, model.Password);
+            AuthenticationResult authentication = await _authService.AuthenticateAsync(model.Name, model.Password);
 
-            if (employee == null)
+            if (authentication.Status != AuthenticationStatus.Success || authentication.Employee is null)
             {
-                model.ErrorMessage = AuthConstants.InvalidCredentialsError;
+                model.ErrorMessage = authentication.Status == AuthenticationStatus.InactiveAccount
+                    ? AuthConstants.InactiveAccountError
+                    : AuthConstants.InvalidCredentialsError;
+
                 ModelState.AddModelError(string.Empty, model.ErrorMessage);
                 return View(model);
             }
 
+            Employee employee = authentication.Employee;
             await SignInUserAsync(employee, model.RememberMe);
 
             if (IsValidReturnUrl(model.ReturnUrl)) return Redirect(model.ReturnUrl);

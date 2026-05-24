@@ -14,10 +14,10 @@ namespace Chapeau.Services.Login
 
     public class ClaimsService : IClaimsService
     {
-        private readonly RoleRepository _roleRepository;
+        private readonly IRoleRepository _roleRepository;
         private readonly ILogger<ClaimsService> _logger;
 
-        public ClaimsService(RoleRepository roleRepository, ILogger<ClaimsService> logger)
+        public ClaimsService(IRoleRepository roleRepository, ILogger<ClaimsService> logger)
         {
             _roleRepository = roleRepository;
             _logger = logger;
@@ -147,9 +147,8 @@ namespace Chapeau.Services.Login
                     PermissionConstants.ManageEmployees,
                     PermissionConstants.ManageMenuItems,
                     PermissionConstants.ManageStock,
-                    PermissionConstants.ViewReports,
-                    PermissionConstants.ManageRoles,
-                    PermissionConstants.ViewFinance
+                    PermissionConstants.ViewFinance,
+                    PermissionConstants.ManageRoles
                 },
 
                 RoleConstants.BedieningId => new List<string>

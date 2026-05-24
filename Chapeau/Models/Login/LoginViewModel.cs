@@ -5,6 +5,7 @@ namespace Chapeau.Models.Login
     public class LoginViewModel
     {
         [Required(ErrorMessage = "Naam is verplicht")]
+        [Display(Name = "Naam")]
         public string Name { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Wachtwoord is verplicht")]

@@ -1,17 +1,14 @@
-@model Chapeau.ViewModels.FinancialOverviewViewModel
+@model Chapeau.ViewModels.FinancialViewModel
+@using Chapeau.Emums
 @using System.Globalization
 @using System.Text.Json
 
 @{
     ViewData["Title"] = "Financieel Overzicht";
+    CultureInfo culture = CultureInfo.GetCultureInfo("nl-NL");
+    string Money(decimal amount) => amount.ToString("C2", culture);
 
-    CultureInfo nlCulture = CultureInfo.GetCultureInfo("nl-NL");
-    string Money(decimal amount) => $"€ {amount.ToString("0.00", CultureInfo.InvariantCulture)}";
-    decimal Average(decimal total, int quantity) => quantity > 0 ? total / quantity : 0m;
-
-    var trendLabels = Model.RevenueTrend
-        .Select(item => item.MonthStart.ToString("MMM", nlCulture))
-        .ToList();
+    var trendLabels = Model.RevenueTrend.Select(item => item.MonthStart.ToString("MMM", culture)).ToList();
     var drinksTrend = Model.RevenueTrend.Select(item => item.DrinksIncome).ToList();
     var lunchTrend = Model.RevenueTrend.Select(item => item.LunchIncome).ToList();
     var dinnerTrend = Model.RevenueTrend.Select(item => item.DinnerIncome).ToList();
@@ -28,60 +25,40 @@
         <h2 class="finance-panel-title">Periode Selectie</h2>
 
         <div class="finance-period-buttons" role="group" aria-label="Kies een periode">
-            <a asp-controller="Finance"
-               asp-action="Index"
-               asp-route-period="month"
-               class="finance-period-button @(Model.SelectedPeriod == "month" ? "is-selected" : "")">
+            <a asp-action="Index" asp-route-period="month"
+               class="finance-period-button @(Model.SelectedPeriod == FinancialPeriod.Month ? "is-selected" : "")">
                 Deze Maand
             </a>
-            <a asp-controller="Finance"
-               asp-action="Index"
-               asp-route-period="quarter"
-               class="finance-period-button @(Model.SelectedPeriod == "quarter" ? "is-selected" : "")">
+            <a asp-action="Index" asp-route-period="quarter"
+               class="finance-period-button @(Model.SelectedPeriod == FinancialPeriod.Quarter ? "is-selected" : "")">
                 Dit Kwartaal
             </a>
-            <a asp-controller="Finance"
-               asp-action="Index"
-               asp-route-period="year"
-               class="finance-period-button @(Model.SelectedPeriod == "year" ? "is-selected" : "")">
+            <a asp-action="Index" asp-route-period="year"
+               class="finance-period-button @(Model.SelectedPeriod == FinancialPeriod.Year ? "is-selected" : "")">
                 Dit Jaar
             </a>
-            <button id="selectCustomPeriod"
-                    type="button"
-                    aria-controls="customPeriodForm"
-                    aria-expanded="@(Model.SelectedPeriod == "custom" ? "true" : "false")"
-                    class="finance-period-button finance-custom-period-button @(Model.SelectedPeriod == "custom" ? "is-selected" : "")">
+            <button id="selectCustomPeriod" type="button" aria-controls="customPeriodForm"
+                    aria-expanded="@(Model.SelectedPeriod == FinancialPeriod.Custom ? "true" : "false")"
+                    class="finance-period-button finance-custom-period-button @(Model.SelectedPeriod == FinancialPeriod.Custom ? "is-selected" : "")">
                 <i class="bi bi-calendar3" aria-hidden="true"></i>
                 Aangepaste Periode
             </button>
         </div>
 
-        <form asp-controller="Finance"
-              asp-action="Index"
-              method="get"
-              id="customPeriodForm"
+        <form asp-action="Index" method="get" id="customPeriodForm"
               class="finance-custom-period-form"
-              hidden="@(Model.SelectedPeriod == "custom" ? null : "hidden")">
+              hidden="@(Model.SelectedPeriod == FinancialPeriod.Custom ? null : "hidden")">
             <input type="hidden" name="period" value="custom" />
-
             <div class="finance-field">
                 <label for="startDate">Startdatum</label>
-                <input id="startDate"
-                       name="startDate"
-                       type="date"
-                       value="@Model.CustomStartDate?.ToString("yyyy-MM-dd")"
-                       required />
+                <input id="startDate" name="startDate" type="date"
+                       value="@Model.CustomStartDate?.ToString("yyyy-MM-dd")" required />
             </div>
-
             <div class="finance-field">
                 <label for="endDate">Einddatum</label>
-                <input id="endDate"
-                       name="endDate"
-                       type="date"
-                       value="@Model.CustomEndDate?.ToString("yyyy-MM-dd")"
-                       required />
+                <input id="endDate" name="endDate" type="date"
+                       value="@Model.CustomEndDate?.ToString("yyyy-MM-dd")" required />
             </div>
-
             <button type="submit" class="finance-submit-button">Toepassen</button>
         </form>
 
@@ -92,45 +69,42 @@
                 @Model.FilterError
             </p>
         }
+        <p class="text-muted mb-0">Getoonde periode: @Model.PeriodDisplay</p>
     </section>
 
     <section class="finance-kpi-grid" aria-label="Omzettotalen">
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Omzet Dranken</p>
             <p class="finance-kpi-value is-drinks">@Money(Model.DrinksIncome)</p>
-            <p class="finance-kpi-support">@Model.DrinksSalesCount bestellingen</p>
+            <p class="finance-kpi-support">@Model.DrinksSalesCount verkochte items</p>
         </article>
-
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Omzet Lunch</p>
             <p class="finance-kpi-value is-lunch">@Money(Model.LunchIncome)</p>
-            <p class="finance-kpi-support">@Model.LunchSalesCount bestellingen</p>
+            <p class="finance-kpi-support">@Model.LunchSalesCount verkochte items</p>
         </article>
-
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Omzet Diner</p>
             <p class="finance-kpi-value is-dinner">@Money(Model.DinnerIncome)</p>
-            <p class="finance-kpi-support">@Model.DinnerSalesCount bestellingen</p>
+            <p class="finance-kpi-support">@Model.DinnerSalesCount verkochte items</p>
         </article>
-
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Fooien</p>
             <p class="finance-kpi-value is-tip">@Money(Model.TotalTips)</p>
-            <p class="finance-kpi-support">van @Model.TotalSalesCount bestellingen</p>
+            <p class="finance-kpi-support">op betaalde orders</p>
         </article>
     </section>
 
-    <section class="finance-panel finance-table-panel" aria-label="Omzet per categorie">
-        <h2 class="finance-panel-title">Omzet per Categorie</h2>
-
+    <section class="finance-panel finance-table-panel" aria-label="Omzet per menukaart">
+        <h2 class="finance-panel-title">Verkopen en inkomsten per menukaart</h2>
         <div class="finance-table-wrapper">
             <table class="finance-category-table">
                 <thead>
                     <tr>
-                        <th>Categorie</th>
-                        <th>Aantal Verkopen</th>
-                        <th>Totaal Inkomen</th>
-                        <th>Gemiddelde per Verkoop</th>
+                        <th>Menukaart</th>
+                        <th>Aantal verkopen</th>
+                        <th>Totaal inkomen</th>
+                        <th>Gemiddelde per item</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -138,37 +112,36 @@
                         <th scope="row">Dranken</th>
                         <td>@Model.DrinksSalesCount</td>
                         <td>@Money(Model.DrinksIncome)</td>
-                        <td>@Money(Average(Model.DrinksIncome, Model.DrinksSalesCount))</td>
+                        <td>@Money(Model.DrinksAverageIncome)</td>
                     </tr>
                     <tr>
                         <th scope="row">Lunch</th>
                         <td>@Model.LunchSalesCount</td>
                         <td>@Money(Model.LunchIncome)</td>
-                        <td>@Money(Average(Model.LunchIncome, Model.LunchSalesCount))</td>
+                        <td>@Money(Model.LunchAverageIncome)</td>
                     </tr>
                     <tr>
                         <th scope="row">Diner</th>
                         <td>@Model.DinnerSalesCount</td>
                         <td>@Money(Model.DinnerIncome)</td>
-                        <td>@Money(Average(Model.DinnerIncome, Model.DinnerSalesCount))</td>
+                        <td>@Money(Model.DinnerAverageIncome)</td>
                     </tr>
                     <tr class="finance-total-row">
-                        <th scope="row">TOTAAL</th>
+                        <th scope="row">Totaal</th>
                         <td>@Model.TotalSalesCount</td>
                         <td>@Money(Model.TotalIncomeBeforeTips)</td>
-                        <td>@Money(Average(Model.TotalIncomeBeforeTips, Model.TotalSalesCount))</td>
+                        <td>@Money(Model.TotalAverageIncome)</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </section>
 
-    <section class="finance-panel finance-chart-panel" aria-label="Omzet trend">
-        <h2 class="finance-panel-title">Omzet Trend</h2>
+    <section class="finance-panel finance-chart-panel" aria-label="Omzettrend">
+        <h2 class="finance-panel-title">Omzettrend</h2>
         <div class="finance-chart-container">
-            <canvas id="revenueTrendChart" aria-label="Grafiek met de maandelijkse omzet van dranken, lunch en diner"></canvas>
+            <canvas id="revenueTrendChart" aria-label="Maandelijkse omzet per menukaart"></canvas>
         </div>
-
         <script id="revenueTrendData" type="application/json">
             @Html.Raw(JsonSerializer.Serialize(new
             {

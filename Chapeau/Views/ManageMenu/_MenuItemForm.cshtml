@@ -1,0 +1,103 @@
+@model Chapeau.ViewModels.MenuManagementViewModel
+@using System.Globalization
+
+@{
+    bool isEdit = Model.EditItem is not null;
+    var item = Model.EditItem;
+    int? menuCardId = isEdit ? item!.Category.MenuCardID : Model.SelectedCardId;
+    string action = isEdit ? "Edit" : "Create";
+    string heading = isEdit ? "Menu Item Bewerken" : "Nieuw Menu Item";
+    string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
+    CultureInfo culture = CultureInfo.GetCultureInfo("nl-NL");
+}
+
+<div class="form-card @(isEdit ? "edit-form-card" : string.Empty)">
+    <h3>@heading</h3>
+    <form asp-action="@action" method="post" enctype="multipart/form-data"
+          class="menu-item-form preserve-scroll-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="cardId" value="@Model.SelectedCardId" />
+        <input type="hidden" name="categoryId" value="@Model.SelectedCategoryId" />
+
+        @if (isEdit)
+        {
+            <input type="hidden" name="MenuItemID" value="@item!.MenuItemID" />
+            <input type="hidden" name="MenuCardID" value="@menuCardId" />
+        }
+
+        <div class="form-group">
+            <label for="menuCard-@action" class="form-label">Kaart</label>
+            @if (isEdit)
+            {
+                <input id="menuCard-@action" type="text" class="form-control"
+                       value="@item!.Category.MenuCardName" disabled />
+                <small class="text-muted">Een item blijft binnen dezelfde menukaart.</small>
+            }
+            else
+            {
+                <select id="createMenuCardSelect" name="MenuCardID" class="form-select" required>
+                    <option value="">-- Selecteer kaart --</option>
+                    @foreach (var card in Model.MenuCards)
+                    {
+                        <option value="@card.MenuCardID" selected="@(menuCardId == card.MenuCardID)">
+                            @card.Name
+                        </option>
+                    }
+                </select>
+            }
+        </div>
+        <div class="form-group">
+            <label for="name-@action" class="form-label">Naam</label>
+            <input id="name-@action" type="text" name="Name" class="form-control"
+                   value="@(item?.Name ?? string.Empty)" maxlength="100" required />
+        </div>
+        <div class="form-group">
+            <label for="price-@action" class="form-label">Prijs</label>
+            <input id="price-@action" type="text" name="RetailPrice" class="form-control"
+                   value="@(item?.RetailPrice.ToString("F2", culture) ?? string.Empty)"
+                   placeholder="12,50" required />
+        </div>
+        <div class="form-group">
+            <label for="stock-@action" class="form-label">Voorraad</label>
+            <input id="stock-@action" type="number" name="Stock" class="form-control"
+                   value="@(item?.Stock ?? 0)" min="0" required />
+        </div>
+        <div class="form-group">
+            <label for="@(isEdit ? "editCategorySelect" : "createCategorySelect")" class="form-label">Categorie</label>
+            <select id="@(isEdit ? "editCategorySelect" : "createCategorySelect")"
+                    name="CategoryID" class="form-select" required>
+                <option value="">-- Selecteer categorie --</option>
+                @foreach (var category in Model.FormCategories)
+                {
+                    <option value="@category.CategoryID" data-cardid="@category.MenuCardID"
+                            selected="@(item?.CategoryID == category.CategoryID)">
+                        @category.DisplayName
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="form-group">
+            <div class="form-check">
+                <input type="checkbox" name="IsAlcoholic" value="true"
+                       id="alcoholic-@action" class="form-check-input" checked="@(item?.IsAlcoholic == true)" />
+                <input type="hidden" name="IsAlcoholic" value="false" />
+                <label for="alcoholic-@action" class="form-check-label">Alcoholische drank (21% btw)</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="image-@action" class="form-label">Afbeelding optioneel</label>
+            <input id="image-@action" type="file" name="imageFile" accept="image/*" class="form-control" />
+            @if (isEdit && !string.IsNullOrWhiteSpace(item!.ImagePath))
+            {
+                <img src="@item.ImagePath" alt="@item.Name" class="menu-item-preview-image mt-2" />
+            }
+            <small class="form-text text-muted">JPG, PNG of WebP, maximaal 10 MB.</small>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary preserve-scroll">@buttonText</button>
+            <a asp-action="Index" asp-route-cardId="@Model.SelectedCardId"
+               asp-route-categoryId="@Model.SelectedCategoryId"
+               class="btn btn-secondary preserve-scroll">Annuleren</a>
+        </div>
+    </form>
+</div>

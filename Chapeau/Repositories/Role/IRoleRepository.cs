@@ -1,11 +1,12 @@
-//using System.Collections.Generic;
-//using Chapeau.Models;
+using Chapeau.Models;
 
-//namespace Chapeau.Repositories.Role
-//{
-//    public interface IRoleRepository
-//    {
-//        List<Chapeau.Models.Role> GetRoles();
-//        Chapeau.Models.Role? GetRoleById(int id);
-//    }
-//}
+namespace Chapeau.Repositories
+{
+    public interface IRoleRepository
+    {
+        List<EmployeeRole> GetRoles();
+        List<string> GetRolePermissions(int roleId);
+        List<string> GetAllPermissionNames();
+        void SetRolePermissions(int roleId, List<string> permissionNames);
+    }
+}

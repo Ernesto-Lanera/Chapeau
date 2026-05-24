@@ -1,6 +1,7 @@
 using System.Data;
 using Chapeau.Constants;
 using Chapeau.Emums;
+using Chapeau.Models;
 using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Repositories.Financial
