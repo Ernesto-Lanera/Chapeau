@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Chapeau.Constants;
 using StockStatusEnum = Chapeau.Emums.StockStatus;
 
 namespace Chapeau.Models
@@ -7,19 +8,19 @@ namespace Chapeau.Models
     {
         public int MenuItemID { get; set; }
 
-        [Required(ErrorMessage = "Naam is verplicht.")]
-        [StringLength(100, ErrorMessage = "Naam mag niet langer zijn dan 100 karakters.")]
+        [Required(ErrorMessage = ErrorMessages.MenuItemNameRequired)]
+        [StringLength(100, ErrorMessage = ErrorMessages.MenuItemNameTooLong)]
         public string Name { get; set; } = string.Empty;
 
-        [Range(0.01, double.MaxValue, ErrorMessage = "Prijs moet hoger zijn dan 0.")]
+        [Range(0.01, double.MaxValue, ErrorMessage = ErrorMessages.MenuItemPriceInvalid)]
         public decimal RetailPrice { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Voorraad mag niet negatief zijn.")]
+        [Range(0, int.MaxValue, ErrorMessage = ErrorMessages.MenuItemStockNegative)]
         public int Stock { get; set; }
 
         public bool IsActive { get; set; } = true;
 
-        [Range(1, int.MaxValue, ErrorMessage = "Selecteer een geldige categorie.")]
+        [Range(1, int.MaxValue, ErrorMessage = ErrorMessages.InvalidCategory)]
         public int CategoryID { get; set; }
 
         public Category Category { get; set; } = new();
@@ -60,7 +61,7 @@ namespace Chapeau.Models
         {
             if (newStock < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(newStock), "Voorraad mag niet negatief zijn.");
+                throw new ArgumentOutOfRangeException(nameof(newStock), ErrorMessages.MenuItemStockNegative);
             }
 
             Stock = newStock;

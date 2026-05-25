@@ -18,5 +18,12 @@ namespace Chapeau.Models
             !string.IsNullOrWhiteSpace(MenuCard.Name)
                 ? MenuCard.Name
                 : MenuCardConstants.GetMenuCardName(MenuCardID);
+
+        /// Alleen drankcategorieen die alcohol kunnen bevatten mogen de 21%-btw keuze tonen.
+        /// Frisdrank en Koffie / Thee zijn altijd niet-alcoholisch.
+        public bool AllowsAlcoholicChoice =>
+            MenuCardID == MenuCardConstants.DrinksCardId
+            && !Name.Equals("Frisdrank", StringComparison.OrdinalIgnoreCase)
+            && !Name.Replace(" ", string.Empty).Equals("Koffie/Thee", StringComparison.OrdinalIgnoreCase);
     }
 }

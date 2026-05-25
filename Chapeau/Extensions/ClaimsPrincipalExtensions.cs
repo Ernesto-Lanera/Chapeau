@@ -118,8 +118,11 @@ namespace Chapeau.Extensions
         public static bool CanViewMenu(this ClaimsPrincipal principal) => principal.HasPermission("ViewMenu");
         public static bool CanTakeOrders(this ClaimsPrincipal principal) => principal.HasPermission("TakeOrders");
         public static bool CanPrepareFood(this ClaimsPrincipal principal) => principal.HasPermission("PrepareFood");
+        public static bool CanPrepareDrinks(this ClaimsPrincipal principal) => principal.HasPermission("PrepareDrinks");
         public static bool CanManageEmployees(this ClaimsPrincipal principal) => principal.HasPermission("ManageEmployees");
         public static bool CanManageMenuItems(this ClaimsPrincipal principal) => principal.HasPermission("ManageMenuItems");
+        public static bool CanManageStock(this ClaimsPrincipal principal) => principal.HasPermission("ManageStock");
+        public static bool CanViewFinance(this ClaimsPrincipal principal) => principal.HasPermission("ViewFinance");
         public static bool CanViewReports(this ClaimsPrincipal principal) => principal.HasPermission("ViewReports");
         public static bool CanManageRoles(this ClaimsPrincipal principal) => principal.HasPermission("ManageRoles");
     }

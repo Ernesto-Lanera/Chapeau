@@ -1,14 +1,13 @@
-﻿using Chapeau.Constants;
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Menu controller for displaying the restaurant menu to customers.
-    /// </summary>
+    [Authorize(Policy = "CanViewMenu")]
     public class MenuController : Controller
     {
         private readonly IMenuService _menuService;
@@ -21,10 +20,6 @@ namespace Chapeau.Controllers
             _menuService = menuService;
             _categoryService = categoryService;
         }
-
-        /// <summary>
-        /// Display the full menu with all items, filterable by category.
-        /// </summary>
         public IActionResult Index()
         {
             try

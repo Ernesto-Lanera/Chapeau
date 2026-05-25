@@ -1,13 +1,12 @@
-﻿using Chapeau.Models;
+using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Payment controller for handling order payment and viewing payment details.
-    /// </summary>
+    [Authorize(Policy = "CanTakeOrders")]
     public class PaymentController : Controller
     {
         private readonly IOrderService _orderService;
@@ -17,9 +16,6 @@ namespace Chapeau.Controllers
             _orderService = orderService;
         }
 
-        /// <summary>
-        /// Display all running orders for payment selection.
-        /// </summary>
         public IActionResult Index()
         {
             try
@@ -34,9 +30,6 @@ namespace Chapeau.Controllers
             }
         }
 
-        /// <summary>
-        /// Display detailed payment information for a specific order.
-        /// </summary>
         public IActionResult ViewOrder(int tableId)
         {
             try

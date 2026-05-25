@@ -25,18 +25,12 @@ namespace Chapeau.Controllers
                 TempData[FlashMessages.SuccessKey] = "Medewerker toegevoegd.";
                 return RedirectToAction(nameof(Index));
             }
-            catch (ArgumentException exception)
-            {
-                return RedirectWithError(exception.Message, showCreate: true);
-            }
-            catch (InvalidOperationException exception)
-            {
-                return RedirectWithError(exception.Message, showCreate: true);
-            }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Onverwachte fout bij toevoegen van een medewerker.");
-                return RedirectWithError(ErrorMessages.UnexpectedError, showCreate: true);
+                return HandleEmployeeError(
+                    exception,
+                    "Onverwachte fout bij toevoegen van een medewerker.",
+                    showCreate: true);
             }
         }
 
@@ -50,18 +44,12 @@ namespace Chapeau.Controllers
                 TempData[FlashMessages.SuccessKey] = "Medewerker bijgewerkt.";
                 return RedirectToAction(nameof(Index));
             }
-            catch (ArgumentException exception)
-            {
-                return RedirectWithError(exception.Message, editId: input.EmployeeID);
-            }
-            catch (InvalidOperationException exception)
-            {
-                return RedirectWithError(exception.Message, editId: input.EmployeeID);
-            }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Onverwachte fout bij bijwerken van medewerker {EmployeeId}.", input.EmployeeID);
-                return RedirectWithError(ErrorMessages.UnexpectedError, editId: input.EmployeeID);
+                return HandleEmployeeError(
+                    exception,
+                    $"Onverwachte fout bij bijwerken van medewerker {input.EmployeeID}.",
+                    editId: input.EmployeeID);
             }
         }
 
@@ -85,9 +73,26 @@ namespace Chapeau.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private IActionResult RedirectWithError(string message, bool showCreate = false, int? editId = null)
+        /// Handles exceptions from employee operations and returns appropriate redirect with error message.
+        private IActionResult HandleEmployeeError(
+            Exception exception,
+            string logMessage,
+            bool showCreate = false,
+            int? editId = null)
         {
-            TempData[FlashMessages.ErrorKey] = message;
+            string errorMessage = exception switch
+            {
+                ArgumentException => exception.Message,
+                InvalidOperationException => exception.Message,
+                _ => ErrorMessages.UnexpectedError
+            };
+
+            if (exception is not (ArgumentException or InvalidOperationException))
+            {
+                _logger.LogError(exception, logMessage);
+            }
+
+            TempData[FlashMessages.ErrorKey] = errorMessage;
             return RedirectToAction(nameof(Index), new { showCreate, editId });
         }
     }

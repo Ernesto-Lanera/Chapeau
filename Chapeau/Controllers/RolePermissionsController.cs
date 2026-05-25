@@ -58,14 +58,27 @@ namespace Chapeau.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var permissionsToSave = selectedPermissions ?? new List<string>();
+
             try
             {
-                _roleRepository.SetRolePermissions(id, selectedPermissions ?? new List<string>());
-                TempData[FlashSuccessKey] = $"Permissies voor '{role.RoleName}' bijgewerkt. De medewerker moet opnieuw inloggen om gewijzigde rechten te gebruiken.";
+                _roleRepository.SetRolePermissions(id, permissionsToSave);
+                TempData[FlashSuccessKey] = $"Permissies voor '{role.RoleName}' bijgewerkt. De navigatie gebruikt direct de nieuwe rechten.";
             }
             catch
             {
                 TempData[FlashErrorKey] = "Er is een fout opgetreden bij het opslaan van de permissies.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            bool changedOwnRole = User.HasClaim(ClaimTypeConstants.RoleId, id.ToString());
+            bool stillCanManageRoles = permissionsToSave.Contains(
+                PermissionConstants.ManageRoles,
+                StringComparer.OrdinalIgnoreCase);
+
+            if (changedOwnRole && !stillCanManageRoles)
+            {
+                return RedirectToAction("Index", "Home");
             }
 
             return RedirectToAction(nameof(Index));

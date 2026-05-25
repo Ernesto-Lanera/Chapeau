@@ -1,14 +1,13 @@
-﻿using Chapeau.Models;
+using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Kitchen controller for displaying running orders (kitchen view).
-    /// </summary>
+    [Authorize(Policy = "CanPrepareFood")]
     public class KitchenController : Controller
     {
         private readonly IOrderService _orderService;
@@ -17,10 +16,6 @@ namespace Chapeau.Controllers
         {
             _orderService = orderService;
         }
-
-        /// <summary>
-        /// Display all running orders with waiting time for kitchen staff.
-        /// </summary>
         public IActionResult Index()
         {
             try

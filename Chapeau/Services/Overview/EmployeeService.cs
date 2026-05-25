@@ -48,7 +48,10 @@ namespace Chapeau.Services.Overview
 
         public void UpdateEmployee(EmployeeInputModel input)
         {
-            if (input.EmployeeID <= 0) throw new ArgumentException("Ongeldige medewerker.");
+            if (input.EmployeeID <= 0)
+            {
+                throw new ArgumentException("Ongeldig medewerker ID.", nameof(input.EmployeeID));
+            }
 
             Employee employee = _employeeRepository.GetEmployeeById(input.EmployeeID)
                 ?? throw new InvalidOperationException(ErrorMessages.EmployeeNotFound);
@@ -68,7 +71,11 @@ namespace Chapeau.Services.Overview
 
         public void SetEmployeeActive(int employeeId, bool active)
         {
-            if (employeeId <= 0) throw new ArgumentException("Ongeldige medewerker.");
+            if (employeeId <= 0)
+            {
+                throw new ArgumentException("Ongeldig medewerker ID.", nameof(employeeId));
+            }
+
             _employeeRepository.SetEmployeeActive(employeeId, active);
             _logger.LogInformation("Medewerkerstatus gewijzigd: {EmployeeId} - {Active}.", employeeId, active);
         }
@@ -77,9 +84,20 @@ namespace Chapeau.Services.Overview
 
         private void ValidateInput(EmployeeInputModel input, bool requirePassword, int? excludedEmployeeId)
         {
-            if (string.IsNullOrWhiteSpace(input.Name)) throw new ArgumentException("Naam is verplicht.");
-            if (input.Name.Trim().Length > 100) throw new ArgumentException("Naam mag niet langer zijn dan 100 karakters.");
-            if (requirePassword && string.IsNullOrWhiteSpace(input.Password)) throw new ArgumentException("Wachtwoord/Pincode is verplicht.");
+            if (string.IsNullOrWhiteSpace(input.Name))
+            {
+                throw new ArgumentException(ErrorMessages.EmployeeNameRequired);
+            }
+
+            if (input.Name.Trim().Length > 100)
+            {
+                throw new ArgumentException(ErrorMessages.EmployeeNameTooLong);
+            }
+
+            if (requirePassword && string.IsNullOrWhiteSpace(input.Password))
+            {
+                throw new ArgumentException(ErrorMessages.EmployeePasswordRequired);
+            }
 
             if (_employeeRepository.NameExists(input.Name.Trim(), excludedEmployeeId))
             {
@@ -91,6 +109,6 @@ namespace Chapeau.Services.Overview
 
         private EmployeeRole GetRole(int roleId) =>
             _roleRepository.GetRoles().FirstOrDefault(role => role.RoleID == roleId)
-            ?? throw new ArgumentException("Kies een geldige rol.");
+            ?? throw new ArgumentException(ErrorMessages.EmployeeRoleRequired);
     }
 }

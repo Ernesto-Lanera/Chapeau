@@ -1,6 +1,11 @@
+@using Chapeau.Constants.Login
+@using Chapeau.Extensions
+@{
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+}
+
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow app-navbar">
     <div class="container-fluid">
-
         <a class="navbar-brand fw-semibold app-brand"
            asp-area=""
            asp-controller="Home"
@@ -19,43 +24,87 @@
         </button>
 
         <div class="collapse navbar-collapse" id="mainNav">
-
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @if (User.HasClaim("Permission", "ManageMenuItems"))
+                    @if (User.HasPermission(PermissionConstants.ManageMenuItems))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageMenu" ? "active" : "")" asp-controller="ManageMenu" asp-action="Index"><i class="bi bi-tools me-1"></i>Menubeheer</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "ManageMenu" ? "active" : string.Empty)" asp-controller="ManageMenu" asp-action="Index">
+                                <i class="bi bi-tools me-1"></i>Menubeheer
+                            </a>
+                        </li>
                     }
-                    @if (User.HasClaim("Permission", "ManageEmployees"))
+                    @if (User.HasPermission(PermissionConstants.ManageEmployees))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Employee" ? "active" : "")" asp-controller="Employee" asp-action="Index"><i class="bi bi-person me-1"></i>Medewerkers</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Employee" ? "active" : string.Empty)" asp-controller="Employee" asp-action="Index">
+                                <i class="bi bi-person me-1"></i>Medewerkers
+                            </a>
+                        </li>
                     }
-                    @if (User.HasClaim("Permission", "ManageStock"))
+                    @if (User.HasPermission(PermissionConstants.ManageStock))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "active" : "")" asp-controller="Stock" asp-action="Index"><i class="bi bi-box-seam me-1"></i>Voorraad</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Stock" ? "active" : string.Empty)" asp-controller="Stock" asp-action="Index">
+                                <i class="bi bi-box-seam me-1"></i>Voorraad
+                            </a>
+                        </li>
                     }
-                    @if (User.HasClaim("Permission", "ViewFinance") || User.HasClaim("Permission", "ViewReports"))
+                    @if (User.HasPermission(PermissionConstants.ViewFinance))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Finance" ? "active" : "")" asp-controller="Finance" asp-action="Index"><i class="bi bi-graph-up me-1"></i>Financieel</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Finance" ? "active" : string.Empty)" asp-controller="Finance" asp-action="Index">
+                                <i class="bi bi-graph-up me-1"></i>Financieel
+                            </a>
+                        </li>
                     }
-                    @if (User.HasClaim("Permission", "ManageRoles"))
+                    @if (User.HasPermission(PermissionConstants.ManageRoles))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RolePermissions" ? "active" : "")" asp-controller="RolePermissions" asp-action="Index">Permissies</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "RolePermissions" ? "active" : string.Empty)" asp-controller="RolePermissions" asp-action="Index">
+                                <i class="bi bi-shield-lock me-1"></i>Permissies
+                            </a>
+                        </li>
                     }
-                    @if (User.IsInRole("Bediening") || User.HasClaim("RoleID", "3"))
+
+                    @* Operationele pagina's volgen de aangevinkte permissies, niet de vaste rol. *@
+                    @if (User.HasPermission(PermissionConstants.TakeOrders))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Table" ? "active" : "")" asp-controller="Table" asp-action="Index">Tafels</a></li>
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Menu" ? "active" : "")" asp-controller="Menu" asp-action="Index">Menu</a></li>
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Payment" ? "active" : "")" asp-controller="Payment" asp-action="Index">Betaling</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Table" ? "active" : string.Empty)" asp-controller="Table" asp-action="Index">
+                                Tafels
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Payment" ? "active" : string.Empty)" asp-controller="Payment" asp-action="Index">
+                                Betaling
+                            </a>
+                        </li>
                     }
-                    @if (User.IsInRole("Keuken") || User.HasClaim("RoleID", "4"))
+                    @if (User.HasPermission(PermissionConstants.ViewMenu))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Kitchen" ? "active" : "")" asp-controller="Kitchen" asp-action="Index">Keuken</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Menu" ? "active" : string.Empty)" asp-controller="Menu" asp-action="Index">
+                                Menu
+                            </a>
+                        </li>
                     }
-                    @if (User.IsInRole("Barman") || User.HasClaim("RoleID", "5"))
+                    @if (User.HasPermission(PermissionConstants.PrepareFood))
                     {
-                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Bar" ? "active" : "")" asp-controller="Bar" asp-action="Index">Bar</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Kitchen" ? "active" : string.Empty)" asp-controller="Kitchen" asp-action="Index">
+                                Keuken
+                            </a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.PrepareDrinks))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Bar" ? "active" : string.Empty)" asp-controller="Bar" asp-action="Index">
+                                Bar
+                            </a>
+                        </li>
                     }
                 </ul>
             }

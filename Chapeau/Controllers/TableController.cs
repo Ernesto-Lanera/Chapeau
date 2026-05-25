@@ -1,12 +1,11 @@
 using Chapeau.Emums;
 using Chapeau.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Table controller for displaying table status and marking orders as served.
-    /// </summary>
+    [Authorize(Policy = "CanTakeOrders")]
     public class TableController : Controller
     {
         private readonly IOrderService _orderService;
@@ -15,10 +14,6 @@ namespace Chapeau.Controllers
         {
             _orderService = orderService;
         }
-
-        /// <summary>
-        /// Display all table statuses with active order information.
-        /// </summary>
         public IActionResult Index()
         {
             try
@@ -33,9 +28,6 @@ namespace Chapeau.Controllers
             }
         }
 
-        /// <summary>
-        /// Mark an order as served (completed order, ready for payment).
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult MarkAsServed(int orderId)

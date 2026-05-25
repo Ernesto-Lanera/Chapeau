@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
-using Chapeau.Models;
-using Chapeau.ViewModels;
+﻿using Chapeau.Models;
 using Chapeau.Services;
+using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Bar controller for displaying running orders (drinks/bar view).
-    /// </summary>
+    [Authorize(Policy = "CanPrepareDrinks")]
     public class BarController : Controller
     {
         private readonly IOrderService _orderService;
@@ -18,9 +17,6 @@ namespace Chapeau.Controllers
             _orderService = orderService;
         }
 
-        /// <summary>
-        /// Display all running orders with waiting time for bar staff.
-        /// </summary>
         public IActionResult Index()
         {
             try
@@ -38,7 +34,7 @@ namespace Chapeau.Controllers
 
                 return View(viewModels);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 ViewBag.ErrorMessage = ex.Message;
                 return View("Error");

@@ -25,14 +25,20 @@ namespace Chapeau.Services
             List<Category> categories = _categoryRepository.GetCategories();
             categoryId = ValidateFilterCategory(cardId, categoryId, categories);
             MenuItem? editItem = editId.HasValue ? _menuRepository.GetMenuItemById(editId.Value) : null;
-            int? formCardId = editItem?.Category.MenuCardID ?? cardId;
+
+            // Bij toevoegen moeten alle categorieen in de HTML staan, zodat JavaScript
+            // direct tussen Lunch, Diner en Dranken kan wisselen zonder ontbrekende opties.
+            // Bij bewerken mag een item alleen binnen de bestaande kaart worden gewijzigd.
+            List<Category> formCategories = editItem is null
+                ? categories
+                : FilterCategories(categories, editItem.Category.MenuCardID);
 
             return new MenuManagementViewModel
             {
                 MenuItems = _menuRepository.GetMenuItems(cardId, categoryId),
                 MenuCards = CreateMenuCards(),
                 FilterCategories = FilterCategories(categories, cardId),
-                FormCategories = FilterCategories(categories, formCardId),
+                FormCategories = formCategories,
                 SelectedCardId = cardId,
                 SelectedCategoryId = categoryId,
                 ShowCreate = showCreate,
@@ -51,8 +57,8 @@ namespace Chapeau.Services
 
         public async Task AddMenuItemAsync(MenuItemInputModel input, IFormFile? imageFile)
         {
-            ValidateForCreate(input);
-            var item = CreateItem(input);
+            Category category = ValidateForCreate(input);
+            var item = CreateItem(input, category);
             item.IsActive = true;
             item.ImagePath = await GetUploadedImagePath(imageFile, string.Empty);
 
@@ -66,8 +72,8 @@ namespace Chapeau.Services
             MenuItem existingItem = _menuRepository.GetMenuItemById(input.MenuItemID)
                 ?? throw new InvalidOperationException(ErrorMessages.MenuItemNotFound);
 
-            ValidateForEdit(input, existingItem);
-            MenuItem updatedItem = CreateItem(input);
+            Category category = ValidateForEdit(input, existingItem);
+            MenuItem updatedItem = CreateItem(input, category);
             updatedItem.MenuItemID = existingItem.MenuItemID;
             updatedItem.IsActive = existingItem.IsActive;
             updatedItem.ImagePath = await GetUploadedImagePath(imageFile, existingItem.ImagePath);
@@ -83,7 +89,7 @@ namespace Chapeau.Services
             _logger.LogInformation("Menu-itemstatus gewijzigd: {MenuItemId} - {Active}.", menuItemId, active);
         }
 
-        private void ValidateForCreate(MenuItemInputModel input)
+        private Category ValidateForCreate(MenuItemInputModel input)
         {
             ValidateInput(input);
             if (!MenuCardConstants.IsValidMenuCardId(input.MenuCardID))
@@ -91,38 +97,40 @@ namespace Chapeau.Services
                 throw new ArgumentException(ErrorMessages.InvalidMenuCard);
             }
 
-            ValidateCategoryMatchesCard(input.CategoryID, input.MenuCardID);
+            Category category = ValidateCategoryMatchesCard(input.CategoryID, input.MenuCardID);
             ValidateUniqueName(input.Name, null);
+            return category;
         }
 
-        private void ValidateForEdit(MenuItemInputModel input, MenuItem existingItem)
+        private Category ValidateForEdit(MenuItemInputModel input, MenuItem existingItem)
         {
             ValidateInput(input);
-            ValidateCategoryMatchesCard(input.CategoryID, existingItem.Category.MenuCardID);
+            Category category = ValidateCategoryMatchesCard(input.CategoryID, existingItem.Category.MenuCardID);
             ValidateUniqueName(input.Name, input.MenuItemID);
+            return category;
         }
 
         private static void ValidateInput(MenuItemInputModel input)
         {
             if (string.IsNullOrWhiteSpace(input.Name))
             {
-                throw new ArgumentException("Naam is verplicht.");
+                throw new ArgumentException(ErrorMessages.MenuItemNameRequired);
             }
 
             if (input.Name.Trim().Length > 100)
             {
-                throw new ArgumentException("Naam mag niet langer zijn dan 100 karakters.");
+                throw new ArgumentException(ErrorMessages.MenuItemNameTooLong);
             }
 
             if (input.Stock < 0)
             {
-                throw new ArgumentException("Voorraad mag niet negatief zijn.");
+                throw new ArgumentException(ErrorMessages.MenuItemStockNegative);
             }
 
             ParsePrice(input.RetailPrice);
         }
 
-        private void ValidateCategoryMatchesCard(int categoryId, int expectedCardId)
+        private Category ValidateCategoryMatchesCard(int categoryId, int expectedCardId)
         {
             Category category = _categoryRepository.GetCategoryById(categoryId)
                 ?? throw new ArgumentException(ErrorMessages.InvalidCategory);
@@ -131,6 +139,8 @@ namespace Chapeau.Services
             {
                 throw new ArgumentException(ErrorMessages.CategoryNotBelongsToCard);
             }
+
+            return category;
         }
 
         private void ValidateUniqueName(string name, int? excludedMenuItemId)
@@ -144,13 +154,15 @@ namespace Chapeau.Services
             }
         }
 
-        private static MenuItem CreateItem(MenuItemInputModel input) => new()
+        private static MenuItem CreateItem(MenuItemInputModel input, Category category) => new()
         {
             Name = input.Name.Trim(),
             RetailPrice = ParsePrice(input.RetailPrice),
             Stock = input.Stock,
-            CategoryID = input.CategoryID,
-            IsAlcoholic = input.IsAlcoholic
+            CategoryID = category.CategoryID,
+            // Alleen alcoholgeschikte drankcategorieen mogen als alcoholisch worden opgeslagen.
+            // Hierdoor kunnen Frisdrank en Koffie / Thee ook via een gemanipuleerde POST geen 21%-keuze krijgen.
+            IsAlcoholic = category.AllowsAlcoholicChoice && input.IsAlcoholic
         };
 
         private async Task<string> GetUploadedImagePath(IFormFile? imageFile, string existingPath)
@@ -168,14 +180,14 @@ namespace Chapeau.Services
         {
             if (string.IsNullOrWhiteSpace(priceText))
             {
-                throw new ArgumentException("Prijs is verplicht.");
+                throw new ArgumentException(ErrorMessages.MenuItemPriceRequired);
             }
 
             string normalized = priceText.Trim().Replace(',', '.');
             if (!decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal price)
                 || price <= 0)
             {
-                throw new ArgumentException("Prijs moet hoger zijn dan 0.");
+                throw new ArgumentException(ErrorMessages.MenuItemPriceInvalid);
             }
 
             return price;
@@ -206,7 +218,7 @@ namespace Chapeau.Services
         {
             if (menuItemId <= 0)
             {
-                throw new ArgumentException("Ongeldig menu-item.");
+                throw new ArgumentException("Ongeldig menu-item ID.", nameof(menuItemId));
             }
         }
     }

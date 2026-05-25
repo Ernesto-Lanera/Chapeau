@@ -8,9 +8,6 @@ using Chapeau.ViewModels;
 
 namespace Chapeau.Services
 {
-    /// <summary>
-    /// Service for order management including retrieval, status updates, and payment calculations.
-    /// </summary>
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
@@ -42,7 +39,7 @@ namespace Chapeau.Services
         {
             if (tableId <= 0)
             {
-                throw new ArgumentException("Table ID must be greater than zero.", nameof(tableId));
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
             }
 
             try
@@ -71,7 +68,7 @@ namespace Chapeau.Services
         {
             if (orderId <= 0)
             {
-                throw new ArgumentException("Order ID must be greater than zero.", nameof(orderId));
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
             }
 
             try
@@ -88,12 +85,12 @@ namespace Chapeau.Services
         {
             if (orderId <= 0)
             {
-                throw new ArgumentException("Order ID must be greater than zero.", nameof(orderId));
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
             }
 
             if (tableNumber <= 0)
             {
-                throw new ArgumentException("Table number must be greater than zero.", nameof(tableNumber));
+                throw new ArgumentException("Ongeldig tafel nummer.", nameof(tableNumber));
             }
 
             try
@@ -113,9 +110,6 @@ namespace Chapeau.Services
             }
         }
 
-        /// <summary>
-        /// Builds a payment view model by grouping order items by MenuItemId and using domain-computed totals.
-        /// </summary>
         private static PaymentOrderViewModel BuildPaymentViewModel(int orderId, int tableNumber, List<OrderItem> items)
         {
             ArgumentNullException.ThrowIfNull(items);
@@ -128,16 +122,19 @@ namespace Chapeau.Services
             // Group items by MenuItemId to combine duplicates and sum quantities
             var groupedItems = items
                 .GroupBy(i => i.MenuItemId)
-                .Select(g => new OrderItem
+                .Select(g =>
                 {
-                    OrderItemId = g.First().OrderItemId,
-                    MenuItemId = g.Key,
-                    Name = g.First().Name,
-                    Price = g.First().Price,
-                    VATRate = g.First().VATRate,
-                    Amount = g.Sum(x => x.Amount),
-                    Comment = g.First().Comment,
-                    OrderId = orderId
+                    var firstItem = g.First();
+                    return new OrderItem
+                    {
+                        OrderItemId = firstItem.OrderItemId,
+                        MenuItemId = g.Key,
+                        MenuItem = firstItem.MenuItem,
+                        VATRate = firstItem.VATRate,
+                        Amount = g.Sum(x => x.Amount),
+                        Comment = firstItem.Comment,
+                        OrderId = orderId
+                    };
                 })
                 .ToList();
 

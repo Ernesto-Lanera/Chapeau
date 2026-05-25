@@ -6,12 +6,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Account controller for authentication (login/logout) and authorization.
-    /// </summary>
     public class AccountController : Controller
     {
         private readonly IAuthService _authService;
@@ -28,17 +26,13 @@ namespace Chapeau.Controllers
             _dashboardRouter = dashboardRouter;
         }
 
-        /// <summary>
-        /// Display login form. Redirects to dashboard if already authenticated.
-        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
         {
             if (User?.Identity?.IsAuthenticated ?? false)
             {
-                var controller = _dashboardRouter.GetDashboardControllerFromClaim(
-                    User.FindFirst(ClaimTypeConstants.RoleId)?.Value);
+                var controller = _dashboardRouter.GetDashboardController(User);
 
                 return RedirectToAction("Index", controller);
             }
@@ -49,9 +43,6 @@ namespace Chapeau.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
-        /// <summary>
-        /// Authenticate user credentials and establish session.
-        /// </summary>
         public async Task<IActionResult> Login(Models.Login.LoginViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -69,19 +60,18 @@ namespace Chapeau.Controllers
             }
 
             Employee employee = authentication.Employee;
-            await SignInUserAsync(employee, model.RememberMe);
+            var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
+            await SignInUserAsync(claimsPrincipal, model.RememberMe);
 
             if (IsValidReturnUrl(model.ReturnUrl)) return Redirect(model.ReturnUrl);
 
-            var controller = _dashboardRouter.GetDashboardController(employee.RoleID);
+            var controller = _dashboardRouter.GetDashboardController(claimsPrincipal);
             return RedirectToAction("Index", controller);
         }
 
-        private async Task SignInUserAsync(Employee employee, bool isPersistent)
+        private async Task SignInUserAsync(ClaimsPrincipal claimsPrincipal, bool isPersistent)
         {
-            ArgumentNullException.ThrowIfNull(employee);
-
-            var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
+            ArgumentNullException.ThrowIfNull(claimsPrincipal);
 
             var authProperties = new AuthenticationProperties
             {
@@ -102,9 +92,6 @@ namespace Chapeau.Controllers
                 && Uri.TryCreate(returnUrl, UriKind.Relative, out _);
         }
 
-        /// <summary>
-        /// Sign out user and end session.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -114,9 +101,6 @@ namespace Chapeau.Controllers
             return RedirectToAction("Login", "Account");
         }
 
-        /// <summary>
-        /// Display access denied message.
-        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult AccessDenied()

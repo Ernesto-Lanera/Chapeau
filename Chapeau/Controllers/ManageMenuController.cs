@@ -18,52 +18,40 @@ namespace Chapeau.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            MenuItemInputModel input, IFormFile? imageFile, int? cardId, int? categoryId)
+            MenuItemInputModel input, IFormFile? imageFile, int? returnCardId, int? returnCategoryId)
         {
             try
             {
                 await _menuService.AddMenuItemAsync(input, imageFile);
                 TempData[FlashMessages.SuccessKey] = $"Menu-item '{input.Name.Trim()}' is toegevoegd.";
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
-            }
-            catch (ArgumentException exception)
-            {
-                return RedirectWithError(exception.Message, cardId, categoryId, showCreate: true);
-            }
-            catch (InvalidOperationException exception)
-            {
-                return RedirectWithError(exception.Message, cardId, categoryId, showCreate: true);
+                return RedirectToAction(nameof(Index), new { cardId = returnCardId, categoryId = returnCategoryId });
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Onverwachte fout bij toevoegen van een menu-item.");
-                return RedirectWithError(ErrorMessages.UnexpectedError, cardId, categoryId, showCreate: true);
+                return HandleMenuItemError(
+                    exception, 
+                    "Onverwachte fout bij toevoegen van een menu-item.",
+                    returnCardId, returnCategoryId, showCreate: true);
             }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            MenuItemInputModel input, IFormFile? imageFile, int? cardId, int? categoryId)
+            MenuItemInputModel input, IFormFile? imageFile, int? returnCardId, int? returnCategoryId)
         {
             try
             {
                 await _menuService.UpdateMenuItemAsync(input, imageFile);
                 TempData[FlashMessages.SuccessKey] = $"Menu-item '{input.Name.Trim()}' is bijgewerkt.";
-                return RedirectToAction(nameof(Index), new { cardId, categoryId });
-            }
-            catch (ArgumentException exception)
-            {
-                return RedirectWithError(exception.Message, cardId, categoryId, editId: input.MenuItemID);
-            }
-            catch (InvalidOperationException exception)
-            {
-                return RedirectWithError(exception.Message, cardId, categoryId, editId: input.MenuItemID);
+                return RedirectToAction(nameof(Index), new { cardId = returnCardId, categoryId = returnCategoryId });
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Onverwachte fout bij bijwerken van menu-item {MenuItemId}.", input.MenuItemID);
-                return RedirectWithError(ErrorMessages.UnexpectedError, cardId, categoryId, editId: input.MenuItemID);
+                return HandleMenuItemError(
+                    exception,
+                    $"Onverwachte fout bij bijwerken van menu-item {input.MenuItemID}.",
+                    returnCardId, returnCategoryId, editId: input.MenuItemID);
             }
         }
 
@@ -87,10 +75,22 @@ namespace Chapeau.Controllers
             return RedirectToAction(nameof(Index), new { cardId, categoryId });
         }
 
-        private IActionResult RedirectWithError(
-            string message, int? cardId, int? categoryId, bool showCreate = false, int? editId = null)
+        /// Handles exceptions from menu item operations and returns appropriate redirect with error message.
+        private IActionResult HandleMenuItemError(Exception exception,string logMessage,int? cardId,int? categoryId,bool showCreate = false,int? editId = null)
         {
-            TempData[FlashMessages.ErrorKey] = message;
+            string errorMessage = exception switch
+            {
+                ArgumentException => exception.Message,
+                InvalidOperationException => exception.Message,
+                _ => ErrorMessages.UnexpectedError
+            };
+
+            if (exception is not (ArgumentException or InvalidOperationException))
+            {
+                _logger.LogError(exception, logMessage);
+            }
+
+            TempData[FlashMessages.ErrorKey] = errorMessage;
             return RedirectToAction(nameof(Index), new { cardId, categoryId, showCreate, editId });
         }
     }

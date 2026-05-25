@@ -1,32 +1,67 @@
 using Chapeau.Constants.Login;
+using System.Security.Claims;
 
 namespace Chapeau.Services.Login
 {
     public interface IDashboardRouterService
     {
-        string GetDashboardController(int roleId);
-        string GetDashboardControllerFromClaim(string? roleIdClaim);
+        string GetDashboardController(ClaimsPrincipal principal);
     }
 
     public class DashboardRouterService : IDashboardRouterService
     {
-        public string GetDashboardController(int roleId)
+        public string GetDashboardController(ClaimsPrincipal principal)
         {
+            int.TryParse(principal.FindFirst(ClaimTypeConstants.RoleId)?.Value, out int roleId);
+
             return roleId switch
             {
-                RoleConstants.ManagerId => "ManageMenu",
-                RoleConstants.BedieningId => "Menu",
-                RoleConstants.KeukenId => "Kitchen",
-                RoleConstants.BarmanId => "Bar",
-                _ => "Home"
+                RoleConstants.ManagerId => FirstAllowedController(principal,
+                    (PermissionConstants.ManageMenuItems, "ManageMenu"),
+                    (PermissionConstants.ManageEmployees, "Employee"),
+                    (PermissionConstants.ManageStock, "Stock"),
+                    (PermissionConstants.ViewFinance, "Finance"),
+                    (PermissionConstants.ManageRoles, "RolePermissions"),
+                    (PermissionConstants.TakeOrders, "Table"),
+                    (PermissionConstants.PrepareFood, "Kitchen"),
+                    (PermissionConstants.PrepareDrinks, "Bar"),
+                    (PermissionConstants.ViewMenu, "Menu")),
+
+                RoleConstants.BedieningId => FirstAllowedController(principal,
+                    (PermissionConstants.TakeOrders, "Table"),
+                    (PermissionConstants.ViewMenu, "Menu")),
+
+                RoleConstants.KeukenId => FirstAllowedController(principal,
+                    (PermissionConstants.PrepareFood, "Kitchen"),
+                    (PermissionConstants.ViewMenu, "Menu")),
+
+                RoleConstants.BarmanId => FirstAllowedController(principal,
+                    (PermissionConstants.PrepareDrinks, "Bar"),
+                    (PermissionConstants.ViewMenu, "Menu")),
+
+                _ => FirstAllowedController(principal,
+                    (PermissionConstants.ViewMenu, "Menu"),
+                    (PermissionConstants.TakeOrders, "Table"),
+                    (PermissionConstants.PrepareFood, "Kitchen"),
+                    (PermissionConstants.PrepareDrinks, "Bar"),
+                    (PermissionConstants.ManageMenuItems, "ManageMenu"),
+                    (PermissionConstants.ManageEmployees, "Employee"),
+                    (PermissionConstants.ManageStock, "Stock"),
+                    (PermissionConstants.ViewFinance, "Finance"),
+                    (PermissionConstants.ManageRoles, "RolePermissions"))
             };
         }
 
-        public string GetDashboardControllerFromClaim(string? roleIdClaim)
+        private static string FirstAllowedController(
+            ClaimsPrincipal principal,
+            params (string Permission, string Controller)[] candidates)
         {
-            if (int.TryParse(roleIdClaim, out int roleId))
+            foreach (var candidate in candidates)
             {
-                return GetDashboardController(roleId);
+                if (principal.HasClaim(ClaimTypeConstants.Permission, candidate.Permission))
+                {
+                    return candidate.Controller;
+                }
             }
 
             return "Home";

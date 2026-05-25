@@ -73,18 +73,16 @@ namespace Chapeau.Services.Login
             {
                 var permissions = _roleRepository.GetRolePermissions(employee.RoleID);
 
-                if (permissions.Any())
+                // An empty result is valid: a role can intentionally have no permissions.
+                // Defaults are only used when the permission data cannot be retrieved.
+                AddPermissionClaimsFromList(claims, permissions, employee);
+
+                if (!permissions.Any())
                 {
-                    AddPermissionClaimsFromList(claims, permissions, employee);
-                }
-                else
-                {
-                    _logger.LogWarning(
-                        "No permissions found in database for role {RoleID}, using defaults",
+                    _logger.LogInformation(
+                        "No permissions assigned in the database for role {RoleID}.",
                         employee.RoleID
                     );
-
-                    AddDefaultPermissionsForRole(claims, employee.RoleID);
                 }
             }
             catch (Exception ex)

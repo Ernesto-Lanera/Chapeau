@@ -1,5 +1,6 @@
 using Chapeau.Repositories;
 using Chapeau.Constants.Login;
+using Chapeau.Middleware;
 using Chapeau.Repositories.Financial;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -58,7 +59,10 @@ namespace Chapeau
                     policy.RequireClaim("Permission", "TakeOrders"));
 
                 options.AddPolicy("CanPrepareFood", policy =>
-                    policy.RequireClaim("Permission", "PrepareFood"));
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.PrepareFood));
+
+                options.AddPolicy("CanPrepareDrinks", policy =>
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.PrepareDrinks));
 
                 options.AddPolicy("CanManageEmployees", policy =>
                     policy.RequireClaim("Permission", "ManageEmployees"));
@@ -140,6 +144,7 @@ namespace Chapeau
             app.UseRouting();
 
             app.UseAuthentication();
+            app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
             app.UseAuthorization();
 
             app.MapStaticAssets();

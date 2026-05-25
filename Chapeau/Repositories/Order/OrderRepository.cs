@@ -131,7 +131,8 @@ public class OrderRepository : IOrderRepository
         {
             connection.Open();
             string query = @"SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered,
-                m.Name, m.Price, m.VATRate
+                m.MenuItemID, m.Name, m.Price, m.Stock, m.IsActive, m.CategoryID, m.ImagePath, m.IsAlcoholic,
+                oi.VATRate
                 FROM OrderItem oi
                 JOIN MenuItems m ON oi.MenuItemID = m.MenuItemID
                 WHERE oi.OrderID = @OrderID";
@@ -215,14 +216,25 @@ public class OrderRepository : IOrderRepository
 
     private static OrderItem MapOrderItem(SqlDataReader reader)
     {
+        var menuItem = new MenuItem
+        {
+            MenuItemID = (int)reader["MenuItemID"],
+            Name = reader["Name"].ToString() ?? string.Empty,
+            RetailPrice = (decimal)reader["Price"],
+            Stock = (int)reader["Stock"],
+            IsActive = (bool)reader["IsActive"],
+            CategoryID = (int)reader["CategoryID"],
+            ImagePath = reader["ImagePath"].ToString() ?? string.Empty,
+            IsAlcoholic = (bool)reader["IsAlcoholic"]
+        };
+
         return new OrderItem
         {
             OrderItemId = (int)reader["OrderItemID"],
             OrderId = (int)reader["OrderID"],
             MenuItemId = (int)reader["MenuItemID"],
             AmountOrdered = (int)reader["AmountOrdered"],
-            Name = reader["Name"].ToString(),
-            Price = (decimal)reader["Price"],
+            MenuItem = menuItem,
             VATRate = (decimal)reader["VATRate"]
         };
     }
