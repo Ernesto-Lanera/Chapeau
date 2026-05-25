@@ -4,11 +4,21 @@ using Chapeau.Utilities;
 
 namespace Chapeau.Services.Login
 {
+    /// <summary>
+    /// Service for authenticating users by credentials and validating their status.
+    /// </summary>
     public interface IAuthService
     {
+        /// <summary>
+        /// Authenticate a user by login identifier (username/employee number) and password.
+        /// Returns success status with employee info, or error status if authentication fails.
+        /// </summary>
         Task<AuthenticationResult> AuthenticateAsync(string loginIdentifier, string password);
     }
 
+    /// <summary>
+    /// Implementation of user authentication with password hashing and status checks.
+    /// </summary>
     public class AuthService(IEmployeeRepository employeeRepository, ILogger<AuthService> logger) : IAuthService
     {
         private readonly IEmployeeRepository _employeeRepository = employeeRepository;

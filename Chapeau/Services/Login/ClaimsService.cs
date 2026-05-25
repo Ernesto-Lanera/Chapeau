@@ -6,12 +6,19 @@ using System.Security.Claims;
 
 namespace Chapeau.Services.Login
 {
+    /// <summary>
+    /// Service for creating claims-based identity for authenticated users.
+    /// Includes role-based and permission-based claims for authorization.
+    /// </summary>
     public interface IClaimsService
     {
         ClaimsPrincipal CreateClaimsPrincipal(Employee employee);
         List<Claim> CreateClaims(Employee employee);
     }
 
+    /// <summary>
+    /// Implementation of claims-based authentication with role and permission mapping.
+    /// </summary>
     public class ClaimsService : IClaimsService
     {
         private readonly IRoleRepository _roleRepository;

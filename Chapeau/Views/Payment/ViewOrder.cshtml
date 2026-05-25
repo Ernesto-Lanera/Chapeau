@@ -40,7 +40,7 @@
                                     <td>@item.Name</td>
                                     <td>@item.AmountOrdered</td>
                                     <td>€@item.Price.ToString("F2")</td>
-                                    <td>€@(item.Price * item.AmountOrdered).ToString("F2")</td>
+                                    <td>€@item.TotalPrice.ToString("F2")</td>
                                 </tr>
                                 @if (!string.IsNullOrEmpty(item.Comment))
                                 {

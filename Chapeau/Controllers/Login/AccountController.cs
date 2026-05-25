@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
+    /// <summary>
+    /// Account controller for authentication (login/logout) and authorization.
+    /// </summary>
     public class AccountController : Controller
     {
         private readonly IAuthService _authService;
@@ -25,6 +28,9 @@ namespace Chapeau.Controllers
             _dashboardRouter = dashboardRouter;
         }
 
+        /// <summary>
+        /// Display login form. Redirects to dashboard if already authenticated.
+        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
@@ -43,6 +49,9 @@ namespace Chapeau.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
+        /// <summary>
+        /// Authenticate user credentials and establish session.
+        /// </summary>
         public async Task<IActionResult> Login(Models.Login.LoginViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -70,6 +79,8 @@ namespace Chapeau.Controllers
 
         private async Task SignInUserAsync(Employee employee, bool isPersistent)
         {
+            ArgumentNullException.ThrowIfNull(employee);
+
             var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
 
             var authProperties = new AuthenticationProperties
@@ -91,6 +102,9 @@ namespace Chapeau.Controllers
                 && Uri.TryCreate(returnUrl, UriKind.Relative, out _);
         }
 
+        /// <summary>
+        /// Sign out user and end session.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -100,6 +114,9 @@ namespace Chapeau.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        /// <summary>
+        /// Display access denied message.
+        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult AccessDenied()

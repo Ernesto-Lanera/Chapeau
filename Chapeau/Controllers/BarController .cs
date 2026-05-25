@@ -6,6 +6,9 @@ using Chapeau.Services;
 
 namespace Chapeau.Controllers
 {
+    /// <summary>
+    /// Bar controller for displaying running orders (drinks/bar view).
+    /// </summary>
     public class BarController : Controller
     {
         private readonly IOrderService _orderService;
@@ -15,6 +18,9 @@ namespace Chapeau.Controllers
             _orderService = orderService;
         }
 
+        /// <summary>
+        /// Display all running orders with waiting time for bar staff.
+        /// </summary>
         public IActionResult Index()
         {
             try
@@ -32,7 +38,7 @@ namespace Chapeau.Controllers
 
                 return View(viewModels);
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 ViewBag.ErrorMessage = ex.Message;
                 return View("Error");

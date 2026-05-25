@@ -6,6 +6,9 @@ using System.Collections.Generic;
 
 namespace Chapeau.Controllers
 {
+    /// <summary>
+    /// Kitchen controller for displaying running orders (kitchen view).
+    /// </summary>
     public class KitchenController : Controller
     {
         private readonly IOrderService _orderService;
@@ -15,6 +18,9 @@ namespace Chapeau.Controllers
             _orderService = orderService;
         }
 
+        /// <summary>
+        /// Display all running orders with waiting time for kitchen staff.
+        /// </summary>
         public IActionResult Index()
         {
             try
@@ -32,7 +38,7 @@ namespace Chapeau.Controllers
 
                 return View(viewModels);
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 ViewBag.ErrorMessage = ex.Message;
                 return View("Error");
