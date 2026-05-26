@@ -1,6 +1,7 @@
 ﻿using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
@@ -15,6 +16,7 @@ namespace Chapeau.Controllers
             _orderService = orderService;
         }
 
+        [Authorize(Roles = "Keuken")]
         public IActionResult Index()
         {
             try

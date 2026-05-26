@@ -110,38 +110,6 @@
 
                 </ul>
             }
-            else if (User.Identity?.IsAuthenticated == true &&
-                     (User.IsInRole("Keuken") || User.HasClaim("RoleID", "4")))
-            {
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Kitchen" ? "active" : "")"
-                           asp-area=""
-                           asp-controller="Kitchen"
-                           asp-action="Index">
-                            Keuken
-                        </a>
-                    </li>
-
-                </ul>
-            }
-            else if (User.Identity?.IsAuthenticated == true &&
-                     (User.IsInRole("Barman") || User.HasClaim("RoleID", "5")))
-            {
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Bar" ? "active" : "")"
-                           asp-area=""
-                           asp-controller="Bar"
-                           asp-action="Index">
-                            Bar
-                        </a>
-                    </li>
-
-                </ul>
-            }
 
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 @await Component.InvokeAsync("LoginStatus")
