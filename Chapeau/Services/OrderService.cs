@@ -85,17 +85,32 @@ namespace Chapeau.Services
 
         private static PaymentOrderViewModel BuildPaymentViewModel(int orderId, int tableNumber, List<OrderItem> items)
         {
-            decimal lowVat = items.Where(i => i.VATRate == 0.09m)
-                                  .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
-            decimal highVat = items.Where(i => i.VATRate == 0.21m)
-                                   .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
-            decimal total = items.Sum(i => i.Price * i.AmountOrdered * (1 + i.VATRate));
+            // Group items by name to combine duplicates and sum quantities
+            var groupedItems = items.GroupBy(i => i.MenuItemId)
+                                   .Select(g => new OrderItem
+                                   {
+                                       OrderItemId = g.First().OrderItemId,
+                                       MenuItemId = g.Key,
+                                       Name = g.First().Name,
+                                       Price = g.First().Price,
+                                       VATRate = g.First().VATRate,
+                                       AmountOrdered = g.Sum(x => x.AmountOrdered),
+                                       Comment = g.First().Comment,
+                                       OrderId = orderId
+                                   })
+                                   .ToList();
+
+            decimal lowVat = groupedItems.Where(i => i.VATRate == 0.06m)
+                                        .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
+            decimal highVat = groupedItems.Where(i => i.VATRate == 0.21m)
+                                         .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
+            decimal total = groupedItems.Sum(i => i.Price * i.AmountOrdered * (1 + i.VATRate));
 
             return new PaymentOrderViewModel
             {
                 OrderID = orderId,
                 TableNumber = tableNumber,
-                Items = items,
+                Items = groupedItems,
                 LowVAT = lowVat,
                 HighVAT = highVat,
                 Total = total

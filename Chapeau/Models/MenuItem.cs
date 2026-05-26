@@ -25,6 +25,8 @@ namespace Chapeau.Models
 
         public string ImagePath { get; set; } = "";
 
+        public bool IsAlcoholic { get; set; } = false;
+
         public string StockStatus
         {
             get

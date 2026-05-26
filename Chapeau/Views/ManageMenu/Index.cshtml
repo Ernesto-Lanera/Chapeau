@@ -22,20 +22,27 @@
     bool isEdit = editItem != null;
     bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
 
-    // Kaart naam van ID
-    string GetMenuCardName(int id) => id switch
-    {
-        1 => "Lunch",
-        2 => "Diner",
-        3 => "Dranken",
-        _ => "Onbekend"
-    };
+    const int DrinksCardId = 3;
 
-    // Categorie naam met kaart context
-    string GetCategoryDisplayName(Chapeau.Models.Category category) =>
-        (category.MenuCardID == 1 || category.MenuCardID == 2)
-            ? $"{category.Name} ({GetMenuCardName(category.MenuCardID)})"
-            : category.Name;
+    string GetMenuCardName(int menuCardId)
+    {
+        return menuCardId switch
+        {
+            1 => "Lunch",
+            2 => "Diner",
+            3 => "Dranken",
+            _ => "Onbekend"
+        };
+    }
+
+    string GetCategoryDisplayName(Chapeau.Models.Category category)
+    {
+        if (category.MenuCardID == 1 || category.MenuCardID == 2)
+        {
+            return $"{category.Name} ({GetMenuCardName(category.MenuCardID)})";
+        }
+        return category.Name;
+    }
 }
 
 <div class="page-content">
@@ -124,6 +131,9 @@
 
                 @Html.AntiForgeryToken()
 
+                <input type="hidden" name="cardId" value="@selectedCardId" />
+                <input type="hidden" name="categoryId" value="@selectedCategoryId" />
+
                 <div class="form-group">
                     <select id="createMenuCardSelect"
                             name="MenuCardID"
@@ -186,6 +196,21 @@
                             </option>
                         }
                     </select>
+                </div>
+
+                <div class="form-group" id="createIsAlcoholicGroup" style="display: none;">
+                    <div class="form-check">
+                        <input type="checkbox"
+                               id="createIsAlcoholicCheck"
+                               class="form-check-input" />
+                        <input type="hidden" name="IsAlcoholic" id="createIsAlcoholicHidden" value="false" />
+                        <label for="createIsAlcoholicCheck" class="form-check-label">
+                            Alcoholische drank (21% VAT)
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        Vink aan indien dit product alcoholhoudend is
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -346,6 +371,8 @@
 
                                         <input type="hidden" name="MenuItemID" value="@editItem.MenuItemID" />
                                         <input type="hidden" name="MenuCardID" value="@selectedMenuCardId" />
+                                        <input type="hidden" name="cardId" value="@selectedCardId" />
+                                        <input type="hidden" name="categoryId" value="@selectedCategoryId" />
 
                                         <div class="form-group">
                                             <select class="form-select" disabled="disabled">
@@ -415,6 +442,22 @@
                                             </select>
                                         </div>
 
+                                        <div class="form-group" id="editIsAlcoholicGroup-@editItem.MenuItemID" style="display: none;">
+                                            <div class="form-check">
+                                                <input type="checkbox"
+                                                       id="editIsAlcoholicCheck-@editItem.MenuItemID"
+                                                       class="form-check-input"
+                                                       @(editItem.IsAlcoholic ? "checked" : "") />
+                                                <input type="hidden" name="IsAlcoholic" id="editIsAlcoholicHidden-@editItem.MenuItemID" value="@(editItem.IsAlcoholic ? "true" : "false")" />
+                                                <label for="editIsAlcoholicCheck-@editItem.MenuItemID" class="form-check-label">
+                                                    Alcoholische drank (21% VAT)
+                                                </label>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">
+                                                Vink aan indien dit product alcoholhoudend is
+                                            </small>
+                                        </div>
+
                                         <div class="form-group">
                                             <label for="editImageUpload-@editItem.MenuItemID" class="form-label">
                                                 Afbeelding optioneel
@@ -460,7 +503,11 @@
         </table>
     </div>
 
+</div>
+
 @section Scripts {
-    <script src="~/js/manage-menu.js" asp-append-version="true"></script>
-    <script src="~/js/menu-item-form.js" asp-append-version="true"></script>
+    <script src="~/js/alcoholic-checkbox.js"></script>
+    <script src="~/js/manage-menu-alcoholic.js"></script>
+    <script src="~/js/manage-menu.js"></script>
+    <script src="~/js/menu-item-form.js"></script>
 }
