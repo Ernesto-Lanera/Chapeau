@@ -66,11 +66,29 @@
                                     }
                                 </div>
                             }
+
+                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="tableId" value="@table.TableId" />
+                                <input type="hidden" name="occupied" value="false" />
+                                <button type="submit" class="btn btn-outline-warning btn-sm w-100 mt-2">
+                                    <i class="bi bi-x-circle me-1"></i>Mark as Free
+                                </button>
+                            </form>
                         }
                         else
                         {
                             <span class="badge bg-success fs-6 mb-2">Free</span>
                             <p class="card-text text-muted mt-auto">No active order</p>
+
+                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="tableId" value="@table.TableId" />
+                                <input type="hidden" name="occupied" value="true" />
+                                <button type="submit" class="btn btn-outline-success btn-sm w-100 mt-2">
+                                    <i class="bi bi-check-circle me-1"></i>Mark as Occupied
+                                </button>
+                            </form>
                         }
                     </div>
                 </div>

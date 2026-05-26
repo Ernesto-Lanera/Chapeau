@@ -103,7 +103,14 @@ namespace Chapeau
             builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
 
             builder.Services.AddScoped<Services.Overview.EmployeeService>();
+            builder.Services.AddScoped<TableRepository>();
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var tableRepo = scope.ServiceProvider.GetRequiredService<TableRepository>();
+                tableRepo.EnsureColumnExists();
+            }
 
             if (!app.Environment.IsDevelopment())
             {

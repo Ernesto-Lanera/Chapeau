@@ -6,7 +6,8 @@ namespace Chapeau.Models
     {
         public int TableId { get; set; }
         public int TableNumber { get; set; }
-        public bool IsOccupied => Orders.Count > 0;
+        public bool IsManuallyOccupied { get; set; }
+        public bool IsOccupied => Orders.Count > 0 || IsManuallyOccupied;
         public List<TableOrderInfo> Orders { get; set; } = new();
     }
 
