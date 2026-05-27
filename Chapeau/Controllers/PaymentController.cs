@@ -18,16 +18,8 @@ namespace Chapeau.Controllers
 
         public IActionResult Index()
         {
-            try
-            {
-                List<Order> orders = _orderService.GetRunningOrders();
-                return View(orders);
-            }
-            catch (InvalidOperationException ex)
-            {
-                ViewBag.ErrorMessage = ex.Message;
-                return View("Error");
-            }
+            List<Order> orders = _orderService.GetAllRunningOrders();
+            return View(orders);
         }
 
         public IActionResult ViewOrder(int tableId)

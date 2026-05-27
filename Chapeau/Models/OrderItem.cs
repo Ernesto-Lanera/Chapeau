@@ -1,10 +1,13 @@
-﻿namespace Chapeau.Models
+﻿using Chapeau.Emums;
+
+namespace Chapeau.Models
 {
     public class OrderItem
     {
-        public int OrderItemId { get; set; }
+       public int OrderItemId { get; set; }
+        public OrderStatus OrderItemStatus { get; set; }
+        public CourseType? Course { get; set; }
         public int Amount { get; set; }
-        public int OrderItemStatus { get; set; }
 
         public int MenuItemId { get; set; }
         public MenuItem MenuItem { get; set; } = new();
@@ -23,6 +26,7 @@
             get => MenuItem.RetailPrice;
             set => MenuItem.RetailPrice = value;
         }
+        public int MenuCardID { get; set; }
 
         public decimal VATRate { get; set; }
         public int AmountOrdered

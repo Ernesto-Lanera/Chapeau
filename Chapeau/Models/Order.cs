@@ -9,11 +9,17 @@ namespace Chapeau.Models
         public int TableNumber { get; set; }
         public string? GuestName { get; set; }
         public DateTime OrderDate { get; set; }
+
+        public List<OrderItem>? OrderItems { get; set; }
+
         public OrderStatus OrderStatus { get; set; }
 
         /// <summary>
         /// Collection of order items. This is the canonical collection; OrderParts is deprecated.
         /// </summary>
+        public OrderType OrderType { get; set; }
+
+        // payment voor carlo
         public List<OrderItem> Items { get; set; } = new();
 
         /// <summary>
@@ -31,6 +37,7 @@ namespace Chapeau.Models
         {
             OrderId = orderId;
             Items = order;
+            OrderItems = order;
             TableId = tableId;
             OrderDate = date;
         }

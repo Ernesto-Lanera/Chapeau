@@ -1,3 +1,4 @@
+using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
@@ -16,28 +17,50 @@ namespace Chapeau.Controllers
         {
             _orderService = orderService;
         }
+
+        [Authorize(Roles = "Keuken")]
+
         public IActionResult Index()
         {
-            try
-            {
-                List<Order> orders = _orderService.GetRunningOrders();
 
-                List<OrderViewModel> viewModels = orders.Select(o => new OrderViewModel
+            List<Order> orders = _orderService.GetRunningOrders(OrderType.Food);
+
+            List<OrderViewModel> viewModels = orders.Select(o => new OrderViewModel
+            {
+                OrderID = o.OrderId,
+                TableNumber = o.TableNumber,
+                OrderDate = o.OrderDate,
+                OrderStatus = o.OrderStatus,
+                WaitingTime = _orderService.GetWaitingTime(o),
+
+                OrderItems = o.OrderItems
+               .OrderBy(i => i.Course)
+               .Select(i => new OrderItemViewModel
                 {
-                    OrderID = o.OrderId,
-                    TableNumber = o.TableNumber,
-                    OrderDate = o.OrderDate,
-                    OrderStatus = o.OrderStatus,
-                    WaitingTime = _orderService.GetWaitingTime(o)
-                }).ToList();
+                    Name = i.Name,
+                    Amount = i.AmountOrdered,
+                    Comment = i.Comment
+                }).ToList(),
 
-                return View(viewModels);
-            }
-            catch (InvalidOperationException ex)
-            {
-                ViewBag.ErrorMessage = ex.Message;
-                return View("Error");
-            }
+                            CourseGroups = o.OrderItems
+                .OrderBy(i => i.Course)
+                .GroupBy(i => i.Course)
+                .Select(g => new CourseGroupViewModel
+                {
+                    Course = g.Key ?? CourseType.Starter,
+                    Items = g.Select(i => new OrderItemViewModel
+                    {
+                        Name = i.Name,
+                        Amount = i.AmountOrdered,
+                        Comment = i.Comment
+                    }).ToList()
+                }).ToList()
+
+            }).ToList();
+
+            return View(viewModels);
         }
+
+       
     }
 }
