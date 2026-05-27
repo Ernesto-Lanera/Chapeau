@@ -11,45 +11,7 @@
             <span class="waiting-time">@Model.WaitingTimeDisplay</span>
         </div>
     </div>
-
-    <div class="mb-2">
+    <div>
         <span class="status-badge">@Model.OrderStatus</span>
     </div>
-
-    <hr />
-
-    @if (Model.CourseGroups != null && Model.CourseGroups.Any())
-    {
-        @foreach (var group in Model.CourseGroups)
-        {
-            <h6>@group.Course</h6>
-            @foreach (var item in group.Items)
-            {
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <span>@item.Amount× @item.Name</span>
-                        @if (!string.IsNullOrEmpty(item.Comment))
-                        {
-                            <small class="text-muted d-block">@item.Comment</small>
-                        }
-                    </div>
-                </div>
-            }
-        }
-    }
-    else
-    {
-        @foreach (var item in Model.OrderItems)
-        {
-            <div class="d-flex justify-content-between">
-                <div>
-                    <span>@item.Amount× @item.Name</span>
-                    @if (!string.IsNullOrEmpty(item.Comment))
-                    {
-                        <small class="text-muted d-block">@item.Comment</small>
-                    }
-                </div>
-            </div>
-        }
-    }
 </div>

@@ -17,25 +17,17 @@ namespace Chapeau.Services
             _orderRepository = orderRepository;
         }
 
-        public List<Order> GetRunningOrders(OrderType type)
+        public List<Order> GetRunningOrders()
         {
             try
             {
-                return _orderRepository.GetRunningOrders(type);
+                return _orderRepository.GetRunningOrders();
             }
             catch (Exception ex)
             {
                 throw new Exception("Failed to retrieve running orders: " + ex.Message);
             }
         }
-
-        public List<Order> GetAllRunningOrders()
-        {
-            var food = _orderRepository.GetRunningOrders(OrderType.Food);
-            var drink = _orderRepository.GetRunningOrders(OrderType.Drink);
-            return food.Concat(drink).ToList();
-        }
-
 
         public TimeSpan GetWaitingTime(Order order)
         {
