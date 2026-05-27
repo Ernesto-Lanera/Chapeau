@@ -1,4 +1,4 @@
-﻿using Chapeau.Emums;
+using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
@@ -8,6 +8,7 @@ using System.Collections.Generic;
 
 namespace Chapeau.Controllers
 {
+    [Authorize(Policy = "CanPrepareFood")]
     public class KitchenController : Controller
     {
         private readonly IOrderService _orderService;

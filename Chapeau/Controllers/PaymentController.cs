@@ -1,10 +1,12 @@
-﻿using Chapeau.Models;
+using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
+    [Authorize(Policy = "CanTakeOrders")]
     public class PaymentController : Controller
     {
         private readonly IOrderService _orderService;
@@ -22,12 +24,22 @@ namespace Chapeau.Controllers
 
         public IActionResult ViewOrder(int tableId)
         {
-            Order order = _orderService.GetActiveOrderByTableId(tableId);
-            if (order == null)
-                return View("Index");
-            
-            PaymentOrderViewModel viewModel = _orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber);
-            return View(viewModel);
+            try
+            {
+                Order? order = _orderService.GetActiveOrderByTableId(tableId);
+                if (order == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                PaymentOrderViewModel viewModel = _orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber);
+                return View(viewModel);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ViewBag.ErrorMessage = ex.Message;
+                return View("Error");
+            }
         }
     }
 }

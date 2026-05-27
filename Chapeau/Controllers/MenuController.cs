@@ -1,35 +1,41 @@
-﻿using Chapeau.Constants;
+using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Chapeau.Controllers
 {
+    [Authorize(Policy = "CanViewMenu")]
     public class MenuController : Controller
     {
-        private readonly MenuService _menuService;
-        private readonly CategoryService _categoryService;
-        private readonly ImageService _imageService;
+        private readonly IMenuService _menuService;
+        private readonly ICategoryService _categoryService;
 
         public MenuController(
-           MenuService menuService,
-           CategoryService categoryService,
-           ImageService imageService)
+            IMenuService menuService,
+            ICategoryService categoryService)
         {
             _menuService = menuService;
             _categoryService = categoryService;
-            _imageService = imageService;
         }
-
         public IActionResult Index()
         {
-            var menuItems = _menuService.GetMenuItems(null, null);
-            var allCategories = _categoryService.GetCategories();
+            try
+            {
+                var menuItems = _menuService.GetMenuItems(null, null);
+                var allCategories = _categoryService.GetCategories();
 
-            ViewBag.AllCategories = allCategories;
-            ViewBag.MenuCards = GetMenuCardSelectList();
-            return View(menuItems);
+                ViewBag.AllCategories = allCategories;
+                ViewBag.MenuCards = GetMenuCardSelectList();
+                return View(menuItems);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ViewBag.ErrorMessage = ex.Message;
+                return View("Error");
+            }
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()

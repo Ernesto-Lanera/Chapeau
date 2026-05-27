@@ -1,8 +1,7 @@
+using System.Data;
 using Chapeau.Constants;
 using Chapeau.Models;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Repositories.Menu
 {
@@ -12,253 +11,198 @@ namespace Chapeau.Repositories.Menu
             ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
         private readonly ILogger<MenuRepository> _logger = logger;
 
-        // Haalt menu-items op met optionele filter
         public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
         {
-            var menuItems = new List<MenuItem>();
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(BuildMenuItemsQuery(cardId, categoryId), connection);
+            AddFilterParameters(command, cardId, categoryId);
             connection.Open();
 
-            string query = BuildGetMenuItemsQuery(cardId, categoryId);
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            AddMenuItemsQueryParameters(command, cardId, categoryId);
-
             using SqlDataReader reader = command.ExecuteReader();
+            var menuItems = new List<MenuItem>();
             while (reader.Read())
             {
-                menuItems.Add(ReadMenuItem(reader));
+                menuItems.Add(MapMenuItem(reader));
             }
 
             return menuItems;
         }
 
-        // Haalt specifiek menu-item op via ID
         public MenuItem? GetMenuItemById(int menuItemId)
         {
-            using SqlConnection connection = new SqlConnection(_connectionString);
+            const string query = """
+                SELECT mi.MenuItemID, mi.Name, mi.Price, mi.Stock, mi.IsActive, mi.CategoryID,
+                       mi.ImagePath, mi.IsAlcoholic, c.Name AS CategoryName, c.MenuCardID,
+                       mc.Name AS MenuCardName
+                FROM MenuItems AS mi
+                INNER JOIN Categories AS c ON c.CategoryID = mi.CategoryID
+                INNER JOIN MenuCards AS mc ON mc.MenuCardID = c.MenuCardID
+                WHERE mi.MenuItemID = @MenuItemID;
+                """;
+
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = menuItemId;
             connection.Open();
-
-            string query = @"
-                SELECT 
-                    MenuItemID,
-                    Name,
-                    Price,
-                    Stock,
-                    IsActive,
-                    CategoryID,
-                    ImagePath,
-                    IsAlcoholic
-                FROM MenuItems
-                WHERE MenuItemID = @MenuItemID";
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@MenuItemID", menuItemId);
 
             using SqlDataReader reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                return ReadMenuItem(reader);
-            }
-
-            return null;
+            return reader.Read() ? MapMenuItem(reader) : null;
         }
 
-        // Voegt nieuw menu-item toe
+        public bool NameExists(string name, int? excludedMenuItemId = null)
+        {
+            const string query = """
+                SELECT COUNT(1)
+                FROM MenuItems
+                WHERE LOWER(Name) = LOWER(@Name)
+                  AND (@ExcludedMenuItemID IS NULL OR MenuItemID <> @ExcludedMenuItemID);
+                """;
+
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name.Trim();
+            command.Parameters.Add("@ExcludedMenuItemID", SqlDbType.Int).Value =
+                excludedMenuItemId.HasValue ? excludedMenuItemId.Value : DBNull.Value;
+            connection.Open();
+
+            return Convert.ToInt32(command.ExecuteScalar()) > 0;
+        }
+
         public void AddMenuItem(MenuItem menuItem)
         {
-            using SqlConnection connection = new SqlConnection(_connectionString);
+            const string query = """
+                INSERT INTO MenuItems (Name, Price, Stock, IsActive, CategoryID, ImagePath, IsAlcoholic)
+                OUTPUT INSERTED.MenuItemID
+                VALUES (@Name, @Price, @Stock, @IsActive, @CategoryID, @ImagePath, @IsAlcoholic);
+                """;
+
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            AddEditableParameters(command, menuItem);
+            command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = menuItem.IsActive;
             connection.Open();
 
-            string query = @"
-                INSERT INTO MenuItems
-                    (Name, Price, Stock, IsActive, CategoryID, ImagePath, IsAlcoholic)
-                VALUES
-                    (@Name, @Price, @Stock, @IsActive, @CategoryID, @ImagePath, @IsAlcoholic)";
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            AddMenuItemParameters(command, menuItem);
-
-            command.ExecuteNonQuery();
-            _logger.LogInformation("Menu item created: {MenuItemName} (Price: {Price})", menuItem.Name, menuItem.RetailPrice);
+            menuItem.MenuItemID = Convert.ToInt32(command.ExecuteScalar());
+            _logger.LogInformation("Menu-item toegevoegd: {MenuItemId} - {Name}.", menuItem.MenuItemID, menuItem.Name);
         }
 
-        // Werkt menu-item bij
         public void UpdateMenuItem(MenuItem menuItem)
         {
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            connection.Open();
-
-            string query = @"
+            const string query = """
                 UPDATE MenuItems
-                SET 
-                    Name = @Name,
-                    Price = @Price,
-                    Stock = @Stock,
-                    CategoryID = @CategoryID,
-                    ImagePath = @ImagePath,
-                    IsAlcoholic = @IsAlcoholic
-                WHERE MenuItemID = @MenuItemID";
+                SET Name = @Name, Price = @Price, Stock = @Stock, CategoryID = @CategoryID,
+                    ImagePath = @ImagePath, IsAlcoholic = @IsAlcoholic
+                WHERE MenuItemID = @MenuItemID;
+                """;
 
-            using SqlCommand command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@MenuItemID", menuItem.MenuItemID);
-            AddMenuItemParameters(command, menuItem);
-
-            command.ExecuteNonQuery();
-            _logger.LogInformation("Menu item updated: {MenuItemID} - {MenuItemName}", menuItem.MenuItemID, menuItem.Name);
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = menuItem.MenuItemID;
+            AddEditableParameters(command, menuItem);
+            connection.Open();
+            EnsureUpdated(command.ExecuteNonQuery(), menuItem.MenuItemID);
         }
 
-        // Zet menu-item actief of inactief
         public void SetMenuItemActive(int menuItemId, bool active)
         {
-            using SqlConnection connection = new SqlConnection(_connectionString);
+            const string query = "UPDATE MenuItems SET IsActive = @IsActive WHERE MenuItemID = @MenuItemID;";
+
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = menuItemId;
+            command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
             connection.Open();
-
-            string query = @"
-                UPDATE MenuItems
-                SET IsActive = @IsActive
-                WHERE MenuItemID = @MenuItemID";
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@MenuItemID", menuItemId);
-            command.Parameters.AddWithValue("@IsActive", active);
-
-            int rowsAffected = command.ExecuteNonQuery();
-
-            if (rowsAffected == 0)
-            {
-                _logger.LogWarning("Menu item not found during status update: {MenuItemId}", menuItemId);
-                throw new InvalidOperationException(ErrorMessages.MenuItemNotFound);
-            }
+            EnsureUpdated(command.ExecuteNonQuery(), menuItemId);
         }
 
-        // Werkt voorraad bij
-        public void ChangeStock(int menuItemId, int stock)
+        public void ChangeStock(int menuItemId, int newStock)
         {
-            using SqlConnection connection = new SqlConnection(_connectionString);
+            const string query = "UPDATE MenuItems SET Stock = @Stock WHERE MenuItemID = @MenuItemID;";
+
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@MenuItemID", SqlDbType.Int).Value = menuItemId;
+            command.Parameters.Add("@Stock", SqlDbType.Int).Value = newStock;
             connection.Open();
-
-            string query = @"
-                UPDATE MenuItems
-                SET Stock = @Stock
-                WHERE MenuItemID = @MenuItemID";
-
-            using SqlCommand command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@MenuItemID", menuItemId);
-            command.Parameters.AddWithValue("@Stock", stock);
-
-            int rowsAffected = command.ExecuteNonQuery();
-
-            if (rowsAffected == 0)
-            {
-                _logger.LogWarning("Menu item not found during stock change: {MenuItemId}", menuItemId);
-                throw new InvalidOperationException(ErrorMessages.MenuItemNotFound);
-            }
+            EnsureUpdated(command.ExecuteNonQuery(), menuItemId);
         }
 
-        // Helper: bouwt query voor ophalen menu-items
-        private static string BuildGetMenuItemsQuery(int? cardId, int? categoryId)
+        private static string BuildMenuItemsQuery(int? cardId, int? categoryId)
         {
-            string query = @"
-                SELECT 
-                    mi.MenuItemID,
-                    mi.Name,
-                    mi.Price,
-                    mi.Stock,
-                    mi.IsActive,
-                    mi.CategoryID,
-                    mi.ImagePath,
-                    mi.IsAlcoholic,
-                    c.CategoryID,
-                    c.Name AS CategoryName,
-                    c.MenuCardID
-                FROM MenuItems mi
-                INNER JOIN Categories c ON mi.CategoryID = c.CategoryID";
+            string query = """
+                SELECT mi.MenuItemID, mi.Name, mi.Price, mi.Stock, mi.IsActive, mi.CategoryID,
+                       mi.ImagePath, mi.IsAlcoholic, c.Name AS CategoryName, c.MenuCardID,
+                       mc.Name AS MenuCardName
+                FROM MenuItems AS mi
+                INNER JOIN Categories AS c ON c.CategoryID = mi.CategoryID
+                INNER JOIN MenuCards AS mc ON mc.MenuCardID = c.MenuCardID
+                """;
 
-            // WHERE clause gedeactiveerd - toon alle items, ook inactieve
-            var conditions = new List<string>();
+            var filters = new List<string>();
+            if (cardId.HasValue) filters.Add("c.MenuCardID = @MenuCardID");
+            if (categoryId.HasValue) filters.Add("mi.CategoryID = @CategoryID");
+            if (filters.Count > 0) query += " WHERE " + string.Join(" AND ", filters);
 
-            if (cardId.HasValue)
-            {
-                conditions.Add("c.MenuCardID = @MenuCardID");
-            }
-
-            if (categoryId.HasValue)
-            {
-                conditions.Add("mi.CategoryID = @CategoryID");
-            }
-
-            if (conditions.Count > 0)
-            {
-                query += " WHERE " + string.Join(" AND ", conditions);
-            }
-
-            query += " ORDER BY c.MenuCardID, c.Name, mi.Name";
-
-            return query;
+            return query + " ORDER BY c.MenuCardID, c.Name, mi.Name;";
         }
 
-        // Helper: voegt query parameters toe
-        private static void AddMenuItemsQueryParameters(SqlCommand command, int? cardId, int? categoryId)
+        private static void AddFilterParameters(SqlCommand command, int? cardId, int? categoryId)
         {
-            if (cardId.HasValue)
-            {
-                command.Parameters.AddWithValue("@MenuCardID", cardId.Value);
-            }
-
-            if (categoryId.HasValue)
-            {
-                command.Parameters.AddWithValue("@CategoryID", categoryId.Value);
-            }
+            if (cardId.HasValue) command.Parameters.Add("@MenuCardID", SqlDbType.Int).Value = cardId.Value;
+            if (categoryId.HasValue) command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = categoryId.Value;
         }
 
-        // Helper: voegt menu-item parameters toe aan command
-        private static void AddMenuItemParameters(SqlCommand command, MenuItem menuItem)
+        private static void AddEditableParameters(SqlCommand command, MenuItem item)
         {
-            command.Parameters.AddWithValue("@Name", menuItem.Name);
-            command.Parameters.AddWithValue("@Price", menuItem.RetailPrice);
-            command.Parameters.AddWithValue("@Stock", menuItem.Stock);
-            command.Parameters.AddWithValue("@IsActive", menuItem.IsActive);
-            command.Parameters.AddWithValue("@CategoryID", menuItem.CategoryID);
-            command.Parameters.AddWithValue("@IsAlcoholic", menuItem.IsAlcoholic);
-
-            if (string.IsNullOrWhiteSpace(menuItem.ImagePath))
-            {
-                command.Parameters.AddWithValue("@ImagePath", DBNull.Value);
-            }
-            else
-            {
-                command.Parameters.AddWithValue("@ImagePath", menuItem.ImagePath);
-            }
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = item.Name.Trim();
+            SqlParameter priceParameter = command.Parameters.Add("@Price", SqlDbType.Decimal);
+            priceParameter.Precision = 10;
+            priceParameter.Scale = 2;
+            priceParameter.Value = item.RetailPrice;
+            command.Parameters.Add("@Stock", SqlDbType.Int).Value = item.Stock;
+            command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = item.CategoryID;
+            command.Parameters.Add("@ImagePath", SqlDbType.NVarChar, 500).Value =
+                string.IsNullOrWhiteSpace(item.ImagePath) ? DBNull.Value : item.ImagePath;
+            command.Parameters.Add("@IsAlcoholic", SqlDbType.Bit).Value = item.IsAlcoholic;
         }
 
-        // Helper: leest menu-item van database
-        private MenuItem ReadMenuItem(SqlDataReader reader)
+        private void EnsureUpdated(int rowsAffected, int menuItemId)
         {
-            var menuItem = new MenuItem
+            if (rowsAffected > 0) return;
+            _logger.LogWarning("Menu-item niet gevonden: {MenuItemId}.", menuItemId);
+            throw new InvalidOperationException(ErrorMessages.MenuItemNotFound);
+        }
+
+        private static MenuItem MapMenuItem(SqlDataReader reader)
+        {
+            int menuCardId = reader.GetInt32(reader.GetOrdinal("MenuCardID"));
+            var menuCard = new MenuCard
             {
-                MenuItemID = Convert.ToInt32(reader["MenuItemID"]),
-                Name = reader["Name"].ToString() ?? "",
-                RetailPrice = Convert.ToDecimal(reader["Price"]),
-                Stock = Convert.ToInt32(reader["Stock"]),
-                IsActive = Convert.ToBoolean(reader["IsActive"]),
-                CategoryID = Convert.ToInt32(reader["CategoryID"]),
-                IsAlcoholic = reader["IsAlcoholic"] != DBNull.Value && Convert.ToBoolean(reader["IsAlcoholic"]),
-                Category = new Models.Category
-                {
-                    CategoryID = Convert.ToInt32(reader["CategoryID"]),
-                    Name = reader["CategoryName"].ToString() ?? "",
-                    MenuCardID = Convert.ToInt32(reader["MenuCardID"])
-                }
+                MenuCardID = menuCardId,
+                Name = reader.GetString(reader.GetOrdinal("MenuCardName"))
             };
 
-            if (reader["ImagePath"] != DBNull.Value)
+            return new MenuItem
             {
-                menuItem.ImagePath = reader["ImagePath"].ToString() ?? "";
-            }
-
-            return menuItem;
+                MenuItemID = reader.GetInt32(reader.GetOrdinal("MenuItemID")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                RetailPrice = reader.GetDecimal(reader.GetOrdinal("Price")),
+                Stock = reader.GetInt32(reader.GetOrdinal("Stock")),
+                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                CategoryID = reader.GetInt32(reader.GetOrdinal("CategoryID")),
+                ImagePath = reader.IsDBNull(reader.GetOrdinal("ImagePath"))
+                    ? string.Empty
+                    : reader.GetString(reader.GetOrdinal("ImagePath")),
+                IsAlcoholic = !reader.IsDBNull(reader.GetOrdinal("IsAlcoholic"))
+                    && reader.GetBoolean(reader.GetOrdinal("IsAlcoholic")),
+                Category = new Models.Category
+                {
+                    CategoryID = reader.GetInt32(reader.GetOrdinal("CategoryID")),
+                    Name = reader.GetString(reader.GetOrdinal("CategoryName")),
+                    MenuCardID = menuCardId,
+                    MenuCard = menuCard
+                }
+            };
         }
     }
 }

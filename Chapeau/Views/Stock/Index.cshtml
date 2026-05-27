@@ -1,54 +1,7 @@
-@model IEnumerable<Chapeau.Models.MenuItem>
+@model Chapeau.ViewModels.StockOverviewViewModel
 
 @{
-    ViewData["Title"] = "VoorraadBeheer";
-
-    // Categorieën en kaarten laden
-    var categories = ViewBag.Categories as IEnumerable<Chapeau.Models.Category> 
-        ?? ViewBag.AllCategories as IEnumerable<Chapeau.Models.Category> 
-        ?? Enumerable.Empty<Chapeau.Models.Category>();
-
-    // Huidige selecties uit filters ophalen
-    int? selectedCardId = ViewBag.SelectedCardId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCardId) : null;
-    int? selectedCategoryId = ViewBag.SelectedCategoryId != null ? (int?)Convert.ToInt32(ViewBag.SelectedCategoryId) : null;
-
-    // Beschikbare kaarten
-    var cards = new[] { new { Id = 1, Name = "Lunch" }, new { Id = 2, Name = "Diner" }, new { Id = 3, Name = "Dranken" } };
-
-    // Voorraad statistieken
-    int soldOutCount = Model.Count(x => x.Stock == 0);
-    int almostOutCount = Model.Count(x => x.Stock > 0 && x.Stock <= 10);
-
-    // Kaart naam van ID
-    string GetMenuCardName(int id) => id switch
-    {
-        1 => "Lunch",
-        2 => "Diner",
-        3 => "Dranken",
-        _ => "-"
-    };
-
-    // Categorie naam met kaart context
-    string GetCategoryDisplayName(Chapeau.Models.Category category) =>
-        (category.MenuCardID == 1 || category.MenuCardID == 2)
-            ? $"{category.Name} ({GetMenuCardName(category.MenuCardID)})"
-            : category.Name;
-
-    // Voorraad status klasse
-    string GetStockStatus(int stock) => stock switch
-    {
-        0 => "danger",
-        <= 10 => "warn",
-        _ => "ok"
-    };
-
-    // Voorraad status tekst
-    string GetStockStatusText(int stock) => stock switch
-    {
-        0 => "Uitverkocht",
-        <= 10 => "Bijna op",
-        _ => "Op voorraad"
-    };
+    ViewData["Title"] = "Voorraad Beheer";
 }
 
 <div class="page-content">
@@ -56,76 +9,29 @@
         <h2 class="page-title">Voorraad Beheer</h2>
     </div>
 
-    @if (TempData["FlashError"] != null)
-    {
-        <div class="alert alert-danger">
-            <strong>Er ging iets mis</strong>
-            <ul>
-                @foreach (var error in TempData["FlashError"].ToString()!.Split('\n'))
-                {
-                    if (!string.IsNullOrWhiteSpace(error))
-                    {
-                        <li>@error</li>
-                    }
-                }
-            </ul>
-        </div>
-    }
-
-    @if (TempData["FlashSuccess"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["FlashSuccess"]
-        </div>
-    }
-
-    <form id="stockFilterForm"
-          method="get"
-          action="@Url.Action("Index", "Stock")"
-          class="preserve-scroll-form">
-
+    <form id="stockFilterForm" asp-action="Index" method="get" class="preserve-scroll-form">
         <div class="filter-row">
             <div class="filter-group">
                 <label for="cardFilter">Kaart</label>
-
                 <select name="cardId" id="cardFilter">
                     <option value="">Alle</option>
-
-                    @foreach (var card in cards)
+                    @foreach (var card in Model.MenuCards)
                     {
-                        if (selectedCardId.HasValue && selectedCardId.Value == card.Id)
-                        {
-                            <option value="@card.Id" selected="selected">@card.Name</option>
-                        }
-                        else
-                        {
-                            <option value="@card.Id">@card.Name</option>
-                        }
+                        <option value="@card.MenuCardID" selected="@(Model.SelectedCardId == card.MenuCardID)">
+                            @card.Name
+                        </option>
                     }
                 </select>
             </div>
-
             <div class="filter-group">
                 <label for="categoryFilter">Categorie</label>
-
                 <select name="categoryId" id="categoryFilter">
                     <option value="">Alle</option>
-
-                    @foreach (var category in categories)
+                    @foreach (var category in Model.Categories)
                     {
-                        if (!selectedCardId.HasValue || category.MenuCardID == selectedCardId.Value)
-                        {
-                            string categoryName = GetCategoryDisplayName(category);
-
-                            if (selectedCategoryId.HasValue && selectedCategoryId.Value == category.CategoryID)
-                            {
-                                <option value="@category.CategoryID" selected="selected">@categoryName</option>
-                            }
-                            else
-                            {
-                                <option value="@category.CategoryID">@categoryName</option>
-                            }
-                        }
+                        <option value="@category.CategoryID" selected="@(Model.SelectedCategoryId == category.CategoryID)">
+                            @category.DisplayName
+                        </option>
                     }
                 </select>
             </div>
@@ -134,11 +40,10 @@
 
     <div class="stock-summary-row">
         <span class="stock-pill danger">
-            Uitverkocht: <span id="soldOutCount">@soldOutCount</span> item(s)
+            Uitverkocht: <span id="soldOutCount">@Model.SoldOutCount</span> item(s)
         </span>
-
         <span class="stock-pill warn">
-            Bijna op: <span id="almostOutCount">@almostOutCount</span> item(s)
+            Bijna op: <span id="almostOutCount">@Model.AlmostOutCount</span> item(s)
         </span>
     </div>
 
@@ -154,71 +59,57 @@
                     <th>Acties</th>
                 </tr>
             </thead>
-
             <tbody>
-                @foreach (var item in Model)
+                @foreach (var item in Model.MenuItems)
                 {
-                    // Categorie en kaart opzoeken voor deze rij
-                    var itemCategory = item.Category ?? categories.FirstOrDefault(c => c.CategoryID == item.CategoryID);
-                    string cardName = itemCategory != null ? GetMenuCardName(itemCategory.MenuCardID) : "-";
-                    string categoryName = itemCategory != null ? GetCategoryDisplayName(itemCategory) : "Onbekend";
-                    string pillClass = GetStockStatus(item.Stock);
-                    string pillText = GetStockStatusText(item.Stock);
-                    string rowClass = item.Stock == 0 ? "sold-out-row" : "";
-
-                    <tr class="@rowClass">
+                    <tr class="@item.StockRowCssClass">
                         <td>@item.Name</td>
-                        <td>@cardName</td>
-                        <td>@categoryName</td>
-
+                        <td>@item.Category.MenuCardName</td>
+                        <td>@item.Category.DisplayName</td>
                         <td>
-                            <input class="stock-input stock-current"
-                                   type="number"
-                                   min="0"
-                                   value="@item.Stock" />
+                            @if (item.CanChangeStock)
+                            {
+                                <input class="stock-input stock-current" type="number" min="0" value="@item.Stock" />
+                            }
+                            else
+                            {
+                                <input class="stock-input stock-current" type="number" min="0" value="@item.Stock"
+                                       disabled="disabled" aria-label="Voorraad niet wijzigbaar: menu-item is inactief" />
+                            }
                         </td>
-
                         <td>
-                            <span class="stock-pill @pillClass stock-status">
-                                <span class="stock-status-text">@pillText</span>
+                            <span class="stock-pill @item.StockDisplayStatusCssClass stock-status">
+                                <span class="stock-status-text">@item.StockDisplayStatusText</span>
                             </span>
                         </td>
-
                         <td>
-                            <div class="qty-actions">
-                                <form method="post"
-                                      action="@Url.Action("Update", "Stock")"
+                            @if (item.CanChangeStock)
+                            {
+                                <form asp-action="Update" method="post"
                                       class="inline-stock-form stock-form preserve-scroll-form">
-
                                     @Html.AntiForgeryToken()
-
                                     <input type="hidden" name="id" value="@item.MenuItemID" />
                                     <input type="hidden" name="newStock" class="stock-new" value="@item.Stock" />
-                                    <input type="hidden" name="cardId" value="@selectedCardId" />
-                                    <input type="hidden" name="categoryId" value="@selectedCategoryId" />
-
-                                    <button type="submit"
-                                            class="stock-action-button stock-plus stock-delta preserve-scroll"
-                                            data-delta="10"
-                                            title="+10">
-                                        +10
-                                    </button>
-
-                                    <button type="submit"
-                                            class="stock-action-button stock-minus stock-delta preserve-scroll"
-                                            data-delta="-1"
-                                            title="-1">
-                                        -1
-                                    </button>
+                                    <input type="hidden" name="cardId" value="@Model.SelectedCardId" />
+                                    <input type="hidden" name="categoryId" value="@Model.SelectedCategoryId" />
+                                    <button type="submit" class="stock-action-button stock-plus stock-delta preserve-scroll"
+                                            data-delta="10" title="+10">+10</button>
+                                    <button type="submit" class="stock-action-button stock-minus stock-delta preserve-scroll"
+                                            data-delta="-1" title="-1">-1</button>
                                 </form>
-                            </div>
+                            }
+                            else
+                            {
+                                <span class="stock-disabled-action">Niet wijzigbaar</span>
+                            }
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
+</div>
 
 @section Scripts {
     <script src="~/js/stock.js" asp-append-version="true"></script>
-}</div>
+}

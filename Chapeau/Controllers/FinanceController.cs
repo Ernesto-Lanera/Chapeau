@@ -1,12 +1,16 @@
+using Chapeau.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    public class FinanceController : Controller
+    [Authorize(Policy = "CanViewFinance")]
+    public class FinanceController(IFinancialService financialService) : Controller
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
+        private readonly IFinancialService _financialService = financialService;
+
+        [HttpGet]
+        public IActionResult Index(string? period = null, DateTime? startDate = null, DateTime? endDate = null) =>
+            View(_financialService.GetOverview(period, startDate, endDate));
     }
 }

@@ -285,6 +285,18 @@ public class OrderRepository : IOrderRepository
 
     private static OrderItem MapOrderItem(SqlDataReader reader)
     {
+        var menuItem = new MenuItem
+        {
+            MenuItemID = (int)reader["MenuItemID"],
+            Name = reader["Name"].ToString() ?? string.Empty,
+            RetailPrice = (decimal)reader["Price"],
+            Stock = (int)reader["Stock"],
+            IsActive = (bool)reader["IsActive"],
+            CategoryID = (int)reader["CategoryID"],
+            ImagePath = reader["ImagePath"].ToString() ?? string.Empty,
+            IsAlcoholic = (bool)reader["IsAlcoholic"]
+        };
+
         return new OrderItem
         {
             OrderItemId = (int)reader["OrderItemID"],

@@ -1,8 +1,12 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Chapeau.Emums;
 
 namespace Chapeau.Repositories
 {
+    /// <summary>
+    /// Repository for table management including occupation status and order tracking.
+    /// </summary>
     public class TableRepository
     {
         private readonly string _connectionString;
@@ -13,6 +17,10 @@ namespace Chapeau.Repositories
                 ?? throw new Exception("Database connection string is missing.");
         }
 
+        /// <summary>
+        /// Ensures the IsManuallyOccupied column exists on the Table_ table.
+        /// Gracefully handles cases where the column already exists or schema is locked.
+        /// </summary>
         public void EnsureColumnExists()
         {
             try
@@ -40,6 +48,9 @@ namespace Chapeau.Repositories
             }
         }
 
+        /// <summary>
+        /// Sets the manual occupation status of a table.
+        /// </summary>
         public void SetOccupied(int tableId, bool occupied)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -52,6 +63,9 @@ namespace Chapeau.Repositories
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Checks if a table has active (non-paid) orders.
+        /// </summary>
         public bool HasActiveOrders(int tableId)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -62,7 +76,7 @@ namespace Chapeau.Repositories
 
             using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@TableID", tableId);
-            command.Parameters.AddWithValue("@Paid", 4);
+            command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
             int count = (int)command.ExecuteScalar();
             return count > 0;
         }

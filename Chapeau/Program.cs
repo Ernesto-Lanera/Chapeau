@@ -1,4 +1,7 @@
 using Chapeau.Repositories;
+using Chapeau.Constants.Login;
+using Chapeau.Middleware;
+using Chapeau.Repositories.Financial;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Globalization;
@@ -56,7 +59,10 @@ namespace Chapeau
                     policy.RequireClaim("Permission", "TakeOrders"));
 
                 options.AddPolicy("CanPrepareFood", policy =>
-                    policy.RequireClaim("Permission", "PrepareFood"));
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.PrepareFood));
+
+                options.AddPolicy("CanPrepareDrinks", policy =>
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.PrepareDrinks));
 
                 options.AddPolicy("CanManageEmployees", policy =>
                     policy.RequireClaim("Permission", "ManageEmployees"));
@@ -64,8 +70,19 @@ namespace Chapeau
                 options.AddPolicy("CanManageMenuItems", policy =>
                     policy.RequireClaim("Permission", "ManageMenuItems"));
 
+                options.AddPolicy("CanManageStock", policy =>
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.ManageStock));
+
+                options.AddPolicy("CanViewFinance", policy =>
+                    policy.RequireAssertion(context =>
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.LegacyViewReports)));
+
+                // Backwards compatible policy for older non-management controller examples.
                 options.AddPolicy("CanViewReports", policy =>
-                    policy.RequireClaim("Permission", "ViewReports"));
+                    policy.RequireAssertion(context =>
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
+                        context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.LegacyViewReports)));
 
                 options.AddPolicy("CanManageRoles", policy =>
                     policy.RequireClaim("Permission", "ManageRoles"));
@@ -81,19 +98,24 @@ namespace Chapeau
                     policy.RequireRole("Kitchen"));
             });
 
-            // Register Repositories
-            builder.Services.AddControllersWithViews();
+            // Register repositories and services
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
-            builder.Services.AddLogging();
 
-            // Register Repositories - Map interfaces to implementations
+            // Scenario 5: repositories via interfaces
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
-            builder.Services.AddScoped<Repositories.EmployeeRepository>();
+            builder.Services.AddScoped<Repositories.IEmployeeRepository, Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
-            builder.Services.AddScoped<Repositories.RoleRepository>();
+            builder.Services.AddScoped<Repositories.IRoleRepository, Repositories.RoleRepository>();
 
-            // Register Services
+            // Scenario 5: application services via interfaces
+            builder.Services.AddScoped<Services.IMenuService, Services.MenuService>();
+            builder.Services.AddScoped<Services.IStockService, Services.StockService>();
+            builder.Services.AddScoped<Services.ICategoryService, Services.CategoryService>();
+            builder.Services.AddScoped<Services.IImageService, Services.ImageService>();
+            builder.Services.AddScoped<Services.Overview.IEmployeeService, Services.Overview.EmployeeService>();
+
+            // Concrete registrations remain for existing non-management controllers.
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
@@ -102,7 +124,9 @@ namespace Chapeau
             builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
             builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
 
-            builder.Services.AddScoped<Services.Overview.EmployeeService>();
+            // Register Financial services and repositories
+            builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
+            builder.Services.AddScoped<IFinancialService, FinancialService>();
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())
@@ -120,6 +144,7 @@ namespace Chapeau
             app.UseRouting();
 
             app.UseAuthentication();
+            app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
             app.UseAuthorization();
 
             app.MapStaticAssets();

@@ -4,39 +4,54 @@ using Chapeau.Utilities;
 
 namespace Chapeau.Services.Login
 {
+    /// <summary>
+    /// Service for authenticating users by credentials and validating their status.
+    /// </summary>
     public interface IAuthService
     {
-        Task<Employee?> AuthenticateAsync(string username, string password);
+        /// <summary>
+        /// Authenticate a user by login identifier (username/employee number) and password.
+        /// Returns success status with employee info, or error status if authentication fails.
+        /// </summary>
+        Task<AuthenticationResult> AuthenticateAsync(string loginIdentifier, string password);
     }
 
-    public class AuthService : IAuthService
+    /// <summary>
+    /// Implementation of user authentication with password hashing and status checks.
+    /// </summary>
+    public class AuthService(IEmployeeRepository employeeRepository, ILogger<AuthService> logger) : IAuthService
     {
-        private readonly EmployeeRepository _employeeRepository;
-        private readonly ILogger<AuthService> _logger;
+        private readonly IEmployeeRepository _employeeRepository = employeeRepository;
+        private readonly ILogger<AuthService> _logger = logger;
 
-        public AuthService(EmployeeRepository employeeRepository, ILogger<AuthService> logger)
+        public async Task<AuthenticationResult> AuthenticateAsync(string loginIdentifier, string password)
         {
-            _employeeRepository = employeeRepository;
-            _logger = logger;
-        }
+            if (string.IsNullOrWhiteSpace(loginIdentifier) || string.IsNullOrWhiteSpace(password))
+            {
+                return AuthenticationResult.InvalidCredentials();
+            }
 
-        public async Task<Employee?> AuthenticateAsync(string username, string password)
-        {
             try
             {
-                var employee = await _employeeRepository.GetEmployeeByNameAsync(username);
+                Employee? employee = await _employeeRepository.GetEmployeeByNameAsync(loginIdentifier.Trim());
 
-                if (employee != null && PasswordHasher.VerifyPassword(password, employee.PasswordHash))
+                if (employee is null || !PasswordHasher.VerifyPassword(password, employee.PasswordHash))
                 {
-                    return employee;
+                    return AuthenticationResult.InvalidCredentials();
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Authentication failed for user {Username}", username);
-            }
 
-            return null;
+                if (!employee.IsActive)
+                {
+                    return AuthenticationResult.InactiveAccount();
+                }
+
+                return AuthenticationResult.Success(employee);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Aanmelden mislukt voor medewerker {LoginIdentifier}.", loginIdentifier);
+                return AuthenticationResult.InvalidCredentials();
+            }
         }
     }
 }
