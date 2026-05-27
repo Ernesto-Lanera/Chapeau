@@ -1,118 +1,114 @@
+using Chapeau.Constants;
+using Chapeau.Models;
 using Chapeau.Repositories;
 using Chapeau.Utilities;
-using Microsoft.Extensions.Logging;
-using EmployeeModel = Chapeau.Models.Employee;
+using Chapeau.ViewModels;
 
 namespace Chapeau.Services.Overview
 {
-    public class EmployeeService(EmployeeRepository employeeRepository, ILogger<EmployeeService> logger)
+    public class EmployeeService(
+        IEmployeeRepository employeeRepository,
+        IRoleRepository roleRepository,
+        ILogger<EmployeeService> logger) : IEmployeeService
     {
-        private readonly EmployeeRepository _employeeRepository = employeeRepository;
+        private readonly IEmployeeRepository _employeeRepository = employeeRepository;
+        private readonly IRoleRepository _roleRepository = roleRepository;
         private readonly ILogger<EmployeeService> _logger = logger;
 
-        // Haalt alle medewerkers uit de database
-        public List<EmployeeModel> GetEmployees()
+        public EmployeeManagementViewModel GetManagementOverview(int? editId, bool showCreate)
         {
-            return _employeeRepository.GetEmployees();
-        }
-
-        // Zoekt medewerker op naam
-        public EmployeeModel? GetEmployeeByName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
+            IReadOnlyList<Employee> employees = _employeeRepository.GetEmployees();
+            return new EmployeeManagementViewModel
             {
-                return null;
-            }
-
-            return _employeeRepository.GetEmployeeByName(name);
+                Employees = employees,
+                Roles = _roleRepository.GetRoles(),
+                EditEmployee = editId.HasValue
+                    ? employees.FirstOrDefault(employee => employee.EmployeeID == editId.Value)
+                    : null,
+                ShowCreate = showCreate
+            };
         }
 
-        public void AddEmployee(EmployeeModel employee)
+        public List<Employee> GetEmployees() => _employeeRepository.GetEmployees();
+
+        public void AddEmployee(EmployeeInputModel input)
         {
-            ArgumentNullException.ThrowIfNull(employee);
-
-            if (string.IsNullOrWhiteSpace(employee.Name))
-                throw new ArgumentException("Naam is verplicht.");
-
-            if (employee.RoleID <= 0)
-                throw new ArgumentException("Kies een geldige rol.");
-
-            if (string.IsNullOrWhiteSpace(employee.PasswordHash))
-                throw new ArgumentException("Wachtwoord is verplicht.");
-
-            employee.PasswordHash = PasswordHasher.HashPassword(employee.PasswordHash);
-            employee.IsActive = true;
+            ValidateInput(input, requirePassword: true, excludedEmployeeId: null);
+            var employee = new Employee
+            {
+                Name = input.Name.Trim(),
+                PasswordHash = PasswordHasher.HashPassword(input.Password),
+                IsActive = true
+            };
+            employee.AssignRole(GetRole(input.RoleID));
 
             _employeeRepository.AddEmployee(employee);
-            _logger.LogInformation("Employee created: {EmployeeName} (Role: {RoleID})", employee.Name, employee.RoleID);
+            _logger.LogInformation("Medewerker aangemaakt: {EmployeeId}.", employee.EmployeeID);
         }
 
-        // Werkt bestaande medewerker bij, voorkomt wachtwoord overwrite als niet gewijzigd
-        public void UpdateEmployee(EmployeeModel employee)
+        public void UpdateEmployee(EmployeeInputModel input)
         {
-            ArgumentNullException.ThrowIfNull(employee);
-
-            if (employee.EmployeeID <= 0)
-                throw new ArgumentException("Ongeldige medewerker.");
-
-            if (string.IsNullOrWhiteSpace(employee.Name))
-                throw new ArgumentException("Naam is verplicht.");
-
-            if (employee.RoleID <= 0)
-                throw new ArgumentException("Kies een geldige rol.");
-
-            var existingEmployee = _employeeRepository.GetEmployeeById(employee.EmployeeID)
-                ?? throw new ArgumentException("Medewerker bestaat niet.");
-
-            // Behoud bestaand wachtwoord als niets ingevuld
-            if (string.IsNullOrWhiteSpace(employee.PasswordHash))
+            if (input.EmployeeID <= 0)
             {
-                employee.PasswordHash = existingEmployee.PasswordHash;
+                throw new ArgumentException("Ongeldig medewerker ID.", nameof(input.EmployeeID));
             }
-            else if (!IsAlreadyHashed(employee.PasswordHash))
+
+            Employee employee = _employeeRepository.GetEmployeeById(input.EmployeeID)
+                ?? throw new InvalidOperationException(ErrorMessages.EmployeeNotFound);
+
+            ValidateInput(input, requirePassword: false, excludedEmployeeId: employee.EmployeeID);
+            employee.Name = input.Name.Trim();
+            employee.AssignRole(GetRole(input.RoleID));
+
+            if (!string.IsNullOrWhiteSpace(input.Password))
             {
-                // Hash alleen als het nog niet gehashed is
-                employee.PasswordHash = PasswordHasher.HashPassword(employee.PasswordHash);
+                employee.PasswordHash = PasswordHasher.HashPassword(input.Password);
             }
 
             _employeeRepository.UpdateEmployee(employee);
-            _logger.LogInformation("Employee updated: {EmployeeID} - {EmployeeName}", employee.EmployeeID, employee.Name);
+            _logger.LogInformation("Medewerker gewijzigd: {EmployeeId}.", employee.EmployeeID);
         }
 
-        // Zet medewerker actief of inactief
-        public void SetEmployeeActive(int id, bool active)
+        public void SetEmployeeActive(int employeeId, bool active)
         {
-            if (id <= 0)
+            if (employeeId <= 0)
             {
-                throw new ArgumentException("Ongeldige medewerker.");
+                throw new ArgumentException("Ongeldig medewerker ID.", nameof(employeeId));
             }
 
-            _employeeRepository.SetEmployeeActive(id, active);
+            _employeeRepository.SetEmployeeActive(employeeId, active);
+            _logger.LogInformation("Medewerkerstatus gewijzigd: {EmployeeId} - {Active}.", employeeId, active);
         }
 
-        // Test database connectie
-        public bool TestConnection()
-        {
-            return _employeeRepository.TestConnection();
-        }
+        public bool TestConnection() => _employeeRepository.TestConnection();
 
-        // Check of wachtwoord al gehashed is (64 chars base64)
-        private static bool IsAlreadyHashed(string password)
+        private void ValidateInput(EmployeeInputModel input, bool requirePassword, int? excludedEmployeeId)
         {
-            return password.Length == 64 && IsValidBase64(password);
-        }
-
-        private static bool IsValidBase64(string input)
-        {
-            try
+            if (string.IsNullOrWhiteSpace(input.Name))
             {
-                Convert.FromBase64String(input);
-                return true;
+                throw new ArgumentException(ErrorMessages.EmployeeNameRequired);
             }
-            catch
+
+            if (input.Name.Trim().Length > 100)
             {
-                return false;
+                throw new ArgumentException(ErrorMessages.EmployeeNameTooLong);
             }
+
+            if (requirePassword && string.IsNullOrWhiteSpace(input.Password))
+            {
+                throw new ArgumentException(ErrorMessages.EmployeePasswordRequired);
+            }
+
+            if (_employeeRepository.NameExists(input.Name.Trim(), excludedEmployeeId))
+            {
+                throw new InvalidOperationException(ErrorMessages.UsernameTaken);
+            }
+
+            GetRole(input.RoleID);
         }
+
+        private EmployeeRole GetRole(int roleId) =>
+            _roleRepository.GetRoles().FirstOrDefault(role => role.RoleID == roleId)
+            ?? throw new ArgumentException(ErrorMessages.EmployeeRoleRequired);
     }
 }

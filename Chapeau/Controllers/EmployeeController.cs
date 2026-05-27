@@ -1,243 +1,99 @@
-using Chapeau.Models;
-using Chapeau.Repositories;
+using Chapeau.Constants;
 using Chapeau.Services.Overview;
+using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace Chapeau.Controllers
 {
-    public class EmployeeController(EmployeeService employeeService, RoleRepository roleRepository) : Controller
+    [Authorize(Policy = "CanManageEmployees")]
+    public class EmployeeController(IEmployeeService employeeService, ILogger<EmployeeController> logger) : Controller
     {
-        private readonly EmployeeService _employeeService = employeeService;
-        private readonly RoleRepository _roleRepository = roleRepository;
+        private readonly IEmployeeService _employeeService = employeeService;
+        private readonly ILogger<EmployeeController> _logger = logger;
 
-        private const string FlashErrorKey = "FlashError";
-        private const string FlashSuccessKey = "FlashSuccess";
-        private const string NewEmployeeDraftKey = "NewEmployeeDraft";
+        public IActionResult Index(int? editId, bool showCreate = false) =>
+            View(_employeeService.GetManagementOverview(editId, showCreate));
 
-        // Toont alle medewerkers met edit optie
-        public IActionResult Index(int? editId, bool showCreate = false)
-        {
-            var employees = _employeeService.GetEmployees();
-            ViewBag.Roles = GetRolesSafe();
-            ViewBag.ShowCreate = showCreate;
-
-            if (editId.HasValue)
-            {
-                var employee = employees.FirstOrDefault(e => e.EmployeeID == editId);
-                if (employee != null)
-                {
-                    ViewBag.EditEmployee = employee;
-                    ViewBag.IsEdit = true;
-                }
-                else
-                {
-                    TempData[FlashErrorKey] = "Medewerker niet gevonden.";
-                }
-            }
-
-            return View(employees);
-        }
-
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return RedirectToAction(nameof(Index), new
-            {
-                showCreate = true
-            });
-        }
-
-        // Maakt nieuwe medewerker aan
         [HttpPost]
-        public IActionResult Create(Employee employee)
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(EmployeeInputModel input)
         {
-            employee.IsActive = true;
-
-            ValidateEmployee(employee, isNew: true);
-
-            if (!ModelState.IsValid)
-            {
-                TempData[NewEmployeeDraftKey] = JsonSerializer.Serialize(new
-                {
-                    employee.Name,
-                    employee.RoleID
-                });
-
-                TempData[FlashErrorKey] = GetModelStateErrors();
-
-                return RedirectToAction(nameof(Index), new
-                {
-                    showCreate = true
-                });
-            }
-
             try
             {
-                _employeeService.AddEmployee(employee);
-
-                TempData[FlashSuccessKey] = "Medewerker toegevoegd.";
-                TempData.Remove(NewEmployeeDraftKey);
-
+                _employeeService.AddEmployee(input);
+                TempData[FlashMessages.SuccessKey] = "Medewerker toegevoegd.";
                 return RedirectToAction(nameof(Index));
             }
-            catch (InvalidOperationException ex)
+            catch (Exception exception)
             {
-                TempData[FlashErrorKey] = ex.Message;
-
-                return RedirectToAction(nameof(Index), new
-                {
-                    showCreate = true
-                });
-            }
-            catch
-            {
-                TempData[FlashErrorKey] = "Er is iets misgegaan bij het opslaan. Probeer het opnieuw.";
-
-                return RedirectToAction(nameof(Index), new
-                {
-                    showCreate = true
-                });
+                return HandleEmployeeError(
+                    exception,
+                    "Onverwachte fout bij toevoegen van een medewerker.",
+                    showCreate: true);
             }
         }
 
         [HttpPost]
-        public IActionResult QuickCreate(Employee employee)
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(EmployeeInputModel input)
         {
-            return Create(employee);
-        }
-
-        [HttpGet]
-        public IActionResult Edit(int id)
-        {
-            return RedirectToAction(nameof(Index), new
-            {
-                editId = id
-            });
-        }
-
-        // Werkt medewerker bij
-        [HttpPost]
-        public IActionResult Edit(Employee employee)
-        {
-            ModelState.Remove(nameof(Employee.PasswordHash));
-
-            var existingEmployee = _employeeService.GetEmployees()
-                .FirstOrDefault(e => e.EmployeeID == employee.EmployeeID);
-
-            if (existingEmployee == null)
-            {
-                TempData[FlashErrorKey] = "Medewerker bestaat niet meer.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            employee.IsActive = existingEmployee.IsActive;
-
-            if (string.IsNullOrWhiteSpace(employee.PasswordHash))
-            {
-                employee.PasswordHash = existingEmployee.PasswordHash;
-            }
-
-            ValidateEmployee(employee, isNew: false);
-
-            if (!ModelState.IsValid)
-            {
-                TempData[FlashErrorKey] = GetModelStateErrors();
-
-                return RedirectToAction(nameof(Index), new
-                {
-                    editId = employee.EmployeeID
-                });
-            }
-
             try
             {
-                _employeeService.UpdateEmployee(employee);
-
-                TempData[FlashSuccessKey] = "Medewerker bijgewerkt.";
-
+                _employeeService.UpdateEmployee(input);
+                TempData[FlashMessages.SuccessKey] = "Medewerker bijgewerkt.";
                 return RedirectToAction(nameof(Index));
             }
-            catch (InvalidOperationException ex)
+            catch (Exception exception)
             {
-                TempData[FlashErrorKey] = ex.Message;
-
-                return RedirectToAction(nameof(Index), new
-                {
-                    editId = employee.EmployeeID
-                });
-            }
-            catch
-            {
-                TempData[FlashErrorKey] = "Er is een onverwachte fout opgetreden bij het opslaan.";
-
-                return RedirectToAction(nameof(Index), new
-                {
-                    editId = employee.EmployeeID
-                });
+                return HandleEmployeeError(
+                    exception,
+                    $"Onverwachte fout bij bijwerken van medewerker {input.EmployeeID}.",
+                    editId: input.EmployeeID);
             }
         }
 
-        // Zet medewerker status aan/uit
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult ToggleActive(int id, bool active)
         {
             try
             {
                 _employeeService.SetEmployeeActive(id, active);
-
-                TempData[FlashSuccessKey] = active
-                    ? "Medewerker geactiveerd."
-                    : "Medewerker gedeactiveerd.";
+                TempData[FlashMessages.SuccessKey] = active
+                    ? "Medewerker geactiveerd. Deze medewerker kan weer inloggen."
+                    : "Medewerker gedeactiveerd. Deze medewerker kan niet meer inloggen.";
             }
-            catch
+            catch (Exception exception)
             {
-                TempData[FlashErrorKey] = "Kon status niet aanpassen. Probeer opnieuw.";
+                _logger.LogError(exception, "Kon actieve status van medewerker {EmployeeId} niet wijzigen.", id);
+                TempData[FlashMessages.ErrorKey] = ErrorMessages.UnexpectedError;
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        // Valideert medwerkerinvoer
-        private void ValidateEmployee(Employee employee, bool isNew)
+        /// Handles exceptions from employee operations and returns appropriate redirect with error message.
+        private IActionResult HandleEmployeeError(
+            Exception exception,
+            string logMessage,
+            bool showCreate = false,
+            int? editId = null)
         {
-            var roles = GetRolesSafe();
-
-            if (string.IsNullOrWhiteSpace(employee.Name))
-                ModelState.AddModelError(nameof(Employee.Name), "Naam is verplicht.");
-
-            if (employee.RoleID <= 0 || !roles.Any(r => r.RoleID == employee.RoleID))
-                ModelState.AddModelError(nameof(Employee.RoleID), "Kies een geldige rol.");
-
-            if (isNew && string.IsNullOrWhiteSpace(employee.PasswordHash))
-                ModelState.AddModelError(nameof(Employee.PasswordHash), "Wachtwoord/Pincode is verplicht.");
-        }
-
-        // Haalt rollen veilig op
-        private List<EmployeeRole> GetRolesSafe()
-        {
-            try
+            string errorMessage = exception switch
             {
-                return _roleRepository.GetRoles();
-            }
-            catch
+                ArgumentException => exception.Message,
+                InvalidOperationException => exception.Message,
+                _ => ErrorMessages.UnexpectedError
+            };
+
+            if (exception is not (ArgumentException or InvalidOperationException))
             {
-                TempData[FlashErrorKey] = "Kon rollen niet ophalen. Controleer database/connectionstring.";
-                return new List<EmployeeRole>();
+                _logger.LogError(exception, logMessage);
             }
-        }
 
-        // Verzamelt validatie fouten
-        private string GetModelStateErrors()
-        {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .Where(msg => !string.IsNullOrWhiteSpace(msg))
-                .Distinct()
-                .ToList();
-
-            return string.Join("\n", errors);
+            TempData[FlashMessages.ErrorKey] = errorMessage;
+            return RedirectToAction(nameof(Index), new { showCreate, editId });
         }
     }
 }

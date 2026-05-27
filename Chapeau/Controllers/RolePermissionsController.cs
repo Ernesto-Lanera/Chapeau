@@ -1,4 +1,5 @@
 using Chapeau.Constants;
+using Chapeau.Constants.Login;
 using Chapeau.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,9 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace Chapeau.Controllers
 {
     [Authorize(Policy = "CanManageRoles")]
-    public class RolePermissionsController(RoleRepository roleRepository) : Controller
+    public class RolePermissionsController(IRoleRepository roleRepository) : Controller
     {
-        private readonly RoleRepository _roleRepository = roleRepository;
+        private readonly IRoleRepository _roleRepository = roleRepository;
 
         private const string FlashErrorKey = "FlashError";
         private const string FlashSuccessKey = "FlashSuccess";
@@ -57,14 +58,27 @@ namespace Chapeau.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var permissionsToSave = selectedPermissions ?? new List<string>();
+
             try
             {
-                _roleRepository.SetRolePermissions(id, selectedPermissions ?? new List<string>());
-                TempData[FlashSuccessKey] = $"Permissies voor '{role.RoleName}' succesvol bijgewerkt.";
+                _roleRepository.SetRolePermissions(id, permissionsToSave);
+                TempData[FlashSuccessKey] = $"Permissies voor '{role.RoleName}' bijgewerkt. De navigatie gebruikt direct de nieuwe rechten.";
             }
             catch
             {
                 TempData[FlashErrorKey] = "Er is een fout opgetreden bij het opslaan van de permissies.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            bool changedOwnRole = User.HasClaim(ClaimTypeConstants.RoleId, id.ToString());
+            bool stillCanManageRoles = permissionsToSave.Contains(
+                PermissionConstants.ManageRoles,
+                StringComparer.OrdinalIgnoreCase);
+
+            if (changedOwnRole && !stillCanManageRoles)
+            {
+                return RedirectToAction("Index", "Home");
             }
 
             return RedirectToAction(nameof(Index));
@@ -75,21 +89,22 @@ namespace Chapeau.Controllers
             var dbPermissions = _roleRepository.GetAllPermissionNames();
             var defaultPermissions = new List<string>
             {
-                "ViewMenu",
-                "TakeOrders",
-                "PrepareFood",
-                "PrepareDrinks",
-                "ManageEmployees",
-                "ManageMenuItems",
-                "ManageStock",
-                "ViewReports",
-                "ManageRoles",
-                "ViewFinance"
+                PermissionConstants.ViewMenu,
+                PermissionConstants.TakeOrders,
+                PermissionConstants.PrepareFood,
+                PermissionConstants.PrepareDrinks,
+                PermissionConstants.ManageEmployees,
+                PermissionConstants.ManageMenuItems,
+                PermissionConstants.ManageStock,
+                PermissionConstants.ViewFinance,
+                PermissionConstants.ManageRoles
             };
 
-            return dbPermissions.Count > 0
-                ? dbPermissions.Union(defaultPermissions).OrderBy(p => p).ToList()
-                : defaultPermissions;
+            return dbPermissions
+                .Where(permission => permission != PermissionConstants.LegacyViewReports)
+                .Union(defaultPermissions)
+                .OrderBy(permission => permission)
+                .ToList();
         }
     }
 }

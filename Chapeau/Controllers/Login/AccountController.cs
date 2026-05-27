@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Chapeau.Controllers
 {
@@ -31,8 +32,7 @@ namespace Chapeau.Controllers
         {
             if (User?.Identity?.IsAuthenticated ?? false)
             {
-                var controller = _dashboardRouter.GetDashboardControllerFromClaim(
-                    User.FindFirst(ClaimTypeConstants.RoleId)?.Value);
+                var controller = _dashboardRouter.GetDashboardController(User);
 
                 return RedirectToAction("Index", controller);
             }
@@ -47,26 +47,31 @@ namespace Chapeau.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var employee = await _authService.AuthenticateAsync(model.Name, model.Password);
+            AuthenticationResult authentication = await _authService.AuthenticateAsync(model.Name, model.Password);
 
-            if (employee == null)
+            if (authentication.Status != AuthenticationStatus.Success || authentication.Employee is null)
             {
-                model.ErrorMessage = AuthConstants.InvalidCredentialsError;
+                model.ErrorMessage = authentication.Status == AuthenticationStatus.InactiveAccount
+                    ? AuthConstants.InactiveAccountError
+                    : AuthConstants.InvalidCredentialsError;
+
                 ModelState.AddModelError(string.Empty, model.ErrorMessage);
                 return View(model);
             }
 
-            await SignInUserAsync(employee, model.RememberMe);
+            Employee employee = authentication.Employee;
+            var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
+            await SignInUserAsync(claimsPrincipal, model.RememberMe);
 
             if (IsValidReturnUrl(model.ReturnUrl)) return Redirect(model.ReturnUrl);
 
-            var controller = _dashboardRouter.GetDashboardController(employee.RoleID);
+            var controller = _dashboardRouter.GetDashboardController(claimsPrincipal);
             return RedirectToAction("Index", controller);
         }
 
-        private async Task SignInUserAsync(Employee employee, bool isPersistent)
+        private async Task SignInUserAsync(ClaimsPrincipal claimsPrincipal, bool isPersistent)
         {
-            var claimsPrincipal = _claimsService.CreateClaimsPrincipal(employee);
+            ArgumentNullException.ThrowIfNull(claimsPrincipal);
 
             var authProperties = new AuthenticationProperties
             {

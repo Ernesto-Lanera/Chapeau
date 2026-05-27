@@ -1,10 +1,12 @@
 using Chapeau.Emums;
 using Chapeau.Repositories;
 using Chapeau.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
+    [Authorize(Policy = "CanTakeOrders")]
     public class TableController : Controller
     {
         private readonly IOrderService _orderService;
@@ -15,19 +17,34 @@ namespace Chapeau.Controllers
             _orderService = orderService;
             _tableRepository = tableRepository;
         }
-
         public IActionResult Index()
         {
-            var tables = _orderService.GetAllTableStatuses();
-            return View(tables);
+            try
+            {
+                var tables = _orderService.GetAllTableStatuses();
+                return View(tables);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ViewBag.ErrorMessage = ex.Message;
+                return View("Error");
+            }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult MarkAsServed(int orderId)
         {
-            _orderService.MarkOrderAsServed(orderId);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                _orderService.MarkOrderAsServed(orderId);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex)
+            {
+                ViewBag.ErrorMessage = ex.Message;
+                return View("Error");
+            }
         }
 
         [HttpPost]

@@ -50,11 +50,11 @@
                 {
                     string stockClasses = "border-success border-2";
 
-                    if (item.Stock == 0)
+                    if (item.IsOutOfStock)
                     {
                         stockClasses = "border-danger border-2 bg-light opacity-50";
                     }
-                    else if (item.Stock <= 10)
+                    else if (item.IsAlmostOutOfStock)
                     {
                         stockClasses = "border-warning border-2";
                     }
@@ -63,20 +63,20 @@
                         <div class="card h-100 shadow-sm @stockClasses" style="min-height: 160px;">
                             @if (!string.IsNullOrEmpty(item.ImagePath))
                             {
-                                <img class="card-img-top @(item.Stock == 0 ? "style-grayscale" : "")"
+                                <img class="card-img-top @(item.IsOutOfStock ? "style-grayscale" : "")"
                                      src="@item.ImagePath" alt="@item.Name" loading="lazy"
-                                     style="height: 100px; object-fit: cover; @(item.Stock == 0 ? "filter: grayscale(100%);" : "")" />
+                                     style="height: 100px; object-fit: cover; @(item.IsOutOfStock ? "filter: grayscale(100%);" : "")" />
                             }
 
                             <div class="card-body d-flex flex-column justify-content-center align-items-center p-2 text-center">
                                 <h6 class="card-title fw-bold mb-1" style="font-size: 0.95rem; line-height: 1.2;">@item.Name</h6>
                                 <p class="card-text mb-0 small">@item.RetailPrice &euro;</p>
 
-                                @if (item.Stock == 0)
+                                @if (item.IsOutOfStock)
                                 {
-                                    <span class="badge bg-danger mt-auto" style="font-size: 0.75rem;">Out of Stock</span>
+                                    <span class="badge bg-danger mt-auto" style="font-size: 0.75rem;">@Chapeau.Emums.StockStatus.OutOfStock</span>
                                 }
-                                else if (item.Stock <= 10)
+                                else if (item.IsAlmostOutOfStock)
                                 {
                                     <span class="badge bg-warning text-dark mt-auto" style="font-size: 0.75rem;">Only @item.Stock left</span>
                                 }
