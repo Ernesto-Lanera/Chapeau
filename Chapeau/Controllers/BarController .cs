@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
-using Chapeau.Models;
-using Chapeau.ViewModels;
+﻿using Chapeau.Models;
 using Chapeau.Services;
+using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace Chapeau.Controllers
 {
+    [Authorize(Policy = "CanPrepareDrinks")]
     public class BarController : Controller
     {
         private readonly IOrderService _orderService;

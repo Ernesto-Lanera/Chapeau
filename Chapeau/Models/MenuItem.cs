@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using Chapeau.Constants;
+using StockStatusEnum = Chapeau.Emums.StockStatus;
 
 namespace Chapeau.Models
 {
@@ -6,35 +8,63 @@ namespace Chapeau.Models
     {
         public int MenuItemID { get; set; }
 
-        [Required(ErrorMessage = "Naam is verplicht")]
-        [StringLength(100, ErrorMessage = "Naam mag niet langer zijn dan 100 karakters")]
-        public string Name { get; set; } = "";
+        [Required(ErrorMessage = ErrorMessages.MenuItemNameRequired)]
+        [StringLength(100, ErrorMessage = ErrorMessages.MenuItemNameTooLong)]
+        public string Name { get; set; } = string.Empty;
 
-        [Range(0, double.MaxValue, ErrorMessage = "Prijs moet groter dan of gelijk aan 0 zijn")]
+        [Range(0.01, double.MaxValue, ErrorMessage = ErrorMessages.MenuItemPriceInvalid)]
         public decimal RetailPrice { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Voorraad moet groter dan of gelijk aan 0 zijn")]
+        [Range(0, int.MaxValue, ErrorMessage = ErrorMessages.MenuItemStockNegative)]
         public int Stock { get; set; }
 
         public bool IsActive { get; set; } = true;
 
-        [Range(1, int.MaxValue, ErrorMessage = "Selecteer een geldige categorie")]
+        [Range(1, int.MaxValue, ErrorMessage = ErrorMessages.InvalidCategory)]
         public int CategoryID { get; set; }
 
-        public Category? Category { get; set; }
+        public Category Category { get; set; } = new();
 
-        public string ImagePath { get; set; } = "";
+        public string ImagePath { get; set; } = string.Empty;
+        public bool IsAlcoholic { get; set; }
 
-        public bool IsAlcoholic { get; set; } = false;
-
-        public string StockStatus
+        public StockStatusEnum StockStatus => Stock switch
         {
-            get
+            0 => StockStatusEnum.OutOfStock,
+            <= 10 => StockStatusEnum.AlmostOutOfStock,
+            _ => StockStatusEnum.Available
+        };
+
+        public bool IsOutOfStock => StockStatus == StockStatusEnum.OutOfStock;
+        public bool IsAlmostOutOfStock => StockStatus == StockStatusEnum.AlmostOutOfStock;
+        public bool CanChangeStock => IsActive;
+
+        public string StockStatusText => StockStatus switch
+        {
+            StockStatusEnum.OutOfStock => "Uitverkocht",
+            StockStatusEnum.AlmostOutOfStock => "Bijna op",
+            _ => "Op voorraad"
+        };
+
+        public string StockStatusCssClass => StockStatus switch
+        {
+            StockStatusEnum.OutOfStock => "danger",
+            StockStatusEnum.AlmostOutOfStock => "warn",
+            _ => "ok"
+        };
+
+        public string StockDisplayStatusText => IsActive ? StockStatusText : "Inactief";
+        public string StockDisplayStatusCssClass => IsActive ? StockStatusCssClass : "inactive";
+        public string StockRowCssClass => !IsActive ? "inactive-stock-row" : IsOutOfStock ? "sold-out-row" : string.Empty;
+
+        public void ChangeStock(int newStock)
+        {
+            if (newStock < 0)
             {
-                if (Stock == 0) return "Uitverkocht";
-                if (Stock <= 10) return "Bijna uitverkocht";
-                return "Beschikbaar";
+                throw new ArgumentOutOfRangeException(nameof(newStock), ErrorMessages.MenuItemStockNegative);
             }
+
+            Stock = newStock;
         }
     }
 }

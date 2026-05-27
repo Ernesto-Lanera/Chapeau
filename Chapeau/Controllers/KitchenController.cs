@@ -1,11 +1,13 @@
-﻿using Chapeau.Models;
+using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
 namespace Chapeau.Controllers
 {
+    [Authorize(Policy = "CanPrepareFood")]
     public class KitchenController : Controller
     {
         private readonly IOrderService _orderService;
@@ -14,7 +16,6 @@ namespace Chapeau.Controllers
         {
             _orderService = orderService;
         }
-
         public IActionResult Index()
         {
             try
@@ -32,7 +33,7 @@ namespace Chapeau.Controllers
 
                 return View(viewModels);
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 ViewBag.ErrorMessage = ex.Message;
                 return View("Error");

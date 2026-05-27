@@ -1,0 +1,303 @@
+/* Financieel Overzicht - dashboard styling volgens het aangeleverde ontwerp */
+
+.finance-dashboard {
+    color: #171717;
+    padding: 25px 0 34px;
+}
+
+.finance-page-title {
+    color: #111827;
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 25px;
+}
+
+.finance-panel,
+.finance-kpi-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.finance-panel-title {
+    color: #18181b;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0;
+}
+
+.finance-period-panel {
+    margin-bottom: 22px;
+    padding: 30px 28px 26px;
+}
+
+.finance-period-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 17px;
+    margin-top: 22px;
+}
+
+.finance-period-button {
+    align-items: center;
+    background-color: #e5e7eb;
+    border: 0;
+    border-radius: 11px;
+    color: #18181b;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 16px;
+    font-weight: 600;
+    gap: 10px;
+    height: 46px;
+    justify-content: center;
+    padding: 0 20px;
+    text-decoration: none;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.finance-period-button:hover {
+    background-color: #d9dde4;
+    color: #18181b;
+}
+
+.finance-period-button.is-selected,
+.finance-period-button.is-selected:hover {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+
+.finance-custom-period-form {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 17px;
+    margin-top: 20px;
+}
+
+.finance-custom-period-form[hidden] {
+    display: none;
+}
+
+.finance-field label {
+    color: #27272a;
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 9px;
+}
+
+.finance-field input {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    color: #18181b;
+    font-size: 16px;
+    height: 48px;
+    min-width: 196px;
+    padding: 0 15px;
+}
+
+.finance-field input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
+    outline: none;
+}
+
+.finance-submit-button {
+    background-color: #2563eb;
+    border: 0;
+    border-radius: 11px;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    height: 48px;
+    padding: 0 20px;
+}
+
+.finance-submit-button:hover {
+    background-color: #1d4ed8;
+}
+
+.finance-filter-error {
+    background-color: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    color: #9a3412;
+    font-size: 14px;
+    margin: 18px 0 0;
+    padding: 10px 12px;
+}
+
+.finance-kpi-grid {
+    display: grid;
+    gap: 17px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 22px;
+}
+
+.finance-kpi-card {
+    min-height: 150px;
+    padding: 31px 27px 25px;
+}
+
+.finance-kpi-label {
+    color: #53627a;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 13px;
+}
+
+.finance-kpi-value {
+    font-size: 27px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0 0 6px;
+}
+
+.finance-kpi-value.is-drinks {
+    color: #2563eb;
+}
+
+.finance-kpi-value.is-lunch {
+    color: #079447;
+}
+
+.finance-kpi-value.is-dinner {
+    color: #912bef;
+}
+
+.finance-kpi-value.is-tip {
+    color: #e7500c;
+}
+
+.finance-kpi-support {
+    color: #667085;
+    font-size: 15px;
+    margin: 0;
+}
+
+.finance-table-panel {
+    margin-bottom: 22px;
+    padding: 28px 27px 24px;
+}
+
+.finance-table-panel .finance-panel-title {
+    margin-bottom: 19px;
+}
+
+.finance-table-wrapper {
+    overflow-x: auto;
+}
+
+.finance-category-table {
+    border-collapse: collapse;
+    min-width: 660px;
+    width: 100%;
+}
+
+.finance-category-table thead {
+    background-color: #f7f8fa;
+}
+
+.finance-category-table th,
+.finance-category-table td {
+    font-size: 14px;
+    padding: 16px 22px;
+    text-align: left;
+}
+
+.finance-category-table thead th {
+    color: #27272a;
+    font-weight: 600;
+}
+
+.finance-category-table tbody th {
+    color: #18181b;
+    font-weight: 600;
+}
+
+.finance-category-table tbody td {
+    color: #27272a;
+}
+
+.finance-category-table tbody tr:not(.finance-total-row) th,
+.finance-category-table tbody tr:not(.finance-total-row) td {
+    border-bottom: 1px solid #eaecf0;
+}
+
+.finance-total-row {
+    background-color: #f7f8fa;
+}
+
+.finance-total-row th,
+.finance-total-row td {
+    color: #18181b !important;
+    font-weight: 700;
+}
+
+.finance-chart-panel {
+    padding: 27px 27px 20px;
+}
+
+.finance-chart-panel .finance-panel-title {
+    margin-bottom: 16px;
+}
+
+.finance-chart-container {
+    height: 305px;
+    position: relative;
+    width: 100%;
+}
+
+@media (max-width: 1080px) {
+    .finance-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .finance-dashboard {
+        padding-top: 18px;
+    }
+
+    .finance-page-title {
+        font-size: 22px;
+        margin-bottom: 18px;
+    }
+
+    .finance-period-panel,
+    .finance-table-panel,
+    .finance-chart-panel {
+        padding: 20px 16px;
+    }
+
+    .finance-period-buttons,
+    .finance-custom-period-form {
+        gap: 10px;
+    }
+
+    .finance-period-button,
+    .finance-field,
+    .finance-field input,
+    .finance-submit-button {
+        width: 100%;
+    }
+
+    .finance-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finance-kpi-card {
+        min-height: auto;
+        padding: 21px 18px;
+    }
+
+    .finance-chart-container {
+        height: 270px;
+    }
+}

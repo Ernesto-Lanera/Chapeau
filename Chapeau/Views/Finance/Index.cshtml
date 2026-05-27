@@ -1,113 +1,160 @@
+@model Chapeau.ViewModels.FinancialViewModel
+@using Chapeau.Emums
+@using System.Globalization
+@using System.Text.Json
+
 @{
     ViewData["Title"] = "Financieel Overzicht";
+    CultureInfo culture = CultureInfo.GetCultureInfo("nl-NL");
+    string Money(decimal amount) => amount.ToString("C2", culture);
+
+    var trendLabels = Model.RevenueTrend.Select(item => item.MonthStart.ToString("MMM", culture)).ToList();
+    var drinksTrend = Model.RevenueTrend.Select(item => item.DrinksIncome).ToList();
+    var lunchTrend = Model.RevenueTrend.Select(item => item.LunchIncome).ToList();
+    var dinnerTrend = Model.RevenueTrend.Select(item => item.DinnerIncome).ToList();
 }
 
-// Financieel overzicht dashboard
-<div class="page-header">
-    <h2 class="page-title">Financieel Overzicht</h2>
-</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/finance.css" asp-append-version="true" />
+}
 
-<div class="card mb-3 finance-period-card">
-    <div class="card-body">
-        <div class="fw-semibold mb-2">Periode Selectie</div>
-        <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-primary">Deze Maand</button>
-            <button class="btn btn-sm btn-light">Dit Kwartaal</button>
-            <button class="btn btn-sm btn-light">Dit Jaar</button>
-            <button class="btn btn-sm btn-light"><i class="bi bi-calendar-event me-1"></i>Aangepaste Periode</button>
-        </div>
-    </div>
-</div>
+<div class="finance-dashboard">
+    <h1 class="finance-page-title">Financieel Overzicht</h1>
 
-<div class="row g-3 mb-3">
-    <div class="col-lg-3 col-md-6">
-        <div class="card finance-kpi-card">
-            <div class="card-body">
-                <div class="finance-kpi-label">Totaal Omzet Dranken</div>
-                <div class="finance-kpi-value text-primary">EUR 0.00</div>
-                <div class="finance-kpi-sub">0 bestellingen</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card finance-kpi-card">
-            <div class="card-body">
-                <div class="finance-kpi-label">Totaal Omzet Lunch</div>
-                <div class="finance-kpi-value text-success">EUR 0.00</div>
-                <div class="finance-kpi-sub">0 bestellingen</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card finance-kpi-card">
-            <div class="card-body">
-                <div class="finance-kpi-label">Totaal Omzet Diner</div>
-                <div class="finance-kpi-value text-purple">EUR 0.00</div>
-                <div class="finance-kpi-sub">0 bestellingen</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card finance-kpi-card">
-            <div class="card-body">
-                <div class="finance-kpi-label">Totaal Fooien</div>
-                <div class="finance-kpi-value text-warning">EUR 0.00</div>
-                <div class="finance-kpi-sub">van 0 bestellingen</div>
-            </div>
-        </div>
-    </div>
-</div>
+    <section class="finance-panel finance-period-panel" aria-label="Periode selectie">
+        <h2 class="finance-panel-title">Periode Selectie</h2>
 
-<div class="card mb-3">
-    <div class="card-body p-0">
-        <div class="p-3 fw-semibold">Omzet per Categorie</div>
-        <div class="table-responsive finance-table-wrap">
-            <table class="table align-middle mb-0">
+        <div class="finance-period-buttons" role="group" aria-label="Kies een periode">
+            <a asp-action="Index" asp-route-period="month"
+               class="finance-period-button @(Model.SelectedPeriod == FinancialPeriod.Month ? "is-selected" : "")">
+                Deze Maand
+            </a>
+            <a asp-action="Index" asp-route-period="quarter"
+               class="finance-period-button @(Model.SelectedPeriod == FinancialPeriod.Quarter ? "is-selected" : "")">
+                Dit Kwartaal
+            </a>
+            <a asp-action="Index" asp-route-period="year"
+               class="finance-period-button @(Model.SelectedPeriod == FinancialPeriod.Year ? "is-selected" : "")">
+                Dit Jaar
+            </a>
+            <button id="selectCustomPeriod" type="button" aria-controls="customPeriodForm"
+                    aria-expanded="@(Model.SelectedPeriod == FinancialPeriod.Custom ? "true" : "false")"
+                    class="finance-period-button finance-custom-period-button @(Model.SelectedPeriod == FinancialPeriod.Custom ? "is-selected" : "")">
+                <i class="bi bi-calendar3" aria-hidden="true"></i>
+                Aangepaste Periode
+            </button>
+        </div>
+
+        <form asp-action="Index" method="get" id="customPeriodForm"
+              class="finance-custom-period-form"
+              hidden="@(Model.SelectedPeriod == FinancialPeriod.Custom ? null : "hidden")">
+            <input type="hidden" name="period" value="custom" />
+            <div class="finance-field">
+                <label for="startDate">Startdatum</label>
+                <input id="startDate" name="startDate" type="date"
+                       value="@Model.CustomStartDate?.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div class="finance-field">
+                <label for="endDate">Einddatum</label>
+                <input id="endDate" name="endDate" type="date"
+                       value="@Model.CustomEndDate?.ToString("yyyy-MM-dd")" required />
+            </div>
+            <button type="submit" class="finance-submit-button">Toepassen</button>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.FilterError))
+        {
+            <p class="finance-filter-error" role="alert">
+                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                @Model.FilterError
+            </p>
+        }
+        <p class="text-muted mb-0">Getoonde periode: @Model.PeriodDisplay</p>
+    </section>
+
+    <section class="finance-kpi-grid" aria-label="Omzettotalen">
+        <article class="finance-kpi-card">
+            <p class="finance-kpi-label">Totaal Omzet Dranken</p>
+            <p class="finance-kpi-value is-drinks">@Money(Model.DrinksIncome)</p>
+            <p class="finance-kpi-support">@Model.DrinksSalesCount verkochte items</p>
+        </article>
+        <article class="finance-kpi-card">
+            <p class="finance-kpi-label">Totaal Omzet Lunch</p>
+            <p class="finance-kpi-value is-lunch">@Money(Model.LunchIncome)</p>
+            <p class="finance-kpi-support">@Model.LunchSalesCount verkochte items</p>
+        </article>
+        <article class="finance-kpi-card">
+            <p class="finance-kpi-label">Totaal Omzet Diner</p>
+            <p class="finance-kpi-value is-dinner">@Money(Model.DinnerIncome)</p>
+            <p class="finance-kpi-support">@Model.DinnerSalesCount verkochte items</p>
+        </article>
+        <article class="finance-kpi-card">
+            <p class="finance-kpi-label">Totaal Fooien</p>
+            <p class="finance-kpi-value is-tip">@Money(Model.TotalTips)</p>
+            <p class="finance-kpi-support">op betaalde orders</p>
+        </article>
+    </section>
+
+    <section class="finance-panel finance-table-panel" aria-label="Omzet per menukaart">
+        <h2 class="finance-panel-title">Verkopen en inkomsten per menukaart</h2>
+        <div class="finance-table-wrapper">
+            <table class="finance-category-table">
                 <thead>
                     <tr>
-                        <th>Categorie</th>
-                        <th class="text-end">Aantal Verkopen</th>
-                        <th class="text-end">Totaal Inkomsten</th>
-                        <th class="text-end">Gemiddelde per Verkoop</th>
+                        <th>Menukaart</th>
+                        <th>Aantal verkopen</th>
+                        <th>Totaal inkomen</th>
+                        <th>Gemiddelde per item</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td colspan="4" class="text-center text-muted py-4">Nog geen financiële data beschikbaar.</td>
+                        <th scope="row">Dranken</th>
+                        <td>@Model.DrinksSalesCount</td>
+                        <td>@Money(Model.DrinksIncome)</td>
+                        <td>@Money(Model.DrinksAverageIncome)</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Lunch</th>
+                        <td>@Model.LunchSalesCount</td>
+                        <td>@Money(Model.LunchIncome)</td>
+                        <td>@Money(Model.LunchAverageIncome)</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Diner</th>
+                        <td>@Model.DinnerSalesCount</td>
+                        <td>@Money(Model.DinnerIncome)</td>
+                        <td>@Money(Model.DinnerAverageIncome)</td>
+                    </tr>
+                    <tr class="finance-total-row">
+                        <th scope="row">Totaal</th>
+                        <td>@Model.TotalSalesCount</td>
+                        <td>@Money(Model.TotalIncomeBeforeTips)</td>
+                        <td>@Money(Model.TotalAverageIncome)</td>
                     </tr>
                 </tbody>
             </table>
         </div>
-    </div>
+    </section>
+
+    <section class="finance-panel finance-chart-panel" aria-label="Omzettrend">
+        <h2 class="finance-panel-title">Omzettrend</h2>
+        <div class="finance-chart-container">
+            <canvas id="revenueTrendChart" aria-label="Maandelijkse omzet per menukaart"></canvas>
+        </div>
+        <script id="revenueTrendData" type="application/json">
+            @Html.Raw(JsonSerializer.Serialize(new
+            {
+                labels = trendLabels,
+                drinks = drinksTrend,
+                lunch = lunchTrend,
+                dinner = dinnerTrend
+            }))
+        </script>
+    </section>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <div class="fw-semibold mb-2">Omzet Trend</div>
-        <div class="finance-chart">
-            <div class="finance-chart-grid">
-                <div class="finance-chart-col">
-                    <div class="finance-chart-bar" style="height: 42%"></div>
-                    <div class="finance-chart-label">Jan</div>
-                </div>
-                <div class="finance-chart-col">
-                    <div class="finance-chart-bar" style="height: 38%"></div>
-                    <div class="finance-chart-label">Feb</div>
-                </div>
-                <div class="finance-chart-col">
-                    <div class="finance-chart-bar" style="height: 46%"></div>
-                    <div class="finance-chart-label">Mrt</div>
-                </div>
-                <div class="finance-chart-col">
-                    <div class="finance-chart-bar" style="height: 43%"></div>
-                    <div class="finance-chart-label">Apr</div>
-                </div>
-            </div>
-            <div class="finance-chart-legend">
-                <span><i class="bi bi-square-fill text-primary"></i>Dranken</span>
-                <span><i class="bi bi-square-fill text-success"></i>Lunch</span>
-                <span><i class="bi bi-square-fill text-purple"></i>Diner</span>
-            </div>
-        </div>
-    </div>
-</div>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+    <script src="~/js/finance.js" asp-append-version="true"></script>
+}

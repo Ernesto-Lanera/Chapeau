@@ -1,179 +1,169 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using System.Data;
+using Chapeau.Constants;
+using Chapeau.Constants.Login;
 using Chapeau.Models;
+using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Repositories
 {
-    public class RoleRepository
+    public class RoleRepository(IConfiguration configuration) : IRoleRepository
     {
-        private readonly string _connectionString;
+        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+            ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
 
-        public RoleRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-                ?? throw new Exception("Database connection string is missing.");
-        }
+        private static readonly IReadOnlyDictionary<string, string> KnownPermissions =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                [PermissionConstants.ViewMenu] = "Menu bekijken.",
+                [PermissionConstants.TakeOrders] = "Bestellingen opnemen.",
+                [PermissionConstants.PrepareFood] = "Keukenbestellingen verwerken.",
+                [PermissionConstants.PrepareDrinks] = "Barbestellingen verwerken.",
+                [PermissionConstants.ManageEmployees] = "Medewerkers beheren.",
+                [PermissionConstants.ManageMenuItems] = "Menu-items beheren.",
+                [PermissionConstants.ManageStock] = "Voorraad beheren.",
+                [PermissionConstants.ViewFinance] = "Financieel overzicht bekijken.",
+                [PermissionConstants.ManageRoles] = "Rollen en permissies beheren."
+            };
 
-        /// <summary>
-        /// Gets all roles from the database.
-        /// </summary>
         public List<EmployeeRole> GetRoles()
         {
+            const string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName;";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            connection.Open();
+
+            using SqlDataReader reader = command.ExecuteReader();
             var roles = new List<EmployeeRole>();
-
-            try
+            while (reader.Read())
             {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-
-                string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName";
-
-                using SqlCommand command = new(query, connection);
-                using SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
+                roles.Add(new EmployeeRole
                 {
-                    roles.Add(new EmployeeRole
-                    {
-                        RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
-                        RoleName = reader.GetString(reader.GetOrdinal("RoleName"))
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving roles: {ex.Message}", ex);
+                    RoleID = reader.GetInt32(reader.GetOrdinal("RoleID")),
+                    RoleName = reader.GetString(reader.GetOrdinal("RoleName"))
+                });
             }
 
             return roles;
         }
 
-        /// <summary>
-        /// Gets all permissions for a specific role.
-        /// </summary>
         public List<string> GetRolePermissions(int roleId)
         {
+            const string query = """
+                SELECT p.PermissionName
+                FROM RolePermissions AS rp
+                INNER JOIN Permissions AS p ON p.PermissionID = rp.PermissionID
+                WHERE rp.RoleID = @RoleID
+                ORDER BY p.PermissionName;
+                """;
+
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@RoleID", SqlDbType.Int).Value = roleId;
+            connection.Open();
+
+            using SqlDataReader reader = command.ExecuteReader();
             var permissions = new List<string>();
-
-            try
+            while (reader.Read())
             {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-
-                string query = @"
-                    SELECT p.PermissionName
-                    FROM RolePermissions rp
-                    INNER JOIN Permissions p ON rp.PermissionID = p.PermissionID
-                    WHERE rp.RoleID = @RoleID
-                    ORDER BY p.PermissionName";
-
-                using SqlCommand command = new(query, connection);
-                command.Parameters.AddWithValue("@RoleID", roleId);
-
-                using SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    permissions.Add(reader.GetString(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving role permissions: {ex.Message}", ex);
+                permissions.Add(NormalizePermissionName(reader.GetString(0)));
             }
 
-            return permissions;
+            return permissions.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(permission => permission).ToList();
         }
 
-        /// <summary>
-        /// Gets all permission names from the Permissions table.
-        /// </summary>
         public List<string> GetAllPermissionNames()
         {
+            const string query = "SELECT PermissionName FROM Permissions ORDER BY PermissionName;";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            connection.Open();
+
+            using SqlDataReader reader = command.ExecuteReader();
             var permissions = new List<string>();
-
-            try
+            while (reader.Read())
             {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-
-                string query = "SELECT PermissionName FROM Permissions ORDER BY PermissionName";
-
-                using SqlCommand command = new(query, connection);
-                using SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    permissions.Add(reader.GetString(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving all permission names: {ex.Message}", ex);
+                permissions.Add(NormalizePermissionName(reader.GetString(0)));
             }
 
-            return permissions;
+            return permissions
+                .Union(KnownPermissions.Keys, StringComparer.OrdinalIgnoreCase)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(permission => permission)
+                .ToList();
         }
 
-        /// <summary>
-        /// Replaces all permissions for a specific role.
-        /// </summary>
         public void SetRolePermissions(int roleId, List<string> permissionNames)
         {
+            using SqlConnection connection = new(_connectionString);
+            connection.Open();
+            using SqlTransaction transaction = connection.BeginTransaction();
+
             try
             {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-                using SqlTransaction transaction = connection.BeginTransaction();
-
-                try
+                DeleteRolePermissions(roleId, connection, transaction);
+                foreach (string permissionName in NormalizePermissionNames(permissionNames))
                 {
-                    var permissionIds = new Dictionary<string, int>();
-
-                    using (SqlCommand lookupCommand = new(
-                        "SELECT PermissionID, PermissionName FROM Permissions", connection, transaction))
-                    using (SqlDataReader reader = lookupCommand.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            permissionIds[reader.GetString(1)] = reader.GetInt32(0);
-                        }
-                    }
-
-                    using (SqlCommand deleteCommand = new("DELETE FROM RolePermissions WHERE RoleID = @RoleID", connection, transaction))
-                    {
-                        deleteCommand.Parameters.AddWithValue("@RoleID", roleId);
-                        deleteCommand.ExecuteNonQuery();
-                    }
-
-                    foreach (var permissionName in permissionNames)
-                    {
-                        if (!permissionIds.TryGetValue(permissionName, out var permId))
-                            continue;
-
-                        using SqlCommand insertCommand = new(
-                            "INSERT INTO RolePermissions (RoleID, PermissionID) VALUES (@RoleID, @PermissionID)",
-                            connection, transaction);
-
-                        insertCommand.Parameters.AddWithValue("@RoleID", roleId);
-                        insertCommand.Parameters.AddWithValue("@PermissionID", permId);
-                        insertCommand.ExecuteNonQuery();
-                    }
-
-                    transaction.Commit();
+                    EnsurePermissionExists(permissionName, connection, transaction);
+                    InsertRolePermission(roleId, permissionName, connection, transaction);
                 }
-                catch
-                {
-                    transaction.Rollback();
-                    throw;
-                }
+
+                transaction.Commit();
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception($"An error occurred while setting role permissions: {ex.Message}", ex);
+                transaction.Rollback();
+                throw;
             }
         }
+
+        private static void DeleteRolePermissions(int roleId, SqlConnection connection, SqlTransaction transaction)
+        {
+            const string query = "DELETE FROM RolePermissions WHERE RoleID = @RoleID;";
+            using SqlCommand command = new(query, connection, transaction);
+            command.Parameters.Add("@RoleID", SqlDbType.Int).Value = roleId;
+            command.ExecuteNonQuery();
+        }
+
+        private static void EnsurePermissionExists(string permissionName, SqlConnection connection, SqlTransaction transaction)
+        {
+            const string query = """
+                IF NOT EXISTS (SELECT 1 FROM Permissions WHERE PermissionName = @PermissionName)
+                BEGIN
+                    INSERT INTO Permissions (PermissionName, Description)
+                    VALUES (@PermissionName, @Description);
+                END;
+                """;
+
+            using SqlCommand command = new(query, connection, transaction);
+            command.Parameters.Add("@PermissionName", SqlDbType.NVarChar, 100).Value = permissionName;
+            command.Parameters.Add("@Description", SqlDbType.NVarChar, 255).Value = KnownPermissions[permissionName];
+            command.ExecuteNonQuery();
+        }
+
+        private static void InsertRolePermission(int roleId, string permissionName, SqlConnection connection, SqlTransaction transaction)
+        {
+            const string query = """
+                INSERT INTO RolePermissions (RoleID, PermissionID)
+                SELECT @RoleID, PermissionID
+                FROM Permissions
+                WHERE PermissionName = @PermissionName;
+                """;
+
+            using SqlCommand command = new(query, connection, transaction);
+            command.Parameters.Add("@RoleID", SqlDbType.Int).Value = roleId;
+            command.Parameters.Add("@PermissionName", SqlDbType.NVarChar, 100).Value = permissionName;
+            command.ExecuteNonQuery();
+        }
+
+        private static IEnumerable<string> NormalizePermissionNames(IEnumerable<string> permissionNames) =>
+            permissionNames
+                .Select(NormalizePermissionName)
+                .Where(permissionName => KnownPermissions.ContainsKey(permissionName))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        private static string NormalizePermissionName(string permissionName) =>
+            string.Equals(permissionName, PermissionConstants.LegacyViewReports, StringComparison.OrdinalIgnoreCase)
+                ? PermissionConstants.ViewFinance
+                : permissionName;
     }
 }
