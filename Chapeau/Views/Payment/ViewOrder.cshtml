@@ -3,16 +3,16 @@
     ViewData["Title"] = "Payment Details";
 }
 
-<div class="container mt-4">
-    <h1>Order Payment Details</h1>
+<div class="container payment-container">
+    <h1 class="payment-header">Order Payment Details</h1>
 
     @if (Model != null)
     {
-        <div class="card">
-            <div class="card-header">
+        <div class="card payment-card">
+            <div class="payment-card-header">
                 <h5>Table @Model.TableNumber</h5>
             </div>
-            <div class="card-body">
+            <div class="payment-card-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <p><strong>Order ID:</strong> @Model.OrderID</p>
@@ -24,7 +24,7 @@
                 <h5>Order Items</h5>
                 @if (Model.Items != null && Model.Items.Count > 0)
                 {
-                    <table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover payment-items-table">
                         <thead class="table-dark">
                             <tr>
                                 <th>Item</th>
@@ -42,9 +42,9 @@
                                 var totalWithVat = subtotal + vatAmount;
                                 
                                 <tr>
-                                    <td>@item.Name</td>
+                                    <td class="item-name">@item.Name</td>
                                     <td>@item.AmountOrdered</td>
-                                    <td>€@item.Price.ToString("F2")</td>
+                                    <td class="item-price">€@item.Price.ToString("F2")</td>
                                     <td>@((item.VATRate * 100).ToString("F0"))%</td>
                                     <td>
                                         <small>Excl.: €@subtotal.ToString("F2")</small><br />
@@ -55,7 +55,7 @@
                                 @if (!string.IsNullOrEmpty(item.Comment))
                                 {
                                     <tr>
-                                        <td colspan="5"><em>Comment: @item.Comment</em></td>
+                                        <td colspan="5" class="item-comment">Comment: @item.Comment</td>
                                     </tr>
                                 }
                             }
@@ -65,13 +65,13 @@
                     <div class="row mt-4">
                         <div class="col-md-8"></div>
                         <div class="col-md-4">
-                            <div class="card bg-light">
+                            <div class="card vat-breakdown-card">
                                 <div class="card-body">
                                     <h6>VAT Breakdown:</h6>
                                     <p><strong>Low VAT (6%):</strong> €@Model.LowVAT.ToString("F2")</p>
                                     <p><strong>High VAT (21%):</strong> €@Model.HighVAT.ToString("F2")</p>
                                     <hr />
-                                    <h5><strong>Total (incl. VAT): €@Model.Total.ToString("F2")</strong></h5>
+                                    <div class="total-amount">Total (incl. VAT): €@Model.Total.ToString("F2")</div>
                                 </div>
                             </div>
                         </div>
@@ -79,22 +79,77 @@
                 }
                 else
                 {
-                    <div class="alert alert-info" role="alert">
+                    <div class="alert payment-alert payment-alert-info">
                         No items in this order.
                     </div>
                 }
 
-                <div class="mt-4">
-                    <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">Back</a>
-                    <button type="button" class="btn btn-success btn-lg" id="checkoutBtn">Checkout</button>
+                <div class="checkout-section">
+                    <h5>Checkout</h5>
+
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="checkout-card">
+
+                                <div class="checkout-total" data-total="@Model.Total" data-order-id="@Model.OrderID">
+                                    Total: €@Model.Total.ToString("F2")
+                                </div>
+
+                                <div class="payment-form-group">
+                                    <label class="form-label">Enter amount to pay:</label>
+                                    <input type="number" id="amountInput" class="form-control" 
+                                           placeholder="Enter amount" min="0" step="0.01" />
+                                </div>
+
+                                <div class="remaining-amount" id="remainingContainer">
+                                    <span>Remaining:</span>
+                                    <span id="remainingDisplay">€@Model.Total.ToString("F2")</span>
+                                </div>
+
+                                <div class="payment-method-group">
+                                    <label class="form-label">Select a payment method:</label>
+                                    <select id="paymentMethod" class="form-select">
+                                        <option value="Card">Card</option>
+                                        <option value="Cash">Cash</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input payment-checkbox" type="checkbox" id="splitCheck" />
+                                    <label class="form-check-label" for="splitCheck">
+                                        Split equally <small class="text-muted">*optional</small>
+                                    </label>
+                                </div>
+
+                                <div id="splitSection" style="display:none;" class="split-section">
+                                    <label class="form-label">Enter amount of people:</label>
+                                    <select id="splitCount" class="form-select">
+                                        <option>1</option>
+                                        <option>2</option>
+                                        <option>3</option>
+                                        <option>4</option>
+                                    </select>
+                                    <div class="per-person-amount">
+                                        Per person: <strong id="perPerson">€@Model.Total.ToString("F2")</strong>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="btn payment-button w-100" data-pay-btn>Pay</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     }
     else
     {
-        <div class="alert alert-warning" role="alert">
-            No order found for this table.
+        <div class="alert payment-alert payment-alert-warning">
+            Order not found.
         </div>
     }
 </div>
+
+@section Scripts {
+    <script src="~/js/payment.js"></script>
+}

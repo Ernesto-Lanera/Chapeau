@@ -3,15 +3,15 @@
     ViewData["Title"] = "Payment";
 }
 
-<div class="container mt-4">
-    <h1>Order Payment - All Tables</h1>
+<div class="container payment-index-container">
+    <h1 class="payment-index-header">Order Payment - All Tables</h1>
 
     @if (Model != null && Model.Count > 0)
     {
         @foreach (var order in Model)
         {
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
+            <div class="card payment-index-card mb-4">
+                <div class="payment-index-card-header">
                     <h5>Table @order.TableNumber - Order #@order.OrderId</h5>
                     <small>Guest: @order.GuestName | Date: @order.OrderDate.ToString("g")</small>
                 </div>
@@ -19,7 +19,7 @@
                     <h6>Order Items</h6>
                     @if (order.Items != null && order.Items.Count > 0)
                     {
-                        <table class="table table-striped table-sm">
+                        <table class="table table-striped table-sm payment-index-table">
                             <thead class="table-light">
                                 <tr>
                                     <th>Item</th>
@@ -37,9 +37,9 @@
                                     var totalWithVat = subtotal + vatAmount;
                                     
                                     <tr>
-                                        <td>@item.Name</td>
+                                        <td class="item-name">@item.Name</td>
                                         <td>@item.AmountOrdered</td>
-                                        <td>€@item.Price.ToString("F2")</td>
+                                        <td class="item-price">€@item.Price.ToString("F2")</td>
                                         <td>@((item.VATRate * 100).ToString("F0"))%</td>
                                         <td>
                                             <small>€@subtotal.ToString("F2")</small><br />
@@ -50,7 +50,7 @@
                                     @if (!string.IsNullOrEmpty(item.Comment))
                                     {
                                         <tr>
-                                            <td colspan="5"><em class="text-muted">Comment: @item.Comment</em></td>
+                                            <td colspan="5" class="item-comment">Comment: @item.Comment</td>
                                         </tr>
                                     }
                                 }
@@ -61,7 +61,7 @@
                         <div class="row mt-3">
                             <div class="col-md-8"></div>
                             <div class="col-md-4">
-                                <div class="alert alert-light border">
+                                <div class="vat-summary-card">
                                     <h6>VAT Breakdown:</h6>
                                     <p class="mb-1">
                                         <strong>Low VAT (6%):</strong> 
@@ -72,9 +72,9 @@
                                         €@order.Items.Where(i => i.VATRate == 0.21m).Sum(i => i.Price * i.AmountOrdered * i.VATRate).ToString("F2")
                                     </p>
                                     <hr />
-                                    <h5>
+                                    <div class="total-summary">
                                         <strong>Total (incl. VAT): €@order.Items.Sum(i => i.Price * i.AmountOrdered * (1 + i.VATRate)).ToString("F2")</strong>
-                                    </h5>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -89,8 +89,9 @@
                     <!-- Checkout Button -->
                     <div class="mt-3">
                         <button type="button" 
-                                class="btn btn-success btn-lg" 
-                                onclick="checkout(@order.OrderId, @order.TableNumber)">
+                                class="btn btn-checkout"
+                                data-checkout-btn
+                                data-table-number="@order.TableNumber">
                             Checkout - Table @order.TableNumber
                         </button>
                     </div>
@@ -110,9 +111,6 @@
     </div>
 </div>
 
-<script>
-    function checkout(orderId, tableNumber) {
-        alert(`Processing checkout for Table ${tableNumber} (Order #${orderId})`);
-        // Hier kan je later de checkout logic toevoegen
-    }
-</script>
+@section Scripts {
+    <script src="~/js/payment-index.js"></script>
+}

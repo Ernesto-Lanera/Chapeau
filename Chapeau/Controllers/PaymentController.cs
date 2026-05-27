@@ -32,14 +32,25 @@ namespace Chapeau.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                PaymentOrderViewModel viewModel = _orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber);
-                return View(viewModel);
+                return View(order);
             }
-            catch (InvalidOperationException ex)
+            catch (ArgumentException ex)
             {
-                ViewBag.ErrorMessage = ex.Message;
-                return View("Error");
+                var errorViewModel = new ErrorViewModel
+                {
+                    ErrorMessage = ex.Message,
+                    RequestId = HttpContext.TraceIdentifier
+                };
+                return View("Error", errorViewModel);
             }
+        }
+
+        public IActionResult Confirmation(int orderId, decimal amount, string method)
+        {
+            ViewBag.OrderId = orderId;
+            ViewBag.Amount = amount;
+            ViewBag.Method = method;
+            return View();
         }
     }
 }

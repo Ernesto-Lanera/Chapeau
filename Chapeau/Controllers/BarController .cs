@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Chapeau.Services;
 using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using Chapeau.Services;
 using Chapeau.Models;
 
 namespace Chapeau.Controllers

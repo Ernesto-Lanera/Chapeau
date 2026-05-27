@@ -51,7 +51,8 @@ public class OrderRepository : IOrderRepository
                     {
                         var order = MapOrder(reader);
 
-                        order.OrderItems = GetOrderItemsByOrderId(order.OrderId, type);
+                        order.Items = GetOrderItemsByOrderId(order.OrderId, type);
+                        order.OrderItems = order.Items;
 
                         orders.Add(order);
                     }
@@ -214,7 +215,17 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
-                        items.Add(MapOrderItem(reader));
+                        //items.Add(MapOrderItem(reader));
+                        items.Add(new OrderItem
+                        {
+                            OrderItemId = (int)reader["OrderItemID"],
+                            OrderId = (int)reader["OrderID"],
+                            MenuItemId = (int)reader["MenuItemID"],
+                            AmountOrdered = (int)reader["AmountOrdered"],
+                            Comment = reader["Comment"] as string,
+                            OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
+                            Name = (string)reader["Name"],
+                        });
                     }
                 }
             }

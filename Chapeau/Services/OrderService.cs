@@ -33,7 +33,16 @@ namespace Chapeau.Services
         {
             var food = _orderRepository.GetRunningOrders(OrderType.Food);
             var drink = _orderRepository.GetRunningOrders(OrderType.Drink);
-            return food.Concat(drink).ToList();
+
+            // Combineer per order ID zodat items samengevoegd worden
+            return food.Concat(drink)
+                .GroupBy(o => o.OrderId)
+                .Select(g => {
+                    var order = g.First();
+                    order.Items = g.SelectMany(o => o.Items ?? new List<OrderItem>()).ToList();
+                    return order;
+                })
+                .ToList();
         }
 
 
@@ -127,7 +136,6 @@ namespace Chapeau.Services
                 throw new InvalidOperationException("Cannot create payment view model for empty order.");
             }
 
-            // Group items by MenuItemId to combine duplicates and sum quantities
             var groupedItems = items
                 .GroupBy(i => i.MenuItemId)
                 .Select(g =>
@@ -146,7 +154,7 @@ namespace Chapeau.Services
                 })
                 .ToList();
 
-            // Validate prices and VAT rates
+    
             foreach (var item in groupedItems)
             {
                 if (item.Price < 0)
@@ -165,7 +173,6 @@ namespace Chapeau.Services
                 }
             }
 
-            // Create a temporary order to leverage domain-computed properties
             var order = new Order { Items = groupedItems };
 
             return new PaymentOrderViewModel
