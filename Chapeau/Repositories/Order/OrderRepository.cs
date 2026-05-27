@@ -3,11 +3,6 @@ using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Repositories;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 public class OrderRepository : IOrderRepository
 {
@@ -145,14 +140,20 @@ public class OrderRepository : IOrderRepository
     public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
         List<OrderItem> items = new List<OrderItem>();
-
+        
         string typeFilter = type == OrderType.Food
             ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
             : "AND c.MenuCardID = @DrinkCard";
 
         string query = $@"
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
-               oi.Comment, oi.OrderItemStatus, m.Name
+               oi.Comment, oi.OrderItemStatus, m.Name,
+        CASE 
+        WHEN m.CategoryID IN (1, 5, 16) THEN 0
+        WHEN m.CategoryID IN (2, 14) THEN 1
+        WHEN m.CategoryID IN (3, 15) THEN 2
+        ELSE NULL
+        END AS Course
         FROM OrderItem oi
         JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
         JOIN Categories c ON c.CategoryID = m.CategoryID
@@ -181,7 +182,8 @@ public class OrderRepository : IOrderRepository
                             AmountOrdered = (int)reader["AmountOrdered"],
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
-                            Name = (string)reader["Name"]
+                            Name = (string)reader["Name"],
+                            Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
                         });
                     }
                 }
@@ -192,33 +194,33 @@ public class OrderRepository : IOrderRepository
     }
 
     public List<OrderItem> GetOrderItemsByOrderId(int orderId)
-{
-    List<OrderItem> items = new List<OrderItem>();
+    {
+        List<OrderItem> items = new List<OrderItem>();
 
-    string query = @"
+        string query = @"
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
                oi.Comment, oi.OrderItemStatus, m.Name
         FROM OrderItem oi
         JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
         WHERE oi.OrderID = @OrderID";
 
-    using (SqlConnection connection = new SqlConnection(_connectionString))
-    {
-        connection.Open();
-        using (SqlCommand command = new SqlCommand(query, connection))
+        using (SqlConnection connection = new SqlConnection(_connectionString))
         {
-            command.Parameters.AddWithValue("@OrderID", orderId);
-            using (SqlDataReader reader = command.ExecuteReader())
+            connection.Open();
+            using (SqlCommand command = new SqlCommand(query, connection))
             {
-                while (reader.Read())
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                using (SqlDataReader reader = command.ExecuteReader())
                 {
-                    items.Add(MapOrderItem(reader));
+                    while (reader.Read())
+                    {
+                        items.Add(MapOrderItem(reader));
+                    }
                 }
             }
         }
+        return items;
     }
-    return items;
-}
 
     private static string BuildTableStatusQuery()
     {
