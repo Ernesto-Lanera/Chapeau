@@ -1,0 +1,52 @@
+@model Chapeau.ViewModels.EmployeeManagementViewModel
+
+@{
+    bool isEdit = Model.EditEmployee is not null;
+    var employee = Model.EditEmployee;
+    string action = isEdit ? "Edit" : "Create";
+    string heading = isEdit ? "Medewerker Bewerken" : "Nieuwe Medewerker";
+    string buttonText = isEdit ? "Bijwerken" : "Toevoegen";
+}
+
+<div class="form-card @(isEdit ? "edit-form-card" : string.Empty)">
+    <h3>@heading</h3>
+    <form asp-action="@action" method="post" class="employee-form preserve-scroll-form">
+        @Html.AntiForgeryToken()
+        @if (isEdit)
+        {
+            <input type="hidden" name="EmployeeID" value="@employee!.EmployeeID" />
+        }
+        <div class="form-group">
+            <label for="employeeName-@action" class="form-label">Naam</label>
+            <input id="employeeName-@action" name="Name" type="text" class="form-control"
+                   value="@(employee?.Name ?? string.Empty)" maxlength="100" required />
+        </div>
+        <div class="form-group">
+            <label for="employeePassword-@action" class="form-label">@(isEdit ? "Nieuw wachtwoord / pincode" : "Wachtwoord / pincode")</label>
+            @if (isEdit)
+            {
+                <input id="employeePassword-@action" name="Password" type="password" class="form-control"
+                       placeholder="Leeg laten om niet te wijzigen" />
+                <small class="form-text text-muted">Laat leeg om het bestaande wachtwoord te behouden.</small>
+            }
+            else
+            {
+                <input id="employeePassword-@action" name="Password" type="password" class="form-control" required />
+            }
+        </div>
+        <div class="form-group">
+            <label for="employeeRole-@action" class="form-label">Rol</label>
+            <select id="employeeRole-@action" name="RoleID" class="form-select" required>
+                <option value="">-- Selecteer rol --</option>
+                @foreach (var role in Model.Roles)
+                {
+                    <option value="@role.RoleID" selected="@(employee?.RoleID == role.RoleID)">@role.RoleName</option>
+                }
+            </select>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary preserve-scroll">@buttonText</button>
+            <a asp-action="Index" class="btn btn-secondary preserve-scroll">Annuleren</a>
+        </div>
+    </form>
+</div>

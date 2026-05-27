@@ -1,55 +1,49 @@
 using Microsoft.AspNetCore.Http;
-using System;
-using System.IO;
-using System.Threading.Tasks;
-
 namespace Chapeau.Services
 {
-    public class ImageService
+    public class ImageService(IWebHostEnvironment webHostEnvironment, ILogger<ImageService> logger) : IImageService
     {
-        private readonly IWebHostEnvironment _webHostEnvironment;
         private const string UploadFolderName = "images/menu-items";
         private const long MaxFileSize = 10 * 1024 * 1024;
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+        private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
-        public ImageService(IWebHostEnvironment webHostEnvironment)
-        {
-            _webHostEnvironment = webHostEnvironment;
-        }
+        private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
+        private readonly ILogger<ImageService> _logger = logger;
 
-        // Upload afbeelding naar server met validatie
         public async Task<(bool Success, string? Path, string? ErrorMessage)> UploadImageAsync(IFormFile? file)
         {
-            if (file == null || file.Length == 0)
+            if (file is null || file.Length == 0)
+            {
                 return (true, null, null);
+            }
 
             if (file.Length > MaxFileSize)
-                return (false, null, "Bestand is te groot. Maximum 10MB.");
+            {
+                return (false, null, "Bestand is te groot. Maximum 10 MB.");
+            }
 
-            var fileExtension = Path.GetExtension(file.FileName).ToLower();
-            if (!Array.Exists(AllowedExtensions, element => element == fileExtension))
-                return (false, null, "Alleen JPG, PNG en WebP bestanden zijn toegestaan.");
+            string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+            {
+                return (false, null, "Alleen JPG-, PNG- en WebP-bestanden zijn toegestaan.");
+            }
 
             try
             {
-                var uploadPath = Path.Combine(_webHostEnvironment.WebRootPath, UploadFolderName);
-                if (!Directory.Exists(uploadPath))
-                    Directory.CreateDirectory(uploadPath);
+                string uploadPath = Path.Combine(_webHostEnvironment.WebRootPath, UploadFolderName);
+                Directory.CreateDirectory(uploadPath);
 
-                var fileName = $"{Guid.NewGuid()}{fileExtension}";
-                var filePath = Path.Combine(uploadPath, fileName);
+                string filename = $"{Guid.NewGuid():N}{extension}";
+                string filePath = Path.Combine(uploadPath, filename);
+                await using FileStream stream = new(filePath, FileMode.Create);
+                await file.CopyToAsync(stream);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                var relativePath = $"/{UploadFolderName}/{fileName}";
-                return (true, relativePath, null);
+                return (true, $"/{UploadFolderName}/{filename}", null);
             }
-            catch (Exception ex)
+            catch (IOException exception)
             {
-                return (false, null, $"Fout bij upload: {ex.Message}");
+                _logger.LogError(exception, "Afbeelding opslaan is mislukt.");
+                return (false, null, "Afbeelding kon niet worden opgeslagen.");
             }
         }
     }

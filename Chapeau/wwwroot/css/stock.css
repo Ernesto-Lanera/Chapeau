@@ -1,4 +1,4 @@
-﻿body {
+body {
     background-color: #f8fafc;
 }
 
@@ -87,6 +87,11 @@
     .stock-pill.danger {
         background-color: #fee2e2;
         color: #991b1b;
+    }
+
+    .stock-pill.inactive {
+        background-color: #e5e7eb;
+        color: #6b7280;
     }
 
 .stock-table-card {
@@ -185,6 +190,24 @@
 
 .sold-out-row:hover td {
     background-color: #f3f4f6;
+}
+
+.inactive-stock-row td,
+.inactive-stock-row:hover td {
+    color: #9ca3af;
+    background-color: #f3f4f6;
+}
+
+.inactive-stock-row .stock-input {
+    color: #9ca3af;
+    background-color: #e5e7eb;
+    cursor: not-allowed;
+}
+
+.stock-disabled-action {
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .alert {

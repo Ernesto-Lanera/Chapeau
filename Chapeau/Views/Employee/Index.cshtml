@@ -1,115 +1,25 @@
-@model IEnumerable<Chapeau.Models.Employee>
+@model Chapeau.ViewModels.EmployeeManagementViewModel
 
 @{
-    ViewData["Title"] = "MedewerkerBeheer";
-
-    // Rollen laden en indexeren
-    var roles = ViewBag.Roles as IEnumerable<Chapeau.Models.EmployeeRole>
-        ?? Enumerable.Empty<Chapeau.Models.EmployeeRole>();
-    var roleNameById = roles.ToDictionary(r => r.RoleID, r => r.RoleName);
-
-    // Formulier state
-    var editEmployee = ViewBag.EditEmployee as Chapeau.Models.Employee;
-    bool isEdit = editEmployee != null;
-    bool showCreate = ViewBag.ShowCreate != null && (bool)ViewBag.ShowCreate;
-
-    // Draft gegevens uit TempData ophalen
-    string draftName = "";
-    int draftRoleId = 0;
-
-    if (TempData["NewEmployeeDraft"] is string draftJson && !string.IsNullOrWhiteSpace(draftJson))
-    {
-        try
-        {
-            using var doc = System.Text.Json.JsonDocument.Parse(draftJson);
-            var root = doc.RootElement;
-            draftName = root.TryGetProperty("Name", out var n) ? n.GetString() ?? "" : "";
-            draftRoleId = root.TryGetProperty("RoleID", out var r) && r.TryGetInt32(out var rid) ? rid : 0;
-        }
-        catch { }
-    }
+    ViewData["Title"] = "Medewerker Beheer";
 }
-
-@Html.Partial("_ToastMessage")
 
 <div class="page-content">
     <div class="page-title-row">
         <h2 class="page-title">Medewerkers Beheer</h2>
-
-        @if (showCreate)
+        @if (Model.ShowCreate)
         {
-            <a href="@Url.Action("Index", "Employee")"
-               class="btn-close-form preserve-scroll">
-                Sluiten
-            </a>
+            <a asp-action="Index" class="btn-close-form preserve-scroll">Sluiten</a>
         }
         else
         {
-            <a href="@Url.Action("Index", "Employee", new { showCreate = true })"
-               class="btn-new preserve-scroll">
-                + Nieuwe Medewerker
-            </a>
+            <a asp-action="Index" asp-route-showCreate="true" class="btn-new preserve-scroll">+ Nieuwe Medewerker</a>
         }
     </div>
 
-    @if (showCreate)
+    @if (Model.ShowCreate)
     {
-        <div class="form-card">
-            <h3>Nieuwe Medewerker</h3>
-
-            <form method="post"
-                  action="@Url.Action("Create", "Employee")"
-                  class="employee-form preserve-scroll-form">
-
-                @Html.AntiForgeryToken()
-
-                <div class="form-group">
-                    <input type="text"
-                           name="Name"
-                           class="form-control"
-                           placeholder="Naam"
-                           value="@draftName"
-                           required="required" />
-                </div>
-
-                <div class="form-group">
-                    <input type="password"
-                           name="PasswordHash"
-                           class="form-control"
-                           placeholder="Wachtwoord"
-                           required="required" />
-                </div>
-
-                <div class="form-group">
-                    <select name="RoleID" class="form-select" required="required">
-                        <option value="">-- Selecteer rol --</option>
-
-                        @foreach (var role in roles)
-                        {
-                            if (draftRoleId == role.RoleID)
-                            {
-                                <option value="@role.RoleID" selected="selected">@role.RoleName</option>
-                            }
-                            else
-                            {
-                                <option value="@role.RoleID">@role.RoleName</option>
-                            }
-                        }
-                    </select>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary preserve-scroll">
-                        Toevoegen
-                    </button>
-
-                    <a href="@Url.Action("Index", "Employee")"
-                       class="btn btn-secondary preserve-scroll">
-                        Annuleren
-                    </a>
-                </div>
-            </form>
-        </div>
+        <partial name="_EmployeeForm" model="Model" />
     }
 
     <div class="employee-table-card">
@@ -117,115 +27,55 @@
             <thead>
                 <tr>
                     <th>Naam</th>
-                    <th>Gebruikersnaam</th>
                     <th>Rol</th>
                     <th>Status</th>
                     <th>Acties</th>
                 </tr>
             </thead>
-
             <tbody>
-                @foreach (var employee in Model)
+                @foreach (var employee in Model.Employees)
                 {
-                    // Gebruikersnaam genereren uit voornaam + ID
-                    var usernameBase = (employee.Name ?? "")
-                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                        .FirstOrDefault()?.ToLowerInvariant() ?? "user";
-
-                    string username = $"{usernameBase}{employee.EmployeeID:000}";
-
-                    // Rol naam opzoeken
-                    string roleName = roleNameById.TryGetValue(employee.RoleID, out var rn)
-                        ? rn ?? employee.RoleID.ToString()
-                        : employee.RoleID.ToString();
-
-                    string rowClass = employee.IsActive ? "" : "inactive-row";
-
-                    <tr class="@rowClass">
+                    <tr class="@(!employee.IsActive ? "inactive-row" : string.Empty)">
                         <td>@employee.Name</td>
-                        <td>@username</td>
-                        <td>@roleName</td>
-
+                        <td>@employee.Role.RoleName</td>
                         <td>
-                            @if (employee.IsActive)
-                            {
-                                <span class="status-badge status-active">Actief</span>
-                            }
-                            else
-                            {
-                                <span class="status-badge status-inactive">Inactief</span>
-                            }
+                            <span class="status-badge @(employee.IsActive ? "status-active" : "status-inactive")">
+                                @(employee.IsActive ? "Actief" : "Inactief")
+                            </span>
                         </td>
-
                         <td>
                             <div class="action-cell">
-                                <a href="@Url.Action("Index", "Employee", new { editId = employee.EmployeeID })"
-                                   class="action-icon action-edit preserve-scroll"
-                                   title="Bewerken">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
+                                <a asp-action="Index" asp-route-editId="@employee.EmployeeID"
+                                   class="action-icon action-edit preserve-scroll" title="Bewerken">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
                                               d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              d="M19.5 7.125L16.875 4.5" />
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L16.875 4.5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round"
                                               d="M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                     </svg>
                                 </a>
-
-                                <form method="post"
-                                      action="@Url.Action("ToggleActive", "Employee")"
-                                      class="inline-action-form preserve-scroll-form">
-
+                                <form asp-action="ToggleActive" method="post" class="inline-action-form preserve-scroll-form">
                                     @Html.AntiForgeryToken()
-
                                     <input type="hidden" name="id" value="@employee.EmployeeID" />
-
                                     @if (employee.IsActive)
                                     {
                                         <input type="hidden" name="active" value="false" />
-
-                                        <button type="submit"
-                                                class="action-icon action-inactive preserve-scroll"
-                                                title="Deactiveren">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M12 3v9" />
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M4 4l16 16" />
+                                        <button type="submit" class="action-icon action-inactive preserve-scroll" title="Deactiveren">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v9" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4l16 16" />
                                             </svg>
                                         </button>
                                     }
                                     else
                                     {
                                         <input type="hidden" name="active" value="true" />
-
-                                        <button type="submit"
-                                                class="action-icon action-active preserve-scroll"
-                                                title="Activeren">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M12 3v9" />
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
+                                        <button type="submit" class="action-icon action-active preserve-scroll" title="Activeren">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v9" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75a7.5 7.5 0 1010.5 0" />
                                             </svg>
                                         </button>
                                     }
@@ -233,70 +83,11 @@
                             </div>
                         </td>
                     </tr>
-
-                    @if (isEdit && editEmployee != null && editEmployee.EmployeeID == employee.EmployeeID)
+                    @if (Model.EditEmployee?.EmployeeID == employee.EmployeeID)
                     {
-                        // Inline edit formulier voor geselecteerde medewerker
-                        <tr class="inline-edit-row">
-                            <td colspan="5">
-                                <div class="inline-edit-card">
-                                    <h3>Medewerker Bewerken</h3>
-
-                                    <form method="post"
-                                          action="@Url.Action("Edit", "Employee")"
-                                          class="employee-form preserve-scroll-form">
-
-                                        @Html.AntiForgeryToken()
-
-                                        <input type="hidden" name="EmployeeID" value="@editEmployee.EmployeeID" />
-                                        <input type="hidden" name="IsActive" value="@editEmployee.IsActive.ToString().ToLower()" />
-
-                                        <div class="form-group">
-                                            <input type="text"
-                                                   name="Name"
-                                                   class="form-control"
-                                                   placeholder="Naam"
-                                                   value="@editEmployee.Name"
-                                                   required="required" />
-                                        </div>
-
-                                        <div class="form-group">
-                                            <input type="password"
-                                                   name="PasswordHash"
-                                                   class="form-control"
-                                                   placeholder="Nieuw wachtwoord optioneel" />
-                                        </div>
-
-                                        <div class="form-group">
-                                            <select name="RoleID" class="form-select" required="required">
-                                                <option value="">-- Selecteer rol --</option>
-
-                                                @foreach (var role in roles)
-                                                {
-                                                    if (editEmployee.RoleID == role.RoleID)
-                                                    {
-                                                        <option value="@role.RoleID" selected="selected">@role.RoleName</option>
-                                                    }
-                                                    else
-                                                    {
-                                                        <option value="@role.RoleID">@role.RoleName</option>
-                                                    }
-                                                }
-                                            </select>
-                                        </div>
-
-                                        <div class="form-actions">
-                                            <button type="submit" class="btn btn-primary preserve-scroll">
-                                                Bijwerken
-                                            </button>
-
-                                            <a href="@Url.Action("Index", "Employee")"
-                                               class="btn btn-secondary preserve-scroll">
-                                                Annuleren
-                                            </a>
-                                        </div>
-                                    </form>
-                                </div>
+                        <tr class="edit-row">
+                            <td colspan="4">
+                                <partial name="_EmployeeForm" model="Model" />
                             </td>
                         </tr>
                     }
@@ -304,7 +95,8 @@
             </tbody>
         </table>
     </div>
+</div>
 
 @section Scripts {
     <script src="~/js/employee.js" asp-append-version="true"></script>
-}</div>
+}

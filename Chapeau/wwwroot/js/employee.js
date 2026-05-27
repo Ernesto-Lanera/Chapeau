@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     setupEmployeeForms();
 });
 
@@ -8,11 +8,10 @@ function setupEmployeeForms() {
     forms.forEach(function (form) {
         form.addEventListener("submit", function (event) {
             const nameInput = form.querySelector('input[name="Name"]');
-            const passwordInput = form.querySelector('input[name="PasswordHash"]');
+            const passwordInput = form.querySelector('input[name="Password"]');
             const roleSelect = form.querySelector('select[name="RoleID"]');
 
             clearValidation(form);
-
             let isValid = true;
 
             if (!nameInput || nameInput.value.trim() === "") {
@@ -26,7 +25,6 @@ function setupEmployeeForms() {
             }
 
             const isCreateForm = form.action.toLowerCase().includes("/create");
-
             if (isCreateForm && passwordInput && passwordInput.value.trim() === "") {
                 showInputError(passwordInput, "Wachtwoord/pincode is verplicht bij toevoegen.");
                 isValid = false;
@@ -40,29 +38,21 @@ function setupEmployeeForms() {
 }
 
 function clearValidation(form) {
-    const invalidInputs = form.querySelectorAll(".is-invalid");
-
-    invalidInputs.forEach(function (input) {
+    form.querySelectorAll(".is-invalid").forEach(function (input) {
         input.classList.remove("is-invalid");
     });
 
-    const validationMessages = form.querySelectorAll(".client-validation-message");
-
-    validationMessages.forEach(function (message) {
+    form.querySelectorAll(".client-validation-message").forEach(function (message) {
         message.remove();
     });
 }
 
 function showInputError(input, message) {
-    if (!input) {
-        return;
-    }
+    if (!input) return;
 
     input.classList.add("is-invalid");
-
     const error = document.createElement("div");
     error.className = "text-danger small mt-1 client-validation-message";
     error.textContent = message;
-
     input.insertAdjacentElement("afterend", error);
 }

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Services
 {
-    public class CategoryService(ICategoryRepository categoryRepository, ILogger<CategoryService> logger)
+    public class CategoryService(ICategoryRepository categoryRepository, ILogger<CategoryService> logger) : ICategoryService
     {
         private readonly ICategoryRepository _categoryRepository = categoryRepository;
         private readonly ILogger<CategoryService> _logger = logger;
