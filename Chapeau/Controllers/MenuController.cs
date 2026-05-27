@@ -20,7 +20,7 @@ namespace Chapeau.Controllers
             _menuService = menuService;
             _categoryService = categoryService;
         }
-        public IActionResult Index()
+        public IActionResult Index(int? tableId, int? tableNumber)
         {
             try
             {
@@ -29,6 +29,8 @@ namespace Chapeau.Controllers
 
                 ViewBag.AllCategories = allCategories;
                 ViewBag.MenuCards = GetMenuCardSelectList();
+                ViewBag.TableId = tableId;
+                ViewBag.TableNumber = tableNumber;
                 return View(menuItems);
             }
             catch (InvalidOperationException ex)

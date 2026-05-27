@@ -16,7 +16,7 @@
         @foreach (var table in Model.OrderBy(t => t.TableNumber))
         {
             <div class="col-md-4 col-lg-3">
-                <div class="card shadow-sm h-100 @(table.IsOccupied ? "border-warning" : "border-success")">
+                <div class="card shadow-sm h-100 @(table.IsOccupied ? "border-warning" : "border-success")" role="button" onclick="window.location='/Menu/Index?tableId=@table.TableId&tableNumber=@table.TableNumber'" style="cursor: pointer;">
                     <div class="card-body text-center d-flex flex-column">
                         <h2 class="card-title mb-3">Table @table.TableNumber</h2>
 
@@ -57,7 +57,7 @@
 
                                     @if (order.OrderStatus == Chapeau.Emums.OrderStatus.ReadyToBeServed)
                                     {
-                                        <form method="post" asp-action="MarkAsServed" asp-controller="Table">
+                                        <form method="post" asp-action="MarkAsServed" asp-controller="Table" onclick="event.stopPropagation();">
                                             <input type="hidden" name="orderId" value="@order.OrderId" />
                                             <button type="submit" class="btn btn-success btn-sm w-100">
                                                 <i class="bi bi-check2-circle me-1"></i>Mark as Served
@@ -67,7 +67,7 @@
                                 </div>
                             }
 
-                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto">
+                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto" onclick="event.stopPropagation();">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="tableId" value="@table.TableId" />
                                 <input type="hidden" name="occupied" value="false" />
@@ -81,7 +81,7 @@
                             <span class="badge bg-success fs-6 mb-2">Free</span>
                             <p class="card-text text-muted mt-auto">No active order</p>
 
-                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto">
+                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto" onclick="event.stopPropagation();">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="tableId" value="@table.TableId" />
                                 <input type="hidden" name="occupied" value="true" />
