@@ -12,10 +12,11 @@ namespace Chapeau.Models
         public string? GuestName { get; set; }
         public DateTime OrderDate { get; set; }
 
-        public List<OrderItem>? OrderParts { get; set; }
+        public List<OrderItem>? OrderItems { get; set; }
 
         public OrderStatus OrderStatus { get; set; }
-        
+        public OrderType OrderType { get; set; }
+
         // payment voor carlo
         public List<OrderItem> Items { get; set; } = new();
         public decimal LowVAT { get; set; }
@@ -28,7 +29,7 @@ namespace Chapeau.Models
         public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
         {
             OrderId = orderId;
-            OrderParts = order;
+            OrderItems = order;
             TableId = tableId;
             OrderDate = date;
         }
