@@ -1,4 +1,5 @@
-﻿using Chapeau.Models;
+﻿using Chapeau.Emums;
+using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -19,26 +20,24 @@ namespace Chapeau.Controllers
         [Authorize(Roles = "Barman")]
         public IActionResult Index()
         {
-            try
-            {
-                List<Order> orders = _orderService.GetRunningOrders();
+            List<Order> orders = _orderService.GetRunningOrders(OrderType.Drink);
 
-                List<OrderViewModel> viewModels = orders.Select(o => new OrderViewModel
+            List<OrderViewModel> viewModels = orders.Select(o => new OrderViewModel
+            {
+                OrderID = o.OrderId,
+                TableNumber = o.TableNumber,
+                OrderDate = o.OrderDate,
+                OrderStatus = o.OrderStatus,
+                WaitingTime = _orderService.GetWaitingTime(o),
+                OrderItems = o.OrderItems.Select(i => new OrderItemViewModel
                 {
-                    OrderID = o.OrderId,
-                    TableNumber = o.TableNumber,
-                    OrderDate = o.OrderDate,
-                    OrderStatus = o.OrderStatus,
-                    WaitingTime = _orderService.GetWaitingTime(o)
-                }).ToList();
+                    Name = i.Name,
+                    Amount = i.AmountOrdered,
+                    Comment = i.Comment
+                }).ToList()
+            }).ToList();
 
-                return View(viewModels);
-            }
-            catch (Exception ex)
-            {
-                ViewBag.ErrorMessage = ex.Message;
-                return View("Error");
-            }
+            return View(viewModels);
         }
     }
 }
