@@ -127,6 +127,10 @@ namespace Chapeau
             // Register Financial services and repositories
             builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
             builder.Services.AddScoped<IFinancialService, FinancialService>();
+
+            // Register Table repository
+            builder.Services.AddScoped<TableRepository>();
+
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
