@@ -141,19 +141,19 @@ public class OrderRepository : IOrderRepository
     public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
         List<OrderItem> items = new List<OrderItem>();
-        
+
         string typeFilter = type == OrderType.Food
             ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
             : "AND c.MenuCardID = @DrinkCard";
 
         string query = $@"
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
-               oi.Comment, oi.OrderItemStatus, m.Name,
+               oi.Comment, oi.OrderItemStatus, m.Name, m.Price, m.IsAlcoholic, c.MenuCardID,
         CASE 
-        WHEN m.CategoryID IN (1, 5, 16) THEN 0
-        WHEN m.CategoryID IN (2, 14) THEN 1
-        WHEN m.CategoryID IN (3, 15) THEN 2
-        ELSE NULL
+            WHEN m.CategoryID IN (1, 5, 16) THEN 0
+            WHEN m.CategoryID IN (2, 14) THEN 1
+            WHEN m.CategoryID IN (3, 15) THEN 2
+            ELSE NULL
         END AS Course
         FROM OrderItem oi
         JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
@@ -175,6 +175,9 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
+                        int menuCardId = (int)reader["MenuCardID"];
+                        bool isAlcoholic = reader["IsAlcoholic"] != DBNull.Value && (bool)reader["IsAlcoholic"];
+
                         items.Add(new OrderItem
                         {
                             OrderItemId = (int)reader["OrderItemID"],
@@ -184,6 +187,9 @@ public class OrderRepository : IOrderRepository
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
                             Name = (string)reader["Name"],
+                            Price = (decimal)reader["Price"],
+                            MenuCardID = menuCardId,
+                            VATRate = GetVatRate(menuCardId, isAlcoholic),
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
                         });
                     }
@@ -200,9 +206,10 @@ public class OrderRepository : IOrderRepository
 
         string query = @"
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
-               oi.Comment, oi.OrderItemStatus, m.Name
+               oi.Comment, oi.OrderItemStatus, m.Name, m.Price, m.IsAlcoholic, c.MenuCardID
         FROM OrderItem oi
         JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+        JOIN Categories c ON c.CategoryID = m.CategoryID
         WHERE oi.OrderID = @OrderID";
 
         using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -215,7 +222,9 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
-                        //items.Add(MapOrderItem(reader));
+                        int menuCardId = (int)reader["MenuCardID"];
+                        bool isAlcoholic = reader["IsAlcoholic"] != DBNull.Value && (bool)reader["IsAlcoholic"];
+
                         items.Add(new OrderItem
                         {
                             OrderItemId = (int)reader["OrderItemID"],
@@ -225,12 +234,20 @@ public class OrderRepository : IOrderRepository
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
                             Name = (string)reader["Name"],
+                            Price = (decimal)reader["Price"],
+                            MenuCardID = menuCardId,
+                            VATRate = GetVatRate(menuCardId, isAlcoholic)
                         });
                     }
                 }
             }
         }
         return items;
+    }
+
+    private static decimal GetVatRate(int menuCardId, bool isAlcoholic)
+    {
+        return menuCardId == MenuCardConstants.DrinksCardId && isAlcoholic ? 0.21m : 0.06m;
     }
 
     private static string BuildTableStatusQuery()
@@ -335,5 +352,38 @@ public class OrderRepository : IOrderRepository
                 command.ExecuteNonQuery();
             }
         }
+    }
+
+    public Order? GetOrderById(int orderId)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        const string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+            FROM Orders o
+            JOIN Table_ t ON o.TableID = t.TableID
+            WHERE o.OrderID = @OrderID";
+
+        using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@OrderID", orderId);
+
+        using SqlDataReader reader = command.ExecuteReader();
+        return reader.Read() ? MapOrder(reader) : null;
+    }
+
+    public void InsertPayment(int orderId, int tableId, decimal totalTipAmount, string? feedback)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        const string query = @"INSERT INTO [Payment] (OrderID, TableID, TotalTipAmount, Feedback)
+            VALUES (@OrderID, @TableID, @TotalTipAmount, @Feedback)";
+
+        using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@OrderID", orderId);
+        command.Parameters.AddWithValue("@TableID", tableId);
+        command.Parameters.AddWithValue("@TotalTipAmount", totalTipAmount);
+        command.Parameters.AddWithValue("@Feedback", string.IsNullOrWhiteSpace(feedback) ? DBNull.Value : feedback);
+        command.ExecuteNonQuery();
     }
 }

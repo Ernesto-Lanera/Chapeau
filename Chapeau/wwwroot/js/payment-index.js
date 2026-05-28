@@ -4,18 +4,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkoutButtons = document.querySelectorAll('[data-checkout-btn]');
     checkoutButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const tableNumber = this.getAttribute('data-table-number');
-            checkout(tableNumber);
+            const tableId = this.getAttribute('data-table-id');
+            checkout(tableId);
         });
     });
 });
 
-function checkout(tableNumber) {
-    if (!tableNumber || isNaN(tableNumber)) {
+function checkout(tableId) {
+    if (!tableId || isNaN(tableId)) {
         alert('Ongeldig tafel nummer.');
         return;
     }
 
-    // Redirect to ViewOrder page
-    window.location.href = `/Payment/ViewOrder?tableId=${tableNumber}`;
+    // Redirect to ViewOrder page (open checkout directly)
+    window.location.href = `/Payment/ViewOrder?tableId=${tableId}&checkout=true`;
 }

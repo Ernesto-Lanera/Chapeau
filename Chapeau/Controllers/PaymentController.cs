@@ -32,9 +32,21 @@ namespace Chapeau.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                return View(order);
+                PaymentOrderViewModel viewModel =
+                    _orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber);
+
+                return View(viewModel);
             }
             catch (ArgumentException ex)
+            {
+                var errorViewModel = new ErrorViewModel
+                {
+                    ErrorMessage = ex.Message,
+                    RequestId = HttpContext.TraceIdentifier
+                };
+                return View("Error", errorViewModel);
+            }
+            catch (InvalidOperationException ex)
             {
                 var errorViewModel = new ErrorViewModel
                 {
@@ -51,6 +63,31 @@ namespace Chapeau.Controllers
             ViewBag.Amount = amount;
             ViewBag.Method = method;
             return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Complete(int orderId, decimal amount, decimal tipAmount, string method, string? feedback)
+        {
+            try
+            {
+                _orderService.CompletePayment(orderId, tipAmount, feedback);
+                ViewBag.OrderId = orderId;
+                ViewBag.Amount = amount;
+                ViewBag.Method = method;
+                ViewBag.TipAmount = tipAmount;
+                ViewBag.Feedback = feedback;
+                return View("Confirmation");
+            }
+            catch (Exception ex)
+            {
+                var errorViewModel = new ErrorViewModel
+                {
+                    ErrorMessage = ex.Message,
+                    RequestId = HttpContext.TraceIdentifier
+                };
+                return View("Error", errorViewModel);
+            }
         }
     }
 }

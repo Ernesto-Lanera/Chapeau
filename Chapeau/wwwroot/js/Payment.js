@@ -1,6 +1,7 @@
-﻿
-let TOTAL = 0;
+﻿let TOTAL = 0;
 let ORDER_ID = 0;
+
+const payments = [];
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -29,20 +30,59 @@ document.addEventListener('DOMContentLoaded', function() {
     if (payButton) {
         payButton.addEventListener('click', doPay);
     }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') === 'true') {
+        showCheckout();
+    }
 });
 
 function fmt(n) {
     return '€' + Math.abs(n).toFixed(2);
 }
 
+function showCheckout() {
+    const orderSection = document.getElementById('orderSection');
+    const checkoutSection = document.getElementById('checkoutSection');
+
+    if (orderSection) orderSection.style.display = 'none';
+    if (checkoutSection) checkoutSection.style.display = 'block';
+
+    updateRemaining();
+}
+
+function hideCheckout() {
+    const orderSection = document.getElementById('orderSection');
+    const checkoutSection = document.getElementById('checkoutSection');
+
+    if (orderSection) orderSection.style.display = 'block';
+    if (checkoutSection) checkoutSection.style.display = 'none';
+}
+
+function calcStatus() {
+    updateRemaining();
+}
+
 function updateRemaining() {
-    const val = parseFloat(document.getElementById('amountInput').value) || 0;
-    const rem = TOTAL - val;
+    const amountInput = document.getElementById('amountInput');
     const el = document.getElementById('remainingDisplay');
     const container = document.getElementById('remainingContainer');
-    
-    el.textContent = rem < 0 ? '-' + fmt(rem) + ' (te veel)' : fmt(rem);
-    
+    const tipRow = document.getElementById('tipRow');
+    const tipDisp = document.getElementById('tipDisp');
+
+    if (!amountInput || !el || !container) return;
+
+    const val = parseFloat(amountInput.value) || 0;
+    const rem = TOTAL - val;
+    const tip = val > TOTAL ? val - TOTAL : 0;
+
+    el.textContent = rem <= 0 ? '€0,00' : fmt(rem);
+
+    if (tipRow && tipDisp) {
+        tipRow.style.display = tip > 0 ? 'flex' : 'none';
+        tipDisp.textContent = fmt(tip);
+    }
+
     if (rem < 0) {
         el.style.color = '#dc2626';
         container.classList.add('overpay');
@@ -55,11 +95,11 @@ function updateRemaining() {
 function toggleSplit() {
     const on = document.getElementById('splitCheck').checked;
     const splitSection = document.getElementById('splitSection');
-    
+
     if (splitSection) {
         splitSection.style.display = on ? 'block' : 'none';
     }
-    
+
     if (on) {
         applySplit();
     } else {
@@ -77,7 +117,7 @@ function applySplit() {
 
     const n = parseInt(splitCountSelect.value) || 1;
     const pp = TOTAL / n;
-    
+
     const perPersonEl = document.getElementById('perPerson');
     if (perPersonEl) {
         perPersonEl.textContent = fmt(pp);
@@ -87,28 +127,82 @@ function applySplit() {
     if (amountInput) {
         amountInput.value = pp.toFixed(2);
     }
-    
+
     updateRemaining();
 }
 
-function doPay() {
+function addPayment() {
     const amountInput = document.getElementById('amountInput');
-    if (!amountInput) return;
+    const paymentMethod = document.getElementById('paymentMethod');
+    if (!amountInput || !paymentMethod) return;
 
     const amount = parseFloat(amountInput.value);
-    
     if (!amount || amount <= 0) {
         alert('Voer een geldig bedrag in.');
         return;
     }
 
-    const paymentMethod = document.getElementById('paymentMethod');
-    const method = paymentMethod ? paymentMethod.value : 'Card';
-    
+    payments.push({ amount, method: paymentMethod.value });
+    amountInput.value = '';
+    updateRemaining();
+    renderPayments();
+}
+
+function renderPayments() {
+    const list = document.getElementById('paymentsList');
+    const container = document.getElementById('paymentsContainer');
+    const stillToPay = document.getElementById('stillToPay');
+    if (!list || !container || !stillToPay) return;
+
+    container.innerHTML = '';
+
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const remaining = Math.max(0, TOTAL - totalPaid);
+
+    payments.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'd-flex justify-content-between small mb-1';
+        row.textContent = `${i + 1}. ${p.method} - ${fmt(p.amount)}`;
+        container.appendChild(row);
+    });
+
+    stillToPay.textContent = remaining <= 0 ? '€0,00' : fmt(remaining);
+    list.style.display = 'block';
+}
+
+function doPay() {
+    const amountInput = document.getElementById('amountInput');
+
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const amount = totalPaid > 0
+        ? totalPaid
+        : parseFloat(amountInput?.value || '0');
+
+    if (!amount || amount <= 0) {
+        alert('Voer een geldig bedrag in.');
+        return;
+    }
+
+    if (amount < TOTAL) {
+        alert('Er staat nog een bedrag open.');
+        return;
+    }
+
     if (!ORDER_ID) {
         alert('Bestelling ID ontbreekt.');
         return;
     }
 
-    window.location.href = `/Payment/Confirmation?orderId=${ORDER_ID}&amount=${amount.toFixed(2)}&method=${method}`;
+    const tip = Math.max(0, amount - TOTAL);
+    const method =
+        payments.length > 1 ? 'Split' : (payments[0]?.method || 'Card');
+    const feedback = document.getElementById('feedbackInput')?.value?.trim() || '';
+
+    const form = document.getElementById('paymentForm');
+    document.getElementById('paymentAmount').value = amount.toFixed(2);
+    document.getElementById('paymentTipAmount').value = tip.toFixed(2);
+    document.getElementById('paymentMethod').value = method;
+    document.getElementById('paymentFeedback').value = feedback;
+
+    form.submit();
 }
