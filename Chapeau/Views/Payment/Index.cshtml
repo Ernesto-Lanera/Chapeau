@@ -88,13 +88,10 @@
 
                     <!-- Checkout Button -->
                     <div class="mt-3">
-                        <button type="button" 
-                                class="btn btn-checkout"
-                                data-checkout-btn
-                                data-table-id="@order.TableId"
-                                data-table-number="@order.TableNumber">
+                        <a href="@Url.Action("CheckoutOrder", "Payment", new { orderId = order.OrderId, tableNumber = order.TableNumber })"
+                           class="btn btn-success btn-lg">
                             Checkout - Table @order.TableNumber
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>

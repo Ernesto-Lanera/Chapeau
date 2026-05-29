@@ -34,7 +34,6 @@ namespace Chapeau.Services
             var food = _orderRepository.GetRunningOrders(OrderType.Food);
             var drink = _orderRepository.GetRunningOrders(OrderType.Drink);
 
-            // Combineer per order ID zodat items samengevoegd worden
             return food.Concat(drink)
                 .GroupBy(o => o.OrderId)
                 .Select(g => {
@@ -44,7 +43,6 @@ namespace Chapeau.Services
                 })
                 .ToList();
         }
-
 
         public TimeSpan GetWaitingTime(Order order)
         {
@@ -123,7 +121,7 @@ namespace Chapeau.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Failed to build payment view model.", ex);
+                throw new InvalidOperationException($"Failed to build payment view model: {ex.Message}", ex);
             }
         }
 
@@ -136,6 +134,7 @@ namespace Chapeau.Services
                 throw new InvalidOperationException("Cannot create payment view model for empty order.");
             }
 
+            // Group items by MenuItemId
             var groupedItems = items
                 .GroupBy(i => i.MenuItemId)
                 .Select(g =>
@@ -146,17 +145,24 @@ namespace Chapeau.Services
                         OrderItemId = firstItem.OrderItemId,
                         MenuItemId = g.Key,
                         MenuItem = firstItem.MenuItem,
+                        Name = firstItem.Name ?? "Unknown Item",
+                        Price = firstItem.Price,
                         VATRate = firstItem.VATRate,
-                        Amount = g.Sum(x => x.Amount),
+                        AmountOrdered = g.Sum(x => x.AmountOrdered),
                         Comment = firstItem.Comment,
                         OrderId = orderId
                     };
                 })
                 .ToList();
 
-    
+            // Validate all items
             foreach (var item in groupedItems)
             {
+                if (string.IsNullOrEmpty(item.Name))
+                {
+                    throw new InvalidOperationException($"Item {item.MenuItemId} has no name.");
+                }
+
                 if (item.Price < 0)
                 {
                     throw new InvalidOperationException($"Invalid price for item {item.Name}: prices cannot be negative.");
@@ -164,15 +170,15 @@ namespace Chapeau.Services
 
                 if (item.VATRate < 0 || item.VATRate > 1)
                 {
-                    throw new InvalidOperationException($"Invalid VAT rate for item {item.Name}: VAT must be between 0 and 100%.");
+                    throw new InvalidOperationException($"Invalid VAT rate for item {item.Name}: VAT must be between 0 and 1.");
                 }
 
-                if (item.Amount <= 0)
+                if (item.AmountOrdered <= 0)
                 {
                     throw new InvalidOperationException($"Invalid quantity for item {item.Name}: quantity must be greater than zero.");
                 }
             }
-
+            //totaal berekenen
             var order = new Order { Items = groupedItems };
 
             return new PaymentOrderViewModel

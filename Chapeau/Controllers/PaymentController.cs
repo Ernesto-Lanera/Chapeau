@@ -37,16 +37,7 @@ namespace Chapeau.Controllers
 
                 return View(viewModel);
             }
-            catch (ArgumentException ex)
-            {
-                var errorViewModel = new ErrorViewModel
-                {
-                    ErrorMessage = ex.Message,
-                    RequestId = HttpContext.TraceIdentifier
-                };
-                return View("Error", errorViewModel);
-            }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 var errorViewModel = new ErrorViewModel
                 {
@@ -64,20 +55,13 @@ namespace Chapeau.Controllers
             ViewBag.Method = method;
             return View();
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Complete(int orderId, decimal amount, decimal tipAmount, string method, string? feedback)
+        public IActionResult CheckoutOrder(int orderId, int tableNumber)
         {
             try
             {
-                _orderService.CompletePayment(orderId, tipAmount, feedback);
-                ViewBag.OrderId = orderId;
-                ViewBag.Amount = amount;
-                ViewBag.Method = method;
-                ViewBag.TipAmount = tipAmount;
-                ViewBag.Feedback = feedback;
-                return View("Confirmation");
+                PaymentOrderViewModel viewModel =
+                    _orderService.GetPaymentOrderViewModel(orderId, tableNumber);
+                return View("ViewOrder", viewModel);
             }
             catch (Exception ex)
             {

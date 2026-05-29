@@ -19,8 +19,8 @@ public class OrderRepository : IOrderRepository
         List<Order> orders = new List<Order>();
 
         string typeFilter = type == OrderType.Food
-        ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
-        : "AND c.MenuCardID = @DrinkCard";
+            ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
+            : "AND c.MenuCardID = @DrinkCard";
 
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
@@ -30,10 +30,10 @@ public class OrderRepository : IOrderRepository
             JOIN Table_ t ON o.TableID = t.TableID
             WHERE o.OrderStatus IN (@Ordered, @BeingPrepared)
             AND EXISTS (
-            SELECT 1 FROM OrderItem oi
-            JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
-            JOIN Categories c ON c.CategoryID = m.CategoryID
-            WHERE oi.OrderID = o.OrderID {typeFilter}
+                SELECT 1 FROM OrderItem oi
+                JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                JOIN Categories c ON c.CategoryID = m.CategoryID
+                WHERE oi.OrderID = o.OrderID {typeFilter}
             )
             ORDER BY o.OrderDate ASC";
 
@@ -50,10 +50,8 @@ public class OrderRepository : IOrderRepository
                     while (reader.Read())
                     {
                         var order = MapOrder(reader);
-
                         order.Items = GetOrderItemsByOrderId(order.OrderId, type);
                         order.OrderItems = order.Items;
-
                         orders.Add(order);
                     }
                 }
@@ -61,7 +59,6 @@ public class OrderRepository : IOrderRepository
         }
         return orders;
     }
-
 
     public Order? GetActiveOrderByTableId(int tableId)
     {
@@ -148,7 +145,8 @@ public class OrderRepository : IOrderRepository
 
         string query = $@"
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
-               oi.Comment, oi.OrderItemStatus, m.Name, m.Price, m.IsAlcoholic, c.MenuCardID,
+               oi.Comment, oi.OrderItemStatus, m.Name, ISNULL(m.Price, 0) as Price, 
+               ISNULL(m.IsAlcoholic, 0) as IsAlcoholic, c.MenuCardID,
         CASE 
             WHEN m.CategoryID IN (1, 5, 16) THEN 0
             WHEN m.CategoryID IN (2, 14) THEN 1
@@ -189,7 +187,7 @@ public class OrderRepository : IOrderRepository
                             Name = (string)reader["Name"],
                             Price = (decimal)reader["Price"],
                             MenuCardID = menuCardId,
-                            VATRate = GetVatRate(menuCardId, isAlcoholic),
+                            VATRate = GetVatRate(isAlcoholic),
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
                         });
                     }
@@ -206,7 +204,8 @@ public class OrderRepository : IOrderRepository
 
         string query = @"
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
-               oi.Comment, oi.OrderItemStatus, m.Name, m.Price, m.IsAlcoholic, c.MenuCardID
+               oi.Comment, oi.OrderItemStatus, m.Name, ISNULL(m.Price, 0) as Price, 
+               ISNULL(m.IsAlcoholic, 0) as IsAlcoholic, c.MenuCardID
         FROM OrderItem oi
         JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
         JOIN Categories c ON c.CategoryID = m.CategoryID
@@ -236,7 +235,7 @@ public class OrderRepository : IOrderRepository
                             Name = (string)reader["Name"],
                             Price = (decimal)reader["Price"],
                             MenuCardID = menuCardId,
-                            VATRate = GetVatRate(menuCardId, isAlcoholic)
+                            VATRate = GetVatRate(isAlcoholic)
                         });
                     }
                 }
@@ -245,9 +244,25 @@ public class OrderRepository : IOrderRepository
         return items;
     }
 
-    private static decimal GetVatRate(int menuCardId, bool isAlcoholic)
+    public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
     {
-        return menuCardId == MenuCardConstants.DrinksCardId && isAlcoholic ? 0.21m : 0.06m;
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = "UPDATE OrderItem SET OrderItemStatus = @Status WHERE OrderItemID = @OrderItemID";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)newStatus);
+                command.Parameters.AddWithValue("@OrderItemID", orderItemId);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
+
+    private static decimal GetVatRate(bool isAlcoholic)
+    {
+        return isAlcoholic ? 0.21m : 0.06m;
     }
 
     private static string BuildTableStatusQuery()
@@ -309,81 +324,5 @@ public class OrderRepository : IOrderRepository
             OrderDate = (DateTime)reader["OrderDate"],
             OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
         };
-    }
-
-    private static OrderItem MapOrderItem(SqlDataReader reader)
-    {
-        var menuItem = new MenuItem
-        {
-            MenuItemID = (int)reader["MenuItemID"],
-            Name = reader["Name"].ToString() ?? string.Empty,
-            RetailPrice = (decimal)reader["Price"],
-            Stock = (int)reader["Stock"],
-            IsActive = (bool)reader["IsActive"],
-            CategoryID = (int)reader["CategoryID"],
-            ImagePath = reader["ImagePath"].ToString() ?? string.Empty,
-            IsAlcoholic = (bool)reader["IsAlcoholic"]
-        };
-
-        return new OrderItem
-        {
-            OrderItemId = (int)reader["OrderItemID"],
-            OrderId = (int)reader["OrderID"],
-            MenuItemId = (int)reader["MenuItemID"],
-            AmountOrdered = (int)reader["AmountOrdered"],
-            Name = reader["Name"].ToString(),
-            Price = (decimal)reader["Price"],
-            Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
-            OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"]
-        };
-    }
-
-    public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
-    {
-        using (SqlConnection connection = new SqlConnection(_connectionString))
-        {
-            connection.Open();
-            string query = "UPDATE OrderItem SET OrderItemStatus = @Status WHERE OrderItemID = @OrderItemID";
-
-            using (SqlCommand command = new SqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@Status", (int)newStatus);
-                command.Parameters.AddWithValue("@OrderItemID", orderItemId);
-                command.ExecuteNonQuery();
-            }
-        }
-    }
-
-    public Order? GetOrderById(int orderId)
-    {
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
-
-        const string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
-            FROM Orders o
-            JOIN Table_ t ON o.TableID = t.TableID
-            WHERE o.OrderID = @OrderID";
-
-        using SqlCommand command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@OrderID", orderId);
-
-        using SqlDataReader reader = command.ExecuteReader();
-        return reader.Read() ? MapOrder(reader) : null;
-    }
-
-    public void InsertPayment(int orderId, int tableId, decimal totalTipAmount, string? feedback)
-    {
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
-
-        const string query = @"INSERT INTO [Payment] (OrderID, TableID, TotalTipAmount, Feedback)
-            VALUES (@OrderID, @TableID, @TotalTipAmount, @Feedback)";
-
-        using SqlCommand command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@OrderID", orderId);
-        command.Parameters.AddWithValue("@TableID", tableId);
-        command.Parameters.AddWithValue("@TotalTipAmount", totalTipAmount);
-        command.Parameters.AddWithValue("@Feedback", string.IsNullOrWhiteSpace(feedback) ? DBNull.Value : feedback);
-        command.ExecuteNonQuery();
     }
 }

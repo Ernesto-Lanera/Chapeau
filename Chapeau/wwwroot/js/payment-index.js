@@ -1,6 +1,5 @@
 ﻿// Payment Index page functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Attach event listeners to all checkout buttons
     const checkoutButtons = document.querySelectorAll('[data-checkout-btn]');
     checkoutButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -16,6 +15,5 @@ function checkout(tableId) {
         return;
     }
 
-    // Redirect to ViewOrder page (open checkout directly)
     window.location.href = `/Payment/ViewOrder?tableId=${tableId}&checkout=true`;
 }

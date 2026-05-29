@@ -30,11 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (payButton) {
         payButton.addEventListener('click', doPay);
     }
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('checkout') === 'true') {
-        showCheckout();
-    }
 });
 
 function fmt(n) {
@@ -172,37 +167,22 @@ function renderPayments() {
 
 function doPay() {
     const amountInput = document.getElementById('amountInput');
+    if (!amountInput) return;
 
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-    const amount = totalPaid > 0
-        ? totalPaid
-        : parseFloat(amountInput?.value || '0');
+    const amount = parseFloat(amountInput.value);
 
     if (!amount || amount <= 0) {
         alert('Voer een geldig bedrag in.');
         return;
     }
 
-    if (amount < TOTAL) {
-        alert('Er staat nog een bedrag open.');
-        return;
-    }
+    const paymentMethod = document.getElementById('paymentMethod');
+    const method = paymentMethod ? paymentMethod.value : 'Card';
 
     if (!ORDER_ID) {
         alert('Bestelling ID ontbreekt.');
         return;
     }
 
-    const tip = Math.max(0, amount - TOTAL);
-    const method =
-        payments.length > 1 ? 'Split' : (payments[0]?.method || 'Card');
-    const feedback = document.getElementById('feedbackInput')?.value?.trim() || '';
-
-    const form = document.getElementById('paymentForm');
-    document.getElementById('paymentAmount').value = amount.toFixed(2);
-    document.getElementById('paymentTipAmount').value = tip.toFixed(2);
-    document.getElementById('paymentMethod').value = method;
-    document.getElementById('paymentFeedback').value = feedback;
-
-    form.submit();
+    window.location.href = `/Payment/Confirmation?orderId=${ORDER_ID}&amount=${amount.toFixed(2)}&method=${method}`;
 }
