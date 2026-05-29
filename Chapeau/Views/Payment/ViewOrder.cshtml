@@ -1,13 +1,6 @@
 @model Chapeau.ViewModels.PaymentOrderViewModel
 @{
     ViewData["Title"] = "Payment Details";
-
-    var items = Model.Items ?? new List<Chapeau.Models.OrderItem>();
-    var lowVat = items.Where(i => i.VATRate == 0.06m)
-        .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
-    var highVat = items.Where(i => i.VATRate == 0.21m)
-        .Sum(i => i.Price * i.AmountOrdered * i.VATRate);
-    var total = items.Sum(i => i.Price * i.AmountOrdered * (1 + i.VATRate));
 }
 
 <div class="container payment-container">
@@ -15,7 +8,6 @@
 
     @if (Model != null)
     {
-        <!-- ORDER DETAILS -->
         <div id="orderSection">
             <div class="card payment-card">
                 <div class="payment-card-header">
@@ -77,9 +69,10 @@
                                 <div class="card vat-breakdown-card">
                                     <div class="card-body">
                                         <h6>VAT Breakdown:</h6>
-                                        <p><strong>Low VAT (6%):</strong> €@lowVat.ToString("F2")</p>
-                                        <p><strong>High VAT (21%):</strong> €@highVat.ToString("F2")</p>
-                                        <div class="total-amount">Total (incl. VAT): €@total.ToString("F2")</div>
+                                        <p><strong>Low VAT (6%):</strong> €@Model.LowVAT.ToString("F2")</p>
+                                        <p><strong>High VAT (21%):</strong> €@Model.HighVAT.ToString("F2")</p>
+                                        <hr />
+                                        <div class="total-amount">Total (incl. VAT): €@Model.Total.ToString("F2")</div>
                                     </div>
                                 </div>
                             </div>
@@ -94,8 +87,7 @@
 
                     <div class="mt-4">
                         <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">Back</a>
-                        <button type="button" class="btn btn-success btn-lg"
-                                onclick="showCheckout()">
+                        <button type="button" class="btn btn-success btn-lg" onclick="showCheckout()">
                             Checkout
                         </button>
                     </div>
@@ -103,7 +95,6 @@
             </div>
         </div>
 
-        <!-- CHECKOUT SECTION -->
         <div id="checkoutSection" style="display:none;" class="mt-4">
             <div class="row justify-content-center">
                 <div class="col-md-6 col-lg-5">
@@ -115,7 +106,7 @@
 
                             <div class="checkout-total-row">
                                 <span class="text-muted">Total:</span>
-                                <span class="checkout-grand-total">€@total.ToString("F2")</span>
+                                <span class="checkout-grand-total">€@Model.Total.ToString("F2")</span>
                             </div>
 
                             <div id="tipRow" class="checkout-tip-row" style="display:none;">
@@ -125,7 +116,7 @@
 
                             <div class="remaining-amount" id="remainingContainer">
                                 <span>Remaining:</span>
-                                <span id="remainingDisplay">€@total.ToString("F2")</span>
+                                <span id="remainingDisplay">€@Model.Total.ToString("F2")</span>
                             </div>
 
                             <div class="payment-form-group">
@@ -160,12 +151,19 @@
                                     <option>4</option>
                                 </select>
                                 <div class="per-person-amount">
-                                    Per person: <strong id="perPerson">€@total.ToString("F2")</strong>
+                                    Per person: <strong id="perPerson">€@Model.Total.ToString("F2")</strong>
                                 </div>
                             </div>
 
-                            <button type="button" class="btn payment-button w-100 mt-2"
-                                    onclick="addPayment()">
+                            <div class="payment-form-group">
+                                <label class="form-label">Guest Feedback (optional):</label>
+                                <textarea id="feedbackInput" class="form-control"
+                                          placeholder="e.g. The food was wonderful!"
+                                          rows="3" maxlength="255"></textarea>
+                                <small class="text-muted">Max 255 characters</small>
+                            </div>
+
+                            <button type="button" class="btn payment-button w-100 mt-2" onclick="addPayment()">
                                 Add payment
                             </button>
 
@@ -177,14 +175,12 @@
                                     <span class="text-muted">Still to pay:</span>
                                     <strong id="stillToPay">€0,00</strong>
                                 </div>
-                                <button type="button" class="btn payment-button w-100 mt-3"
-                                        onclick="doPay()">
+                                <button type="button" class="btn payment-button w-100 mt-3" onclick="doPay()">
                                     Pay all
                                 </button>
                             </div>
 
-                            <button type="button" class="btn btn-outline-secondary w-100 mt-2"
-                                    onclick="hideCheckout()">
+                            <button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="hideCheckout()">
                                 Back to order
                             </button>
                         </div>
@@ -193,7 +189,6 @@
             </div>
         </div>
 
-        <!-- CONFIRMATION SECTION -->
         <div id="confirmSection" style="display:none;" class="mt-4">
             <div class="row justify-content-center">
                 <div class="col-md-6 col-lg-5 text-center">
@@ -214,8 +209,9 @@
 
                             <div id="confirmDetails" class="text-start small text-muted mb-4"></div>
 
-                            <a href="@Url.Action("Index", "Payment")"
-                               class="btn payment-button w-100">Return</a>
+                            <a href="@Url.Action("Index", "Payment")" class="btn payment-button w-100">
+                                Return
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -223,7 +219,7 @@
         </div>
 
         <div id="paymentData"
-             data-total="@total.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+             data-total="@Model.Total.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
              data-order-id="@Model.OrderID"
              data-table-number="@Model.TableNumber"
              style="display:none;">
