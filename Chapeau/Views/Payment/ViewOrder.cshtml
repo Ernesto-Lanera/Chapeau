@@ -28,11 +28,11 @@
                         <table class="table table-striped table-hover payment-items-table">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>Item</th>
-                                    <th>Qty</th>
-                                    <th>Unit Price</th>
-                                    <th>VAT Rate</th>
-                                    <th>Subtotal</th>
+                    <th>Item</th>
+                    <th>Aantal</th>
+                    <th>Stukprijs</th>
+                    <th>BTW-tarief</th>
+                    <th>Subtotaal</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -56,7 +56,7 @@
                                     @if (!string.IsNullOrEmpty(item.Comment))
                                     {
                                         <tr>
-                                            <td colspan="5" class="item-comment">Comment: @item.Comment</td>
+                            <td colspan="5" class="item-comment">Opmerking: @item.Comment</td>
                                         </tr>
                                     }
                                 }
@@ -69,8 +69,8 @@
                                 <div class="card vat-breakdown-card">
                                     <div class="card-body">
                                         <h6>VAT Breakdown:</h6>
-                                        <p><strong>Low VAT (6%):</strong> €@Model.LowVAT.ToString("F2")</p>
-                                        <p><strong>High VAT (21%):</strong> €@Model.HighVAT.ToString("F2")</p>
+                <strong>Lage BTW (6%):</strong>
+                <strong>Hoge BTW (21%):</strong>
                                         <hr />
                                         <div class="total-amount">Total (incl. VAT): €@Model.Total.ToString("F2")</div>
                                     </div>
@@ -86,7 +86,7 @@
                     }
 
                     <div class="mt-4">
-                        <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">Back</a>
+        <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">Terug</a>
                         <button type="button" class="btn btn-success btn-lg" onclick="showCheckout()">
                             Checkout
                         </button>

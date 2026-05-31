@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Payment received";
+    ViewData["Title"] = "Betaling ontvangen";
 }
 
 <div class="container mt-5 text-center">
@@ -8,7 +8,7 @@
         <i class="bi bi-check-lg" style="font-size:2rem; color:green;"></i>
     </div>
 
-    <h2>Payment received!</h2>
+    <h2>Betaling bevestigd!</h2>
     <p class="text-muted">€@ViewBag.Amount via @ViewBag.Method</p>
     @if (ViewBag.TipAmount is decimal tip && tip > 0)
     {
@@ -16,10 +16,10 @@
     }
     @if (!string.IsNullOrWhiteSpace(ViewBag.Feedback as string))
     {
-        <p class="text-muted">Feedback: @ViewBag.Feedback</p>
+        <p class="text-muted">Opmerking: @ViewBag.Feedback</p>
     }
 
     <hr class="w-25 mx-auto my-4" />
 
-    <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">Return</a>
+    <a href="@Url.Action("Index", "Payment")" class="btn btn-secondary">Terug</a>
 </div>
