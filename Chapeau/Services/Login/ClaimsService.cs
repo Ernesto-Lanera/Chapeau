@@ -6,18 +6,25 @@ using System.Security.Claims;
 
 namespace Chapeau.Services.Login
 {
+    /// <summary>
+    /// Service for creating claims-based identity for authenticated users.
+    /// Includes role-based and permission-based claims for authorization.
+    /// </summary>
     public interface IClaimsService
     {
         ClaimsPrincipal CreateClaimsPrincipal(Employee employee);
         List<Claim> CreateClaims(Employee employee);
     }
 
+    /// <summary>
+    /// Implementation of claims-based authentication with role and permission mapping.
+    /// </summary>
     public class ClaimsService : IClaimsService
     {
-        private readonly RoleRepository _roleRepository;
+        private readonly IRoleRepository _roleRepository;
         private readonly ILogger<ClaimsService> _logger;
 
-        public ClaimsService(RoleRepository roleRepository, ILogger<ClaimsService> logger)
+        public ClaimsService(IRoleRepository roleRepository, ILogger<ClaimsService> logger)
         {
             _roleRepository = roleRepository;
             _logger = logger;
@@ -66,18 +73,16 @@ namespace Chapeau.Services.Login
             {
                 var permissions = _roleRepository.GetRolePermissions(employee.RoleID);
 
-                if (permissions.Any())
+                // An empty result is valid: a role can intentionally have no permissions.
+                // Defaults are only used when the permission data cannot be retrieved.
+                AddPermissionClaimsFromList(claims, permissions, employee);
+
+                if (!permissions.Any())
                 {
-                    AddPermissionClaimsFromList(claims, permissions, employee);
-                }
-                else
-                {
-                    _logger.LogWarning(
-                        "No permissions found in database for role {RoleID}, using defaults",
+                    _logger.LogInformation(
+                        "No permissions assigned in the database for role {RoleID}.",
                         employee.RoleID
                     );
-
-                    AddDefaultPermissionsForRole(claims, employee.RoleID);
                 }
             }
             catch (Exception ex)
@@ -147,9 +152,8 @@ namespace Chapeau.Services.Login
                     PermissionConstants.ManageEmployees,
                     PermissionConstants.ManageMenuItems,
                     PermissionConstants.ManageStock,
-                    PermissionConstants.ViewReports,
-                    PermissionConstants.ManageRoles,
-                    PermissionConstants.ViewFinance
+                    PermissionConstants.ViewFinance,
+                    PermissionConstants.ManageRoles
                 },
 
                 RoleConstants.BedieningId => new List<string>

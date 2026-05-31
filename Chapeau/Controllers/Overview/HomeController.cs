@@ -8,9 +8,9 @@ using System.Diagnostics;
 
 namespace Chapeau.Controllers
 {
-    public class HomeController(EmployeeService employeeService) : Controller
+    public class HomeController(IEmployeeService employeeService) : Controller
     {
-        private readonly EmployeeService _employeeService = employeeService;
+        private readonly IEmployeeService _employeeService = employeeService;
 
         public IActionResult Index()
         {

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Chapeau.Models;
 
 namespace Chapeau.Repositories.Menu
@@ -7,9 +6,10 @@ namespace Chapeau.Repositories.Menu
     {
         List<MenuItem> GetMenuItems(int? cardId, int? categoryId);
         MenuItem? GetMenuItemById(int menuItemId);
+        bool NameExists(string name, int? excludedMenuItemId = null);
         void AddMenuItem(MenuItem item);
         void UpdateMenuItem(MenuItem item);
-        void SetMenuItemActive(int id, bool active);
-        void ChangeStock(int id, int newStock);
+        void SetMenuItemActive(int menuItemId, bool active);
+        void ChangeStock(int menuItemId, int newStock);
     }
 }

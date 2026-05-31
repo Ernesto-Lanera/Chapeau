@@ -50,11 +50,11 @@
                 {
                     string stockClasses = "border-success border-2";
 
-                    if (item.Stock == 0)
+                    if (item.IsOutOfStock)
                     {
                         stockClasses = "border-danger border-2 bg-light opacity-50";
                     }
-                    else if (item.Stock <= 10)
+                    else if (item.IsAlmostOutOfStock)
                     {
                         stockClasses = "border-warning border-2";
                     }

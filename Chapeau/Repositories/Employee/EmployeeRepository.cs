@@ -1,272 +1,135 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Threading.Tasks;
 using Chapeau.Constants;
+using Chapeau.Models;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using EmployeeModel = Chapeau.Models.Employee;
 
 namespace Chapeau.Repositories
 {
-    public class EmployeeRepository(IConfiguration configuration, ILogger<EmployeeRepository> logger)
+    public class EmployeeRepository(IConfiguration configuration, ILogger<EmployeeRepository> logger) : IEmployeeRepository
     {
+        private const string SelectEmployeeColumns = """
+            SELECT e.EmployeeID, e.Name, e.PasswordHash, e.RoleID, e.IsActive, r.RoleName
+            FROM Employee AS e
+            INNER JOIN Roles AS r ON r.RoleID = e.RoleID
+            """;
+
         private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
             ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
-
         private readonly ILogger<EmployeeRepository> _logger = logger;
 
-        // Haalt alle medewerkers op
-        public List<EmployeeModel> GetEmployees()
+        public List<Employee> GetEmployees()
         {
-            var employees = new List<EmployeeModel>();
+            string query = SelectEmployeeColumns + " ORDER BY e.Name;";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            connection.Open();
 
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
-
-                string query = @"
-                    SELECT 
-                        e.EmployeeID,
-                        e.Name,
-                        e.PasswordHash,
-                        e.RoleID,
-                        e.IsActive,
-                        r.RoleName
-                    FROM Employee e
-                    INNER JOIN Roles r ON e.RoleID = r.RoleID
-                    ORDER BY e.EmployeeID";
-
-                using SqlCommand command = new(query, connection);
-                using SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    employees.Add(MapEmployee(reader));
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving employees: {ex.Message}", ex);
-            }
-
+            using SqlDataReader reader = command.ExecuteReader();
+            var employees = new List<Employee>();
+            while (reader.Read()) employees.Add(MapEmployee(reader));
             return employees;
         }
 
-        // Haalt medewerker op via ID
-        public EmployeeModel? GetEmployeeById(int employeeId)
+        public Employee? GetEmployeeById(int employeeId)
         {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
+            string query = SelectEmployeeColumns + " WHERE e.EmployeeID = @EmployeeID;";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employeeId;
+            connection.Open();
 
-                string query = @"
-                    SELECT 
-                        e.EmployeeID,
-                        e.Name,
-                        e.PasswordHash,
-                        e.RoleID,
-                        e.IsActive,
-                        r.RoleName
-                    FROM Employee e
-                    INNER JOIN Roles r ON e.RoleID = r.RoleID
-                    WHERE e.EmployeeID = @EmployeeID";
-
-                using SqlCommand command = new(query, connection);
-                command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employeeId;
-
-                using SqlDataReader reader = command.ExecuteReader();
-
-                if (!reader.Read())
-                {
-                    return null;
-                }
-
-                return MapEmployee(reader);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving employee by id: {ex.Message}", ex);
-            }
+            using SqlDataReader reader = command.ExecuteReader();
+            return reader.Read() ? MapEmployee(reader) : null;
         }
 
-        // Zoekt medewerker op naam
-        public EmployeeModel? GetEmployeeByName(string name)
+        public Employee? GetEmployeeByName(string name)
         {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
+            string query = SelectEmployeeColumns + " WHERE e.Name = @Name;";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name.Trim();
+            connection.Open();
 
-                string query = @"
-                    SELECT 
-                        e.EmployeeID,
-                        e.Name,
-                        e.PasswordHash,
-                        e.RoleID,
-                        e.IsActive,
-                        r.RoleName
-                    FROM Employee e
-                    INNER JOIN Roles r ON e.RoleID = r.RoleID
-                    WHERE e.Name = @Name";
-
-                using SqlCommand command = new(query, connection);
-                command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name;
-
-                using SqlDataReader reader = command.ExecuteReader();
-
-                if (!reader.Read())
-                {
-                    return null;
-                }
-
-                return MapEmployee(reader);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving employee by name: {ex.Message}", ex);
-            }
+            using SqlDataReader reader = command.ExecuteReader();
+            return reader.Read() ? MapEmployee(reader) : null;
         }
 
-        public async Task<EmployeeModel?> GetEmployeeByNameAsync(string name)
+        public async Task<Employee?> GetEmployeeByNameAsync(string name)
         {
-            try
-            {
-                await using SqlConnection connection = new(_connectionString);
-                await connection.OpenAsync();
+            string query = SelectEmployeeColumns + " WHERE e.Name = @Name;";
+            await using SqlConnection connection = new(_connectionString);
+            await using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name.Trim();
+            await connection.OpenAsync();
 
-                string query = @"
-                    SELECT 
-                        e.EmployeeID,
-                        e.Name,
-                        e.PasswordHash,
-                        e.RoleID,
-                        e.IsActive,
-                        r.RoleName
-                    FROM Employee e
-                    INNER JOIN Roles r ON e.RoleID = r.RoleID
-                    WHERE e.Name = @Name";
-
-                await using SqlCommand command = new(query, connection);
-                command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name;
-
-                await using SqlDataReader reader = await command.ExecuteReaderAsync();
-
-                if (!await reader.ReadAsync())
-                {
-                    return null;
-                }
-
-                return MapEmployee(reader);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while retrieving employee by name async: {ex.Message}", ex);
-            }
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
+            return await reader.ReadAsync() ? MapEmployee(reader) : null;
         }
 
-        // Voegt nieuw medewerker toe
-        public void AddEmployee(EmployeeModel employee)
+        public bool NameExists(string name, int? excludedEmployeeId = null)
         {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
+            const string query = """
+                SELECT COUNT(1) FROM Employee
+                WHERE LOWER(Name) = LOWER(@Name)
+                  AND (@ExcludedEmployeeID IS NULL OR EmployeeID <> @ExcludedEmployeeID);
+                """;
 
-                string query = @"
-                    INSERT INTO Employee 
-                        (Name, PasswordHash, RoleID, IsActive)
-                    VALUES 
-                        (@Name, @PasswordHash, @RoleID, @IsActive)";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name.Trim();
+            command.Parameters.Add("@ExcludedEmployeeID", SqlDbType.Int).Value =
+                excludedEmployeeId.HasValue ? excludedEmployeeId.Value : DBNull.Value;
+            connection.Open();
 
-                using SqlCommand command = new(query, connection);
-
-                command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = employee.Name;
-                command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 255).Value = employee.PasswordHash;
-                command.Parameters.Add("@RoleID", SqlDbType.Int).Value = employee.RoleID;
-                command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = employee.IsActive;
-
-                command.ExecuteNonQuery();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while adding the employee: {ex.Message}", ex);
-            }
+            return Convert.ToInt32(command.ExecuteScalar()) > 0;
         }
 
-        // Werkt medewerker bij
-        public void UpdateEmployee(EmployeeModel employee)
+        public void AddEmployee(Employee employee)
         {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
+            const string query = """
+                INSERT INTO Employee (Name, PasswordHash, RoleID, IsActive)
+                OUTPUT INSERTED.EmployeeID
+                VALUES (@Name, @PasswordHash, @RoleID, @IsActive);
+                """;
 
-                string query = @"
-                    UPDATE Employee
-                    SET 
-                        Name = @Name,
-                        PasswordHash = @PasswordHash,
-                        RoleID = @RoleID,
-                        IsActive = @IsActive
-                    WHERE EmployeeID = @EmployeeID";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            AddEditableParameters(command, employee);
+            connection.Open();
 
-                using SqlCommand command = new(query, connection);
-
-                command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = employee.Name;
-                command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 255).Value = employee.PasswordHash;
-                command.Parameters.Add("@RoleID", SqlDbType.Int).Value = employee.RoleID;
-                command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = employee.IsActive;
-                command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employee.EmployeeID;
-
-                int rowsAffected = command.ExecuteNonQuery();
-
-                if (rowsAffected == 0)
-                {
-                    throw new Exception("Update failed: Employee not found.");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while updating the employee: {ex.Message}", ex);
-            }
+            employee.EmployeeID = Convert.ToInt32(command.ExecuteScalar());
+            _logger.LogInformation("Medewerker toegevoegd: {EmployeeId}.", employee.EmployeeID);
         }
 
-        // Zet medewerker actief of inactief
-        public void SetEmployeeActive(int id, bool active)
+        public void UpdateEmployee(Employee employee)
         {
-            try
-            {
-                using SqlConnection connection = new(_connectionString);
-                connection.Open();
+            const string query = """
+                UPDATE Employee
+                SET Name = @Name, PasswordHash = @PasswordHash, RoleID = @RoleID, IsActive = @IsActive
+                WHERE EmployeeID = @EmployeeID;
+                """;
 
-                string query = @"
-                    UPDATE Employee
-                    SET IsActive = @IsActive
-                    WHERE EmployeeID = @EmployeeID";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employee.EmployeeID;
+            AddEditableParameters(command, employee);
+            connection.Open();
 
-                using SqlCommand command = new(query, connection);
-
-                command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
-                command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = id;
-
-                int rowsAffected = command.ExecuteNonQuery();
-
-                if (rowsAffected == 0)
-                {
-                    throw new Exception("Update failed: Employee not found.");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while updating the employee active status: {ex.Message}", ex);
-            }
+            EnsureUpdated(command.ExecuteNonQuery(), employee.EmployeeID);
         }
 
-        // Test database connectie
+        public void SetEmployeeActive(int employeeId, bool active)
+        {
+            const string query = "UPDATE Employee SET IsActive = @IsActive WHERE EmployeeID = @EmployeeID;";
+            using SqlConnection connection = new(_connectionString);
+            using SqlCommand command = new(query, connection);
+            command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employeeId;
+            command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
+            connection.Open();
+
+            EnsureUpdated(command.ExecuteNonQuery(), employeeId);
+        }
+
         public bool TestConnection()
         {
             try
@@ -275,23 +138,43 @@ namespace Chapeau.Repositories
                 connection.Open();
                 return true;
             }
-            catch
+            catch (SqlException exception)
             {
+                _logger.LogWarning(exception, "Databaseverbinding testen is mislukt.");
                 return false;
             }
         }
 
-        // Helper: mapt database rij naar EmployeeModel
-        private static EmployeeModel MapEmployee(SqlDataReader reader)
+        private static void AddEditableParameters(SqlCommand command, Employee employee)
         {
-            return new EmployeeModel
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = employee.Name.Trim();
+            command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 255).Value = employee.PasswordHash;
+            command.Parameters.Add("@RoleID", SqlDbType.Int).Value = employee.RoleID;
+            command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = employee.IsActive;
+        }
+
+        private void EnsureUpdated(int rowsAffected, int employeeId)
+        {
+            if (rowsAffected > 0) return;
+            _logger.LogWarning("Medewerker niet gevonden: {EmployeeId}.", employeeId);
+            throw new InvalidOperationException(ErrorMessages.EmployeeNotFound);
+        }
+
+        private static Employee MapEmployee(SqlDataReader reader)
+        {
+            int roleId = reader.GetInt32(reader.GetOrdinal("RoleID"));
+            return new Employee
             {
-                EmployeeID = Convert.ToInt32(reader["EmployeeID"]),
-                Name = reader["Name"].ToString() ?? string.Empty,
-                PasswordHash = reader["PasswordHash"].ToString() ?? string.Empty,
-                RoleID = Convert.ToInt32(reader["RoleID"]),
-                RoleName = reader["RoleName"].ToString() ?? string.Empty,
-                IsActive = Convert.ToBoolean(reader["IsActive"])
+                EmployeeID = reader.GetInt32(reader.GetOrdinal("EmployeeID")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
+                RoleID = roleId,
+                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                Role = new EmployeeRole
+                {
+                    RoleID = roleId,
+                    RoleName = reader.GetString(reader.GetOrdinal("RoleName"))
+                }
             };
         }
     }
