@@ -119,6 +119,7 @@ namespace Chapeau
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
+            builder.Services.AddScoped<Services.OrderService>();
 
             builder.Services.AddScoped<Services.Login.IAuthService, Services.Login.AuthService>();
             builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
