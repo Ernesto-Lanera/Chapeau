@@ -226,7 +226,7 @@ public class OrderRepository : IOrderRepository
 
     private static string BuildTableStatusQuery()
     {
-        return $@"SELECT t.TableID, t.TableNumber,
+        return $@"SELECT t.TableID, t.TableNumber, t.IsManuallyOccupied,
                 o.OrderID, o.OrderStatus,
                 CAST(CASE WHEN EXISTS (
                     SELECT 1 FROM OrderItem oi
@@ -256,7 +256,8 @@ public class OrderRepository : IOrderRepository
             tableDict[tableId] = new TableStatus
             {
                 TableId = tableId,
-                TableNumber = tableNumber
+                TableNumber = tableNumber,
+                IsManuallyOccupied = (bool)reader["IsManuallyOccupied"]
             };
         }
 
