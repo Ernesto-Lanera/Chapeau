@@ -34,6 +34,38 @@ namespace Chapeau.Services
             return DateTime.Now - order.OrderDate;
         }
 
+        public Order MakeNewOrder(int tableId)
+        {
+            Dictionary<int, OrderItem> orderItems = [];
+
+            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems };
+            return order;
+        }
+
+        public Order AddMenuItemToOrder(MenuItem MenuItem, Order order)
+        {
+            if (order.OrderItems != null)
+            {
+                if (!order.OrderItems.ContainsKey(MenuItem.MenuItemID))
+                {
+                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItem.MenuItemID, Amount = 1, MenuItemName = MenuItem.Name };
+                    order.OrderItems.Add(MenuItem.MenuItemID, orderitem);
+                }
+                else
+                {
+                    order.OrderItems[MenuItem.MenuItemID].Amount++;
+                }
+            }
+             
+            return order;
+
+        }
+
+        public void SaveOrderToDb(Order order)
+        {
+
+        }
+
         public Order GetActiveOrderByTableId(int tableId)
         {
             try

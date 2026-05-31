@@ -7,11 +7,10 @@
         public int OrderItemStatus { get; set; }
 
         public string Name { get; set; }
-        public decimal Price { get; set; }
+        public decimal Price { get; set; } 
         public decimal VATRate { get; set; }
-     
-        //public int OrderPartId { get; set; }
 
+        public string MenuItemName { get; set; } 
         public int MenuItemId { get; set; }
 
         public int Amount { get; set; }
