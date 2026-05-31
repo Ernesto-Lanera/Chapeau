@@ -49,6 +49,30 @@ namespace Chapeau.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public IActionResult MarkTableServed(int tableId)
+        {
+            try
+            {
+                int updated = _orderService.MarkTableServed(tableId);
+                if (updated > 0)
+                {
+                    TempData["FlashSuccess"] = $"Bestellingen voor tafel {tableId} zijn gemarkeerd als geserveerd.";
+                }
+                else
+                {
+                    TempData["FlashError"] = "Er zijn geen bestellingen gevonden die geserveerd kunnen worden.";
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["FlashError"] = ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult ToggleStatus(int tableId, bool occupied)
         {
             if (!occupied && _tableRepository.HasActiveOrders(tableId))

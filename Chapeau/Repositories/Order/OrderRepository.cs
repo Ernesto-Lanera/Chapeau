@@ -311,7 +311,23 @@ public class OrderRepository : IOrderRepository
         };
     }
 
-    public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
+        public int MarkReadyOrdersAsServed(int tableId)
+        {
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            connection.Open();
+
+            string query = @"UPDATE Orders SET OrderStatus = @Served
+                WHERE TableID = @TableID AND OrderStatus = @ReadyToBeServed";
+
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+            command.Parameters.AddWithValue("@TableID", tableId);
+            command.Parameters.AddWithValue("@ReadyToBeServed", (int)OrderStatus.ReadyToBeServed);
+
+            return command.ExecuteNonQuery();
+        }
+
+        public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
     {
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {

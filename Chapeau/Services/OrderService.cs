@@ -72,6 +72,23 @@ namespace Chapeau.Services
             }
         }
 
+        public int MarkTableServed(int tableId)
+        {
+            if (tableId <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
+            }
+
+            try
+            {
+                return _orderRepository.MarkReadyOrdersAsServed(tableId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to mark orders as served.", ex);
+            }
+        }
+
         public void MarkOrderAsServed(int orderId)
         {
             if (orderId <= 0)

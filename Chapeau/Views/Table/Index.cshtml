@@ -67,14 +67,17 @@
                                 </div>
                             }
 
-                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto" onclick="event.stopPropagation();">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="tableId" value="@table.TableId" />
-                                <input type="hidden" name="occupied" value="false" />
-                                <button type="submit" class="btn btn-outline-warning btn-sm w-100 mt-2">
-                                    <i class="bi bi-x-circle me-1"></i>Mark as Free
-                                </button>
-                            </form>
+                            @if (table.Orders.Count == 0)
+                            {
+                                <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto" onclick="event.stopPropagation();">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="tableId" value="@table.TableId" />
+                                    <input type="hidden" name="occupied" value="false" />
+                                    <button type="submit" class="btn btn-outline-warning btn-sm w-100 mt-2">
+                                        <i class="bi bi-x-circle me-1"></i>Mark as Free
+                                    </button>
+                                </form>
+                            }
                         }
                         else
                         {
@@ -87,6 +90,17 @@
                                 <input type="hidden" name="occupied" value="true" />
                                 <button type="submit" class="btn btn-outline-success btn-sm w-100 mt-2">
                                     <i class="bi bi-check-circle me-1"></i>Mark as Occupied
+                                </button>
+                            </form>
+                        }
+
+                        @if (table.Orders.Any(o => o.OrderStatus == Chapeau.Emums.OrderStatus.ReadyToBeServed))
+                        {
+                            <form method="post" asp-action="MarkTableServed" asp-controller="Table" class="mt-auto" onclick="event.stopPropagation();">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="tableId" value="@table.TableId" />
+                                <button type="submit" class="btn btn-success btn-sm w-100 mt-2">
+                                    <i class="bi bi-check2-all me-1"></i>Serve All
                                 </button>
                             </form>
                         }
