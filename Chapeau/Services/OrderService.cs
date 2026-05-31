@@ -51,23 +51,51 @@ namespace Chapeau.Services
             return order;
         }
 
-        public Order AddMenuItemToOrder(MenuItem MenuItem, Order order)
+        public Order AddOrderItemToOrder(int MenuItemId, Order order, string MenuItemName)
         {
             if (order.OrderItems != null)
             {
-                if (!order.OrderItems.ContainsKey(MenuItem.MenuItemID))
+                if (!order.OrderItems.ContainsKey(MenuItemId))
                 {
-                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItem.MenuItemID, Amount = 1, MenuItemName = MenuItem.Name };
-                    order.OrderItems.Add(MenuItem.MenuItemID, orderitem);
+                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, Amount = 1, MenuItemName = MenuItemName };
+                    order.OrderItems.Add(MenuItemId, orderitem);
                 }
                 else
                 {
-                    order.OrderItems[MenuItem.MenuItemID].Amount++;
+                    order.OrderItems[MenuItemId].Amount++;
                 }
             }
              
             return order;
 
+        }
+
+
+        public Order RemoveItemFormOrder(int MenuItemId, Order order)
+        {
+            if (order.OrderItems != null)
+            {
+                order.OrderItems.Remove(MenuItemId);
+            }
+            return order;
+        }
+
+        public Order UpdateItemFormOrder (int MenuItemId, Order order, int NewAmount)
+        {
+            if (order.OrderItems != null)
+            {
+                order.OrderItems[MenuItemId].Amount = NewAmount;
+            }
+            return order;
+        }
+
+        public Order AddCommentoItem(int MenuItemId, Order order,String Comment)
+        {
+            if (order.OrderItems != null)
+            {
+                order.OrderItems[MenuItemId].Comment = Comment;
+            }
+            return order;
         }
 
         public void SaveOrderToDb(Order order)

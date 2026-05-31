@@ -59,12 +59,14 @@
                         stockClasses = "border-warning border-2";
                     }
 
-                    <form asp-controller="Menu" asp-action="AddMenuItemToOrder" method="post">
+                 
                         <div class="col menu-item" data-category="@item.Category?.CategoryID" data-menucard="@item.Category?.MenuCardID">
-                            <input type="hidden" name="MenuCardId"  value="@item.MenuItemID"/>
-                            
 
-                            <div class="card h-100 shadow-sm @stockClasses" style="min-height: 160px;">
+                            <input type="hidden" name="MenuCardId" value="@item.MenuItemID" />
+                            <input type="hidden" name="MenuItemName" value="@item.Name" />
+
+                            
+                        <div class="card h-100 shadow-sm @stockClasses" style="min-height: 160px;" onclick="addToOrder(@item.MenuItemID, '@item.Name')">
                                 @if (!string.IsNullOrEmpty(item.ImagePath))
                                 {
                                     <img class="card-img-top @(item.Stock == 0 ? "style-grayscale" : "")"
@@ -87,7 +89,7 @@
                                 </div>
                             </div>
                         </div>
-                    </form>
+            
                 }
             </div>
         </div>
@@ -97,22 +99,21 @@
                 <h4 class="mb-0 fw-bold fs-5">Tafel 1</h4>
             </div>
 
-            <div class="flex-grow-1 overflow-y-auto hide-scrollbar">
-                <p class="text-muted text-center mt-5 small">Select items to add to order...</p>
+            <div id="cart-container" class="flex-grow-1 overflow-y-auto hide-scrollbar">
             </div>
 
-            <div class="flex-shrink-0 mt-auto pt-2 pb-2 border-top d-flex flex-column gap-2">
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-danger fw-bold py-2 flex-grow-1">Cancel</button>
-                    <button class="btn btn-sm btn-warning fw-bold py-2 flex-grow-1">Note</button>
-                </div>
-                <button class="btn btn-success fw-bold py-2 fs-6">Send to production</button>
+            <div class="mt-auto d-flex justify-content-between pt-3 border-top">
+                <button class="btn btn-danger w-50 me-1 fw-bold rounded-3">Cancel</button>
+                <button class="btn btn-primary w-50 ms-1 fw-bold rounded-3">Send To Kitchen/Bar</button>
             </div>
         </div>
 
     </div>
 
+</div>
 
-    @section Scripts {
-        <script src="~/js/MenuFilter.js"></script>
-    }
+
+@section Scripts {
+    <script src="~/js/MenuFilter.js"></script>
+    <script src="~/js/Order.js"></script>
+}

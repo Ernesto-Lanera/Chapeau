@@ -98,6 +98,15 @@ namespace Chapeau
                     policy.RequireRole("Kitchen"));
             });
 
+            builder.Services.AddDistributedMemoryCache();
+
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
             // Register repositories and services
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
@@ -155,8 +164,11 @@ namespace Chapeau
             app.UseRouting();
 
             app.UseAuthentication();
-            app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
             app.UseAuthorization();
+
+            app.UseSession();
+            app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
+
 
             app.MapStaticAssets();
             app.MapControllerRoute(
