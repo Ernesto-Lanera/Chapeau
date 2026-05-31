@@ -260,6 +260,55 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        using SqlTransaction transaction = connection.BeginTransaction();
+        try
+        {
+            string insertPaymentQuery = @"
+                INSERT INTO Payment (OrderID, TableID, TotalTipAmount, Feedback)
+                VALUES (@OrderID, @TableID, @TipAmount, @Feedback)";
+
+            using (SqlCommand command = new SqlCommand(insertPaymentQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.Parameters.AddWithValue("@TableID", tableNumber);
+                command.Parameters.AddWithValue("@TipAmount", tipAmount);
+                command.Parameters.AddWithValue("@Feedback", (object?)feedback ?? DBNull.Value);
+                command.ExecuteNonQuery();
+            }
+
+            string updateOrderQuery = "UPDATE Orders SET OrderStatus = @Paid WHERE OrderID = @OrderID";
+            using (SqlCommand command = new SqlCommand(updateOrderQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.ExecuteNonQuery();
+            }
+
+            string updateTableQuery = @"
+                UPDATE Table_ 
+                SET TableStatus = 0  
+                WHERE TableID = (SELECT TableID FROM Orders WHERE OrderID = @OrderID)";
+
+            using (SqlCommand command = new SqlCommand(updateTableQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
     private static decimal GetVatRate(bool isAlcoholic)
     {
         return isAlcoholic ? 0.21m : 0.06m;

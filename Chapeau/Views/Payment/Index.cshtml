@@ -19,43 +19,7 @@
                     <h6>Bestelregels</h6>
                     @if (order.Items != null && order.Items.Count > 0)
                     {
-                        <table class="table table-striped table-sm payment-index-table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Aantal</th>
-                                    <th>Stukprijs</th>
-                                    <th>BTW-tarief</th>
-                                    <th>Subtotaal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in order.Items)
-                                {
-                                    var subtotal = item.Price * item.AmountOrdered;
-                                    var vatAmount = subtotal * item.VATRate;
-                                    var totalWithVat = subtotal + vatAmount;
-                                    
-                                    <tr>
-                                        <td class="item-name">@item.Name</td>
-                                        <td>@item.AmountOrdered</td>
-                                        <td class="item-price">€@item.Price.ToString("F2")</td>
-                                        <td>@((item.VATRate * 100).ToString("F0"))%</td>
-                                        <td>
-                                            <small>€@subtotal.ToString("F2")</small><br />
-                                            <small class="text-muted">+€@vatAmount.ToString("F2") BTW</small><br />
-                                            <strong>€@totalWithVat.ToString("F2")</strong>
-                                        </td>
-                                    </tr>
-                                    @if (!string.IsNullOrEmpty(item.Comment))
-                                    {
-                                        <tr>
-                                            <td colspan="5" class="item-comment">Opmerking: @item.Comment</td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                        </table>
+                        <partial name="_PaymentItemsTable" model="order.Items" />
 
                         <!-- VAT Summary -->
                         <div class="row mt-3">
@@ -65,15 +29,15 @@
                                     <h6>BTW verdeling:</h6>
                                     <p class="mb-1">
                                         <strong>Lage BTW (6%):</strong> 
-                                        €@order.Items.Where(i => i.VATRate == 0.06m).Sum(i => i.Price * i.AmountOrdered * i.VATRate).ToString("F2")
+                                        €@order.Items.Where(i => i.VATRate == 0.06m).Sum(i => i.Price * i.Amount * i.VATRate).ToString("F2")
                                     </p>
                                     <p class="mb-2">
                                         <strong>Hoge BTW (21%):</strong> 
-                                        €@order.Items.Where(i => i.VATRate == 0.21m).Sum(i => i.Price * i.AmountOrdered * i.VATRate).ToString("F2")
+                                        €@order.Items.Where(i => i.VATRate == 0.21m).Sum(i => i.Price * i.Amount * i.VATRate).ToString("F2")
                                     </p>
                                     <hr />
                                     <div class="total-summary">
-                                        <strong>Totaal (incl. BTW): €@order.Items.Sum(i => i.Price * i.AmountOrdered * (1 + i.VATRate)).ToString("F2")</strong>
+                                        <strong>Totaal (incl. BTW): €@order.Items.Sum(i => i.Price * i.Amount * (1 + i.VATRate)).ToString("F2")</strong>
                                     </div>
                                 </div>
                             </div>

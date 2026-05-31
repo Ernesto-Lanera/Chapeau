@@ -175,12 +175,10 @@ function doPay() {
     document.getElementById('confirmSection').style.display = 'block';
 
     // Save to database
-    savePaymentToDatabase(totalPaid, totalTip, feedback);
+    savePaymentToDatabase(totalTip, feedback);
 }
 
-function savePaymentToDatabase(totalPaid, totalTip, feedback) {
-    const paymentMethod = payments.map(p => p.method).join(', ');
-
+function savePaymentToDatabase(totalTip, feedback) {
     // POST to server to save payment
     fetch('/Payment/SavePayment', {
         method: 'POST',
@@ -190,9 +188,7 @@ function savePaymentToDatabase(totalPaid, totalTip, feedback) {
         body: JSON.stringify({
             orderId: ORDER_ID,
             tableNumber: TABLE_NUMBER,
-            totalPaidAmount: totalPaid,
             tipAmount: totalTip,
-            paymentMethod: paymentMethod,
             feedback: feedback
         })
     })

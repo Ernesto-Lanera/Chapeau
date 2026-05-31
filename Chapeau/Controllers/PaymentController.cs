@@ -3,7 +3,6 @@ using Chapeau.Services;
 using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Controllers
 {
@@ -11,12 +10,10 @@ namespace Chapeau.Controllers
     public class PaymentController : Controller
     {
         private readonly IOrderService _orderService;
-        private readonly IConfiguration _configuration;
 
-        public PaymentController(IOrderService orderService, IConfiguration configuration)
+        public PaymentController(IOrderService orderService)
         {
             _orderService = orderService;
-            _configuration = configuration;
         }
 
         public IActionResult Index()
@@ -29,25 +26,14 @@ namespace Chapeau.Controllers
         {
             try
             {
-                Order? order = _orderService.GetActiveOrderByTableId(tableId);
-                if (order == null)
-                {
-                    return RedirectToAction(nameof(Index));
-                }
-
-                PaymentOrderViewModel viewModel =
-                    _orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber);
-
-                return View(viewModel);
+                var order = _orderService.GetActiveOrderByTableId(tableId);
+                return order == null
+                    ? RedirectToAction(nameof(Index))
+                    : View(_orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber));
             }
             catch (Exception ex)
             {
-                var errorViewModel = new ErrorViewModel
-                {
-                    ErrorMessage = ex.Message,
-                    RequestId = HttpContext.TraceIdentifier
-                };
-                return View("Error", errorViewModel);
+                return Error(ex);
             }
         }
 
@@ -55,27 +41,12 @@ namespace Chapeau.Controllers
         {
             try
             {
-                PaymentOrderViewModel viewModel =
-                    _orderService.GetPaymentOrderViewModel(orderId, tableNumber);
-                return View("ViewOrder", viewModel);
+                return View("ViewOrder", _orderService.GetPaymentOrderViewModel(orderId, tableNumber));
             }
             catch (Exception ex)
             {
-                var errorViewModel = new ErrorViewModel
-                {
-                    ErrorMessage = ex.Message,
-                    RequestId = HttpContext.TraceIdentifier
-                };
-                return View("Error", errorViewModel);
+                return Error(ex);
             }
-        }
-
-        public IActionResult Confirmation(int orderId, decimal amount, string method)
-        {
-            ViewBag.OrderId = orderId;
-            ViewBag.Amount = amount;
-            ViewBag.Method = method;
-            return View();
         }
 
         [HttpPost]
@@ -83,52 +54,12 @@ namespace Chapeau.Controllers
         {
             try
             {
-                if (request == null || request.OrderId <= 0)
+                if (request?.OrderId <= 0)
                 {
                     return Json(new { success = false, message = "Invalid order ID" });
                 }
 
-                string connectionString = _configuration.GetConnectionString("ChapeauDatabaseSQL");
-
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    // 1. betaling dingen opslaan
-                    string insertPaymentQuery = @"
-                        INSERT INTO Payment (OrderID, TableID, TotalTipAmount, Feedback)
-                        VALUES (@OrderID, @TableID, @TipAmount, @Feedback)";
-
-                    using (SqlCommand command = new SqlCommand(insertPaymentQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("@OrderID", request.OrderId);
-                        command.Parameters.AddWithValue("@TableID", request.TableNumber);
-                        command.Parameters.AddWithValue("@TipAmount", request.TipAmount);
-                        command.Parameters.AddWithValue("@Feedback", (object?)request.Feedback ?? DBNull.Value);
-                        command.ExecuteNonQuery();
-                    }
-
-                    // 2. markeer order naar betaald
-                    string updateOrderQuery = "UPDATE Orders SET OrderStatus = 4 WHERE OrderID = @OrderID";
-                    using (SqlCommand command = new SqlCommand(updateOrderQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("@OrderID", request.OrderId);
-                        command.ExecuteNonQuery();
-                    }
-
-                    // 3. tafel vrij maken
-                    string updateTableQuery = @"
-                        UPDATE Table_ 
-                        SET TableStatus = 0  
-                        WHERE TableID = (SELECT TableID FROM Orders WHERE OrderID = @OrderID)";
-
-                    using (SqlCommand command = new SqlCommand(updateTableQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("@OrderID", request.OrderId);
-                        command.ExecuteNonQuery();
-                    }
-                }
-
+                _orderService.SavePayment(request.OrderId, request.TableNumber, request.TipAmount, request.Feedback);
                 return Json(new { success = true, message = "Payment saved successfully" });
             }
             catch (Exception ex)
@@ -136,15 +67,23 @@ namespace Chapeau.Controllers
                 return Json(new { success = false, message = ex.Message });
             }
         }
+
+        private IActionResult Error(Exception ex)
+        {
+            return View("Error", new ErrorViewModel
+            {
+                ErrorMessage = ex.Message,
+                RequestId = HttpContext.TraceIdentifier
+            });
+        }
     }
 
+    //nodig voor json in payment.js
     public class PaymentSaveRequest
     {
         public int OrderId { get; set; }
         public int TableNumber { get; set; }
-        public decimal TotalPaidAmount { get; set; }
         public decimal TipAmount { get; set; }
-        public string PaymentMethod { get; set; }
-        public string Feedback { get; set; }
+        public string? Feedback { get; set; }
     }
 }

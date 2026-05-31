@@ -148,7 +148,7 @@ namespace Chapeau.Services
                         Name = firstItem.Name ?? "Unknown Item",
                         Price = firstItem.Price,
                         VATRate = firstItem.VATRate,
-                        AmountOrdered = g.Sum(x => x.AmountOrdered),
+                        Amount = g.Sum(x => x.Amount),
                         Comment = firstItem.Comment,
                         OrderId = orderId
                     };
@@ -190,6 +190,21 @@ namespace Chapeau.Services
                 HighVAT = Math.Round(order.HighVATTotal, 2),
                 Total = Math.Round(order.GrandTotal, 2)
             };
+        }
+
+        public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            if (tableNumber <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel nummer.", nameof(tableNumber));
+            }
+
+            _orderRepository.SavePayment(orderId, tableNumber, tipAmount, feedback);
         }
     }
 }

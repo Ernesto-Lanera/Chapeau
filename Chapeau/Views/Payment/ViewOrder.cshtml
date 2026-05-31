@@ -25,43 +25,7 @@
                     <h5>Order Items</h5>
                     @if (Model.Items != null && Model.Items.Count > 0)
                     {
-                        <table class="table table-striped table-hover payment-items-table">
-                            <thead class="table-dark">
-                                <tr>
-                    <th>Item</th>
-                    <th>Aantal</th>
-                    <th>Stukprijs</th>
-                    <th>BTW-tarief</th>
-                    <th>Subtotaal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in Model.Items)
-                                {
-                                    var subtotal = item.Price * item.AmountOrdered;
-                                    var vatAmount = subtotal * item.VATRate;
-                                    var totalWithVat = subtotal + vatAmount;
-
-                                    <tr>
-                                        <td class="item-name">@item.Name</td>
-                                        <td>@item.AmountOrdered</td>
-                                        <td class="item-price">€@item.Price.ToString("F2")</td>
-                                        <td>@((item.VATRate * 100).ToString("F0"))%</td>
-                                        <td>
-                                            <small>Excl.: €@subtotal.ToString("F2")</small><br />
-                                            <small>VAT: €@vatAmount.ToString("F2")</small><br />
-                                            <strong>€@totalWithVat.ToString("F2")</strong>
-                                        </td>
-                                    </tr>
-                                    @if (!string.IsNullOrEmpty(item.Comment))
-                                    {
-                                        <tr>
-                            <td colspan="5" class="item-comment">Opmerking: @item.Comment</td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                        </table>
+                        <partial name="_PaymentItemsTable" model="Model.Items" />
 
                         <div class="row mt-4">
                             <div class="col-md-8"></div>
@@ -69,8 +33,14 @@
                                 <div class="card vat-breakdown-card">
                                     <div class="card-body">
                                         <h6>VAT Breakdown:</h6>
-                <strong>Lage BTW (6%):</strong>
-                <strong>Hoge BTW (21%):</strong>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Lage BTW (6%):</span>
+                                            <strong>€@Model.LowVAT.ToString("F2")</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Hoge BTW (21%):</span>
+                                            <strong>€@Model.HighVAT.ToString("F2")</strong>
+                                        </div>
                                         <hr />
                                         <div class="total-amount">Total (incl. VAT): €@Model.Total.ToString("F2")</div>
                                     </div>

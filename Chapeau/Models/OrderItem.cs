@@ -4,7 +4,7 @@ namespace Chapeau.Models
 {
     public class OrderItem
     {
-       public int OrderItemId { get; set; }
+        public int OrderItemId { get; set; }
         public OrderStatus OrderItemStatus { get; set; }
         public CourseType? Course { get; set; }
         public int Amount { get; set; }
@@ -26,17 +26,23 @@ namespace Chapeau.Models
             get => MenuItem.RetailPrice;
             set => MenuItem.RetailPrice = value;
         }
+
         public int MenuCardID { get; set; }
 
         public decimal VATRate { get; set; }
+
         public int AmountOrdered
         {
             get => Amount;
             set => Amount = value;
         }
-        public decimal TotalPrice => Price * Amount * (1 + VATRate);
-        public decimal VATAmount => Price * Amount * VATRate;
-        public decimal GrossPrice => Price * Amount;
+
+        public decimal GrossPrice => Price * AmountOrdered;
+        public decimal VATAmount => Price * AmountOrdered * VATRate;
+        public decimal TotalPrice => Price * AmountOrdered * (1 + VATRate);
+
+        public decimal Subtotal => GrossPrice;
+        public decimal TotalWithVat => Subtotal + VATAmount;
 
         public OrderItem(int orderItemId, int menuItemId, int amount, int orderId)
         {
