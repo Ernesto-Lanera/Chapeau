@@ -29,24 +29,21 @@ namespace Chapeau.Controllers
         }
         public IActionResult Index()
         {
-            try
-            {
-                var menuItems = _menuService.GetMenuItems(null, null);
-                var allCategories = _categoryService.GetCategories();
+            var menuItems = _menuService.GetMenuItems(null, null);
+            var allCategories = _categoryService.GetCategories();
 
-           
+
 
             ViewBag.Order = order;
             ViewBag.AllCategories = allCategories;
             ViewBag.MenuCards = GetMenuCardSelectList();
             return View(menuItems);
         }
-
-        [HttpPost]
-        public IActionResult AddMenuItemToOrder()
-        {
-            return View(order);
-        }
+        //[HttpPost]
+        //public IActionResult AddMenuItemToOrder()
+        //{
+        //    return View(order);
+        //}
 
         private static List<SelectListItem> GetMenuCardSelectList()
         {

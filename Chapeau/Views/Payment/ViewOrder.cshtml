@@ -34,7 +34,7 @@
                                 <th>Subtotal</th>
                             </tr>
                         </thead>
-                        <tbody>
+                       @*  <tbody>
                             @foreach (var item in Model.Items)
                             {
                                 var subtotal = item.Price * item.AmountOrdered;
@@ -59,7 +59,7 @@
                                     </tr>
                                 }
                             }
-                        </tbody>
+                        </tbody> *@
                     </table>
 
                     <div class="row mt-4">

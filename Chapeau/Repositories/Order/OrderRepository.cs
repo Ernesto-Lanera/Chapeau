@@ -137,9 +137,9 @@ public class OrderRepository : IOrderRepository
         }
     }
 
-    public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
+    public Dictionary<int,OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
-        List<OrderItem> items = new List<OrderItem>();
+        Dictionary<int,OrderItem> items = [];
         
         string typeFilter = type == OrderType.Food
             ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
@@ -174,17 +174,19 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
-                        items.Add(new OrderItem
+                        OrderItem orderItem = new OrderItem
                         {
                             OrderItemId = (int)reader["OrderItemID"],
                             OrderId = (int)reader["OrderID"],
                             MenuItemId = (int)reader["MenuItemID"],
-                            AmountOrdered = (int)reader["AmountOrdered"],
+                            Amount = (int)reader["AmountOrdered"],
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
-                            Name = (string)reader["Name"],
+                            MenuItemName = (string)reader["Name"],
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
-                        });
+                        };
+                        
+                        items.Add(orderItem.MenuItemId,orderItem);
                     }
                 }
             }
@@ -302,9 +304,8 @@ public class OrderRepository : IOrderRepository
             OrderItemId = (int)reader["OrderItemID"],
             OrderId = (int)reader["OrderID"],
             MenuItemId = (int)reader["MenuItemID"],
-            AmountOrdered = (int)reader["AmountOrdered"],
-            Name = reader["Name"].ToString(),
-            Price = (decimal)reader["Price"],
+            Amount = (int)reader["AmountOrdered"],
+            MenuItemName = reader["Name"].ToString(), 
             Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
             OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"]
         };

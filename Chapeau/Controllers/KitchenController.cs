@@ -34,25 +34,25 @@ namespace Chapeau.Controllers
                 WaitingTime = _orderService.GetWaitingTime(o),
 
                 OrderItems = o.OrderItems
-               .OrderBy(i => i.Course)
+               .OrderBy(i => i.Value.Course)
                .Select(i => new OrderItemViewModel
                 {
-                    Name = i.Name,
-                    Amount = i.AmountOrdered,
-                    Comment = i.Comment
+                    Name = i.Value.MenuItemName,
+                    Amount = i.Value.Amount,
+                    Comment = i.Value.Comment
                 }).ToList(),
 
                             CourseGroups = o.OrderItems
-                .OrderBy(i => i.Course)
-                .GroupBy(i => i.Course)
+                .OrderBy(i => i.Value.Course)
+                .GroupBy(i => i.Value.Course)
                 .Select(g => new CourseGroupViewModel
                 {
                     Course = g.Key ?? CourseType.Starter,
                     Items = g.Select(i => new OrderItemViewModel
                     {
-                        Name = i.Name,
-                        Amount = i.AmountOrdered,
-                        Comment = i.Comment
+                        Name = i.Value.MenuItemName,
+                        Amount = i.Value.Amount,
+                        Comment = i.Value.Comment
                     }).ToList()
                 }).ToList()
 

@@ -34,9 +34,9 @@ namespace Chapeau.Controllers
                 WaitingTime = _orderService.GetWaitingTime(o),
                 OrderItems = o.OrderItems.Select(i => new OrderItemViewModel
                 {
-                    Name = i.Name,
-                    Amount = i.AmountOrdered,
-                    Comment = i.Comment
+                    Name = i.Value.MenuItemName,
+                    Amount = i.Value.Amount,
+                    Comment = i.Value.Comment
                 }).ToList()
             }).ToList();
 

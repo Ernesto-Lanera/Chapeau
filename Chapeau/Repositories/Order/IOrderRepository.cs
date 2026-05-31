@@ -6,7 +6,7 @@ namespace Chapeau.Repositories
     public interface IOrderRepository
     {
         List<Order> GetRunningOrders(OrderType type);
-        List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type);
+        Dictionary<int,OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type);
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
         Order GetActiveOrderByTableId(int tableId);
         List<TableStatus> GetAllTableStatuses();
