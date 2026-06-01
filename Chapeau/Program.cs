@@ -24,7 +24,7 @@ namespace Chapeau
                     .RequireAuthenticatedUser()
                     .Build();
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
-            });
+            }).AddSessionStateTempDataProvider();
 
             builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
             {

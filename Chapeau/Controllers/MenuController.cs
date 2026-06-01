@@ -29,7 +29,9 @@ namespace Chapeau.Controllers
             {
                 return _orderService.MakeNewOrder(1);
             }
-            return JsonSerializer.Deserialize<Order>(sessionData);
+
+
+            return JsonSerializer.Deserialize<Order>(sessionData)!;
         }
 
         private void SaveOrder(Order order)
@@ -44,7 +46,7 @@ namespace Chapeau.Controllers
                 ViewBag.Order = GetOrder();
                 ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();
-                var menuItems = _menuService.GetMenuItems(null, null) ?? new List<MenuItem>(); ;
+                var menuItems = _menuService.GetMenuItems(null, null) ?? new List<MenuItem>();
 
                 return View(menuItems);
             }
@@ -55,40 +57,47 @@ namespace Chapeau.Controllers
             }
         }
 
-        [HttpPost]
-        public IActionResult AddMenuItemToOrder(int MenuCardId, string MenuItemName)
+        [HttpGet]
+        public IActionResult GetActiveOrderItems()
         {
             Order order = GetOrder();
-            order = _orderService.AddOrderItemToOrder(MenuCardId, order, MenuItemName);
-            SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems.Values });
+            return Json(new { success = true, items = order.OrderItems?.Values });
         }
 
         [HttpPost]
-        public IActionResult RemoveMenuItemFromOrder(int MenuCardId)
+        public IActionResult AddMenuItemToOrder(int MenuItemId, string MenuItemName)
         {
             Order order = GetOrder();
-            order = _orderService.RemoveItemFormOrder(MenuCardId, order);
+            order = _orderService.AddOrderItemToOrder(MenuItemId, order, MenuItemName);
             SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems.Values });
+            return Json(new { success = true, items = order.OrderItems!.Values });
         }
 
         [HttpPost]
-        public IActionResult UpdateMenuItemQuantity(int MenuCardId, int NewQuantity)
+        public IActionResult RemoveMenuItemFromOrder(int MenuItemId)
         {
             Order order = GetOrder();
-            order = _orderService.UpdateItemFormOrder(MenuCardId, order, NewQuantity);
+            order = _orderService.RemoveItemFormOrder(MenuItemId, order);
             SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems.Values });
+            return Json(new { success = true, items = order.OrderItems!.Values });
         }
 
         [HttpPost]
-        public IActionResult AddCommentToItem(int MenuCardId, string Comment)
+        public IActionResult UpdateMenuItemQuantity(int MenuItemId, int NewQuantity)
         {
             Order order = GetOrder();
-            order = _orderService.AddCommentoItem(MenuCardId, order, Comment);
+            order = _orderService.UpdateItemFormOrder(MenuItemId, order, NewQuantity);
             SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems.Values });
+            return Json(new { success = true, items = order.OrderItems!.Values });
+        }
+
+        [HttpPost]
+        public IActionResult AddCommentToItem(int MenuItemId, string Comment)
+        {
+            Order order = GetOrder();
+            order = _orderService.AddCommentoItem(MenuItemId, order, Comment);
+            SaveOrder(order);
+            return Json(new { success = true, items = order.OrderItems!.Values });
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()

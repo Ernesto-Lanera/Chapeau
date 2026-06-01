@@ -1,9 +1,6 @@
 ﻿@model IEnumerable<Chapeau.Models.MenuItem>
-
 <div class="container-fluid d-flex flex-column overflow-hidden bg-light p-0" style="height: calc(100vh - 75px);">
 
-
-    
     <div class="d-flex align-items-center bg-white border-bottom p-2 shadow-sm z-1 m-0 flex-shrink-0">
         <div class="d-flex align-items-center gap-3 overflow-x-auto text-nowrap w-100 hide-scrollbar">
             <div class="d-flex gap-2">
@@ -59,37 +56,34 @@
                         stockClasses = "border-warning border-2";
                     }
 
-                 
-                        <div class="col menu-item" data-category="@item.Category?.CategoryID" data-menucard="@item.Category?.MenuCardID">
+                    <div class="col menu-item" data-category="@item.Category?.CategoryID" data-menucard="@item.Category?.MenuCardID">
 
-                            <input type="hidden" name="MenuCardId" value="@item.MenuItemID" />
-                            <input type="hidden" name="MenuItemName" value="@item.Name" />
+                        <input type="hidden" name="MenuItemId" value="@item.MenuItemID" />
+                        <input type="hidden" name="MenuItemName" value="@item.Name" />
 
-                            
-                        <div class="card h-100 shadow-sm @stockClasses" style="min-height: 160px;" onclick="addToOrder(@item.MenuItemID, '@item.Name')">
-                                @if (!string.IsNullOrEmpty(item.ImagePath))
+                        <div class="card h-100 shadow-sm @stockClasses" style="min-height: 160px;" onclick="addToOrder(@item.MenuItemID, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(item.Name))')">
+                            @if (!string.IsNullOrEmpty(item.ImagePath))
+                            {
+                                <img class="card-img-top @(item.Stock == 0 ? "style-grayscale" : "")"
+                                     src="@item.ImagePath" alt="@item.Name" loading="lazy"
+                                     style="height: 100px; object-fit: cover; @(item.Stock == 0 ? "filter: grayscale(100%);" : "")" />
+                            }
+
+                            <div class="card-body d-flex flex-column justify-content-center align-items-center p-2 text-center">
+                                <h6 class="card-title fw-bold mb-1" style="font-size: 0.95rem; line-height: 1.2;">@item.Name</h6>
+                                <p class="card-text mb-0 small">@item.RetailPrice &euro;</p>
+
+                                @if (item.Stock == 0)
                                 {
-                                    <img class="card-img-top @(item.Stock == 0 ? "style-grayscale" : "")"
-                                         src="@item.ImagePath" alt="@item.Name" loading="lazy"
-                                         style="height: 100px; object-fit: cover; @(item.Stock == 0 ? "filter: grayscale(100%);" : "")" />
+                                    <span class="badge bg-danger mt-auto" style="font-size: 0.75rem;">Out of Stock</span>
                                 }
-
-                                <div class="card-body d-flex flex-column justify-content-center align-items-center p-2 text-center">
-                                    <h6 class="card-title fw-bold mb-1" style="font-size: 0.95rem; line-height: 1.2;">@item.Name</h6>
-                                    <p class="card-text mb-0 small">@item.RetailPrice &euro;</p>
-
-                                    @if (item.Stock == 0)
-                                    {
-                                        <span class="badge bg-danger mt-auto" style="font-size: 0.75rem;">Out of Stock</span>
-                                    }
-                                    else if (item.Stock <= 10)
-                                    {
-                                        <span class="badge bg-warning text-dark mt-auto" style="font-size: 0.75rem;">Only @item.Stock left</span>
-                                    }
-                                </div>
+                                else if (item.Stock <= 10)
+                                {
+                                    <span class="badge bg-warning text-dark mt-auto" style="font-size: 0.75rem;">Only @item.Stock left</span>
+                                }
                             </div>
                         </div>
-            
+                    </div>
                 }
             </div>
         </div>
@@ -109,9 +103,7 @@
         </div>
 
     </div>
-
 </div>
-
 
 @section Scripts {
     <script src="~/js/MenuFilter.js"></script>
