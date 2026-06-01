@@ -4,7 +4,6 @@ using System.Linq;
 using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Repositories;
-using Chapeau.ViewModels;
 
 namespace Chapeau.Services
 {
@@ -67,6 +66,16 @@ namespace Chapeau.Services
             }
         }
 
+        public List<OrderItem> GetOrderItemsByOrderId(int orderId)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            return _orderRepository.GetOrderItemsByOrderId(orderId);
+        }
+
         public List<TableStatus> GetAllTableStatuses()
         {
             try
@@ -94,102 +103,6 @@ namespace Chapeau.Services
             {
                 throw new InvalidOperationException("Failed to mark order as served.", ex);
             }
-        }
-
-        public PaymentOrderViewModel GetPaymentOrderViewModel(int orderId, int tableNumber)
-        {
-            if (orderId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
-
-            if (tableNumber <= 0)
-            {
-                throw new ArgumentException("Ongeldig tafel nummer.", nameof(tableNumber));
-            }
-
-            try
-            {
-                List<OrderItem> items = _orderRepository.GetOrderItemsByOrderId(orderId);
-
-                if (items == null || items.Count == 0)
-                {
-                    throw new InvalidOperationException($"No items found for order {orderId}.");
-                }
-
-                return BuildPaymentViewModel(orderId, tableNumber, items);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to build payment view model: {ex.Message}", ex);
-            }
-        }
-
-        private static PaymentOrderViewModel BuildPaymentViewModel(int orderId, int tableNumber, List<OrderItem> items)
-        {
-            ArgumentNullException.ThrowIfNull(items);
-
-            if (items.Count == 0)
-            {
-                throw new InvalidOperationException("Cannot create payment view model for empty order.");
-            }
-
-            // Group items by MenuItemId
-            var groupedItems = items
-                .GroupBy(i => i.MenuItemId)
-                .Select(g =>
-                {
-                    var firstItem = g.First();
-                    return new OrderItem
-                    {
-                        OrderItemId = firstItem.OrderItemId,
-                        MenuItemId = g.Key,
-                        MenuItem = firstItem.MenuItem,
-                        Name = firstItem.Name ?? "Unknown Item",
-                        Price = firstItem.Price,
-                        VATRate = firstItem.VATRate,
-                        Amount = g.Sum(x => x.Amount),
-                        Comment = firstItem.Comment,
-                        OrderId = orderId
-                    };
-                })
-                .ToList();
-
-            // Validate all items
-            foreach (var item in groupedItems)
-            {
-                if (string.IsNullOrEmpty(item.Name))
-                {
-                    throw new InvalidOperationException($"Item {item.MenuItemId} has no name.");
-                }
-
-                if (item.Price < 0)
-                {
-                    throw new InvalidOperationException($"Invalid price for item {item.Name}: prices cannot be negative.");
-                }
-
-                if (item.VATRate < 0 || item.VATRate > 1)
-                {
-                    throw new InvalidOperationException($"Invalid VAT rate for item {item.Name}: VAT must be between 0 and 1.");
-                }
-
-                if (item.AmountOrdered <= 0)
-                {
-                    throw new InvalidOperationException($"Invalid quantity for item {item.Name}: quantity must be greater than zero.");
-                }
-            }
-            //totaal berekenen
-            var order = new Order { Items = groupedItems };
-
-            return new PaymentOrderViewModel
-            {
-                OrderID = orderId,
-                TableNumber = tableNumber,
-                Items = groupedItems.AsReadOnly(),
-                LowVAT = Math.Round(order.LowVATTotal, 2),
-                HighVAT = Math.Round(order.HighVATTotal, 2),
-                Total = Math.Round(order.GrandTotal, 2)
-            };
         }
 
         public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)

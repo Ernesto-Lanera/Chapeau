@@ -1,3 +1,4 @@
+using System.Linq;
 using Chapeau.Models;
 using Chapeau.Services;
 using Chapeau.ViewModels;
@@ -27,9 +28,12 @@ namespace Chapeau.Controllers
             try
             {
                 var order = _orderService.GetActiveOrderByTableId(tableId);
-                return order == null
-                    ? RedirectToAction(nameof(Index))
-                    : View(_orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber));
+                if (order == null)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(BuildPaymentViewModel(order.OrderId, order.TableNumber));
             }
             catch (Exception ex)
             {
@@ -41,7 +45,7 @@ namespace Chapeau.Controllers
         {
             try
             {
-                return View("ViewOrder", _orderService.GetPaymentOrderViewModel(orderId, tableNumber));
+                return View("ViewOrder", BuildPaymentViewModel(orderId, tableNumber));
             }
             catch (Exception ex)
             {
@@ -54,7 +58,7 @@ namespace Chapeau.Controllers
         {
             try
             {
-                if (request?.OrderId <= 0)
+                if (request == null || request.OrderId <= 0)
                 {
                     return Json(new { success = false, message = "Invalid order ID" });
                 }
@@ -66,6 +70,77 @@ namespace Chapeau.Controllers
             {
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        private PaymentOrderViewModel BuildPaymentViewModel(int orderId, int tableNumber)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            if (tableNumber <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel nummer.", nameof(tableNumber));
+            }
+
+            List<OrderItem> items = _orderService.GetOrderItemsByOrderId(orderId);
+            if (items == null || items.Count == 0)
+            {
+                throw new InvalidOperationException($"No items found for order {orderId}.");
+            }
+
+            var groupedItems = items
+                .GroupBy(i => i.MenuItemId)
+                .Select(g =>
+                {
+                    var firstItem = g.First();
+                    return new OrderItem
+                    {
+                        OrderItemId = firstItem.OrderItemId,
+                        MenuItemId = g.Key,
+                        MenuItem = firstItem.MenuItem,
+                        Name = firstItem.Name ?? "Unknown Item",
+                        Price = firstItem.Price,
+                        VATRate = firstItem.VATRate,
+                        Amount = g.Sum(x => x.Amount),
+                        Comment = firstItem.Comment,
+                        OrderId = orderId
+                    };
+                })
+                .ToList();
+
+            foreach (var item in groupedItems)
+            {
+                ValidatePaymentItem(item);
+            }
+
+            var order = new Order { Items = groupedItems };
+
+            return new PaymentOrderViewModel
+            {
+                OrderID = orderId,
+                TableNumber = tableNumber,
+                Items = groupedItems.AsReadOnly(),
+                LowVAT = Math.Round(order.LowVATTotal, 2),
+                HighVAT = Math.Round(order.HighVATTotal, 2),
+                Total = Math.Round(order.GrandTotal, 2)
+            };
+        }
+
+        private static void ValidatePaymentItem(OrderItem item)
+        {
+            if (string.IsNullOrEmpty(item.Name))
+                throw new InvalidOperationException($"Item {item.MenuItemId} has no name.");
+
+            if (item.Price < 0)
+                throw new InvalidOperationException($"Invalid price for item {item.Name}: prices cannot be negative.");
+
+            if (item.VATRate < 0 || item.VATRate > 1)
+                throw new InvalidOperationException($"Invalid VAT rate for item {item.Name}: VAT must be between 0 and 1.");
+
+            if (item.Amount <= 0)
+                throw new InvalidOperationException($"Invalid quantity for item {item.Name}: quantity must be greater than zero.");
         }
 
         private IActionResult Error(Exception ex)
