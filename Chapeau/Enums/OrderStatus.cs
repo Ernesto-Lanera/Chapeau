@@ -4,6 +4,8 @@
     {
         Ordered,
         BeingPrepared,
+        DrinksReady,
+        FoodReady,
         ReadyToBeServed,
         Served,
         Paid

@@ -268,6 +268,19 @@ public class OrderRepository : IOrderRepository
         using SqlTransaction transaction = connection.BeginTransaction();
         try
         {
+            // je kan alleen betalen als het served is
+            string statusQuery = "SELECT OrderStatus FROM Orders WHERE OrderID = @OrderID";
+            using (SqlCommand command = new SqlCommand(statusQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                object? statusObj = command.ExecuteScalar();
+
+                if (statusObj == null || (OrderStatus)(int)statusObj != OrderStatus.Served)
+                {
+                    throw new InvalidOperationException("Order is not served yet.");
+                }
+            }
+
             string insertPaymentQuery = @"
                 INSERT INTO Payment (OrderID, TableID, TotalTipAmount, Feedback)
                 VALUES (@OrderID, @TableID, @TipAmount, @Feedback)";
@@ -307,6 +320,90 @@ public class OrderRepository : IOrderRepository
             transaction.Rollback();
             throw;
         }
+    }
+
+    public Order? GetOrderById(int orderId)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+                FROM Orders o
+                JOIN Table_ t ON o.TableID = t.TableID
+                WHERE o.OrderID = @OrderID";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@OrderID", orderId);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return MapOrder(reader);
+                    }
+                    return null;
+                }
+            }
+        }
+    }
+
+    public Order? GetServedOrderByTableId(int tableId)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+                FROM Orders o
+                JOIN Table_ t ON o.TableID = t.TableID
+                WHERE o.TableID = @TableID
+                AND o.OrderStatus = @Served";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@TableID", tableId);
+                command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return MapOrder(reader);
+                    }
+                    return null;
+                }
+            }
+        }
+    }
+
+    public List<Order> GetOrdersByStatus(OrderStatus status)
+    {
+        List<Order> orders = new List<Order>();
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+                FROM Orders o
+                JOIN Table_ t ON o.TableID = t.TableID
+                WHERE o.OrderStatus = @Status
+                ORDER BY o.OrderDate ASC";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)status);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        orders.Add(MapOrder(reader));
+                    }
+                }
+            }
+        }
+
+        return orders;
     }
 
     private static decimal GetVatRate(bool isAlcoholic)

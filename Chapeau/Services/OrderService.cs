@@ -119,5 +119,38 @@ namespace Chapeau.Services
 
             _orderRepository.SavePayment(orderId, tableNumber, tipAmount, feedback);
         }
+
+        public Order? GetOrderById(int orderId)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            return _orderRepository.GetOrderById(orderId);
+        }
+
+        public Order? GetServedOrderByTableId(int tableId)
+        {
+            if (tableId <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
+            }
+
+            return _orderRepository.GetServedOrderByTableId(tableId);
+        }
+
+        public List<Order> GetServedOrdersForPayment()
+        {
+            List<Order> orders = _orderRepository.GetOrdersByStatus(OrderStatus.Served);
+
+            foreach (var order in orders)
+            {
+                order.Items = _orderRepository.GetOrderItemsByOrderId(order.OrderId);
+                order.OrderItems = order.Items;
+            }
+
+            return orders;
+        }
     }
 }
