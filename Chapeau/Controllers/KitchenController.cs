@@ -18,8 +18,6 @@ namespace Chapeau.Controllers
             _orderService = orderService;
         }
 
-        [Authorize(Roles = "Keuken")]
-
         public IActionResult Index()
         {
 

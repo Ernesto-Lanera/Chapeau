@@ -18,7 +18,6 @@ namespace Chapeau.Controllers
             _orderService = orderService;
         }
 
-        [Authorize(Roles = "Barman")]
         public IActionResult Index()
         {
             List<Order> orders = _orderService.GetRunningOrders(OrderType.Drink);

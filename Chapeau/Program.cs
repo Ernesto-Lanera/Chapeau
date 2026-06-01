@@ -33,6 +33,14 @@ namespace Chapeau
             });
             builder.Services.AddLogging();
 
+            // Add Session
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(20);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
             // Add Response Compression
             builder.Services.AddResponseCompression(options =>
             {
@@ -143,6 +151,7 @@ namespace Chapeau
             app.UseHttpsRedirection();
             app.UseRouting();
 
+            app.UseSession();
             app.UseAuthentication();
             app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
             app.UseAuthorization();
