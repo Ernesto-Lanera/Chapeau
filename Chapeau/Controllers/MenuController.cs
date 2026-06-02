@@ -61,7 +61,7 @@ namespace Chapeau.Controllers
         public IActionResult GetActiveOrderItems()
         {
             Order order = GetOrder();
-            return Json(new { success = true, items = order.OrderItems?.Values });
+            return Json(new { success = true, items = order.OrderItems});
         }
 
         [HttpPost]
@@ -70,7 +70,7 @@ namespace Chapeau.Controllers
             Order order = GetOrder();
             order = _orderService.AddOrderItemToOrder(MenuItemId, order, MenuItemName);
             SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems!.Values });
+            return Json(new { success = true, items = order.OrderItems });
         }
 
         [HttpPost]
@@ -79,7 +79,7 @@ namespace Chapeau.Controllers
             Order order = GetOrder();
             order = _orderService.RemoveItemFormOrder(MenuItemId, order);
             SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems!.Values });
+            return Json(new { success = true, items = order.OrderItems});
         }
 
         [HttpPost]
@@ -88,7 +88,7 @@ namespace Chapeau.Controllers
             Order order = GetOrder();
             order = _orderService.UpdateItemFormOrder(MenuItemId, order, NewQuantity);
             SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems!.Values });
+            return Json(new { success = true, items = order.OrderItems });
         }
 
         [HttpPost]
@@ -97,7 +97,7 @@ namespace Chapeau.Controllers
             Order order = GetOrder();
             order = _orderService.AddCommentoItem(MenuItemId, order, Comment);
             SaveOrder(order);
-            return Json(new { success = true, items = order.OrderItems!.Values });
+            return Json(new { success = true, items = order.OrderItems });
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()

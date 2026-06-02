@@ -45,7 +45,7 @@ namespace Chapeau.Services
 
         public Order MakeNewOrder(int tableId)
         {
-            Dictionary<int, OrderItem> orderItems = [];
+            List<OrderItem> orderItems = [];
 
             Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems };
             return order;
@@ -55,14 +55,15 @@ namespace Chapeau.Services
         {
             if (order.OrderItems != null)
             {
-                if (!order.OrderItems.ContainsKey(MenuItemId))
+                if (!order.OrderItems.Any(i => i.MenuItemId == MenuItemId))
                 {
                     OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, Amount = 1, MenuItemName = MenuItemName };
-                    order.OrderItems.Add(MenuItemId, orderitem);
+                    order.OrderItems.Add(orderitem);
                 }
                 else
                 {
-                    order.OrderItems[MenuItemId].Amount++;
+                    var existingItem = order.OrderItems.First(i => i.MenuItemId == MenuItemId);
+                    existingItem.Amount++;
                 }
             }
              
@@ -75,7 +76,11 @@ namespace Chapeau.Services
         {
             if (order.OrderItems != null)
             {
-                order.OrderItems.Remove(MenuItemId);
+                var itemToRemove = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
+                if (itemToRemove != null)
+                {
+                    order.OrderItems.Remove(itemToRemove);
+                }
             }
             return order;
         }
@@ -84,7 +89,11 @@ namespace Chapeau.Services
         {
             if (order.OrderItems != null)
             {
-                order.OrderItems[MenuItemId].Amount = NewAmount;
+                var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
+                if (itemToUpdate != null)
+                {
+                    itemToUpdate.Amount = NewAmount;
+                }
             }
             return order;
         }

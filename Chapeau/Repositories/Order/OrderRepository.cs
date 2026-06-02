@@ -137,9 +137,9 @@ public class OrderRepository : IOrderRepository
         }
     }
 
-    public Dictionary<int,OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
+    public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
-        Dictionary<int,OrderItem> items = [];
+        List<OrderItem> items = [];
         
         string typeFilter = type == OrderType.Food
             ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
@@ -186,7 +186,7 @@ public class OrderRepository : IOrderRepository
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
                         };
                         
-                        items.Add(orderItem.MenuItemId,orderItem);
+                        items.Add(orderItem);
                     }
                 }
             }

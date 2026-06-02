@@ -10,7 +10,7 @@ namespace Chapeau.Models
         public string? GuestName { get; set; }
         public DateTime OrderDate { get; set; }
 
-        public Dictionary<int, OrderItem>? OrderItems { get; set; }
+        public List<OrderItem>? OrderItems { get; set; }
 
         public OrderStatus OrderStatus { get; set; }
 
@@ -21,7 +21,7 @@ namespace Chapeau.Models
 
         public Order() { }
 
-        public Order(int orderId, Dictionary<int,OrderItem> orderitems, int tableId, DateTime date)
+        public Order(int orderId, List<OrderItem> orderitems, int tableId, DateTime date)
         {
             OrderId = orderId;
             OrderItems = orderitems;
