@@ -73,7 +73,7 @@ namespace Chapeau.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ToggleStatus(int tableId, bool occupied)
+        public IActionResult ToggleStatus(int tableId, bool occupied, string? returnUrl = null)
         {
             if (!occupied && _tableRepository.HasActiveOrders(tableId))
             {
@@ -83,6 +83,10 @@ namespace Chapeau.Controllers
 
             _tableRepository.SetOccupied(tableId, occupied);
             TempData["FlashSuccess"] = occupied ? "Tafel is gemarkeerd als bezet." : "Tafel is vrijgemaakt.";
+
+            if (!string.IsNullOrEmpty(returnUrl))
+                return Redirect(returnUrl);
+
             return RedirectToAction(nameof(Index));
         }
     }

@@ -225,7 +225,7 @@ public class OrderRepository : IOrderRepository
     private static string BuildTableStatusQuery()
     {
         return $@"SELECT t.TableID, t.TableNumber, t.IsManuallyOccupied,
-                o.OrderID, o.OrderStatus,
+                o.OrderID, o.OrderStatus, o.OrderDate,
                 CAST(CASE WHEN EXISTS (
                     SELECT 1 FROM OrderItem oi
                     JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
@@ -266,7 +266,8 @@ public class OrderRepository : IOrderRepository
                 OrderId = (int)reader["OrderID"],
                 OrderStatus = (OrderStatus)(int)reader["OrderStatus"],
                 HasFood = (bool)reader["HasFood"],
-                HasDrink = (bool)reader["HasDrink"]
+                HasDrink = (bool)reader["HasDrink"],
+                OrderDate = reader["OrderDate"] != DBNull.Value ? (DateTime)reader["OrderDate"] : DateTime.MinValue
             });
         }
     }
