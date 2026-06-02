@@ -517,4 +517,48 @@ textarea::placeholder {
     background: #121518 !important;
 }
 
+.payment-container,
+.payment-index-container,
+.payment-container *,
+.payment-index-container *,
+.payment-card,
+.payment-index-card,
+.payment-card *,
+.payment-index_card *,
+.payment-items-table,
+.payment-index-table,
+.payment-items-table *,
+.payment-index-table * {
+    color: #ffffff !important;
+}
+
+.split-section {
+    background: transparent;
+    border: 1px solid #2a2f35;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+.split-section .form-label,
+.split-section .per-person-amount,
+.split-section .per-person-amount strong {
+    color: #e5e7eb !important;
+}
+
+.split-section .form-select {
+    background: #111417;
+    color: #e5e7eb;
+    border: 1px solid #3a4149;
+}
+
+.split-section .form-select:focus {
+    border-color: #4b5563;
+    box-shadow: none;
+}
+
+.form-check-label,
+.form-check-label small {
+    color: #e5e7eb !important;
+}
+
 
