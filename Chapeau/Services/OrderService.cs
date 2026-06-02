@@ -4,7 +4,6 @@ using System.Linq;
 using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Repositories;
-using Chapeau.ViewModels;
 
 namespace Chapeau.Services
 {
@@ -33,9 +32,16 @@ namespace Chapeau.Services
         {
             var food = _orderRepository.GetRunningOrders(OrderType.Food);
             var drink = _orderRepository.GetRunningOrders(OrderType.Drink);
-            return food.Concat(drink).ToList();
-        }
 
+            return food.Concat(drink)
+                .GroupBy(o => o.OrderId)
+                .Select(g => {
+                    var order = g.First();
+                    order.Items = g.SelectMany(o => o.Items ?? new List<OrderItem>()).ToList();
+                    return order;
+                })
+                .ToList();
+        }
 
         public TimeSpan GetWaitingTime(Order order)
         {

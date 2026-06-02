@@ -9,8 +9,12 @@ namespace Chapeau.Repositories
         List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type);
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
         Order GetActiveOrderByTableId(int tableId);
+        Order? GetServedOrderByTableId(int tableId);
+        Order? GetOrderById(int orderId);
+        List<Order> GetOrdersByStatus(OrderStatus status);
         List<TableStatus> GetAllTableStatuses();
         void UpdateOrderStatus(int orderId, OrderStatus newStatus);
         void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus);
+        void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback);
     }
 }

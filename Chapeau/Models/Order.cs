@@ -10,11 +10,11 @@ namespace Chapeau.Models
         public string? GuestName { get; set; }
         public DateTime OrderDate { get; set; }
 
-        public List<OrderItem>? OrderItems { get; set; }
-
         public OrderStatus OrderStatus { get; set; }
 
         
+        /// Collection of order items. This is the canonical collection; OrderParts is deprecated.
+        /// </summary>
         public OrderType OrderType { get; set; }
 
       
