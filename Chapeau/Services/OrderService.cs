@@ -146,24 +146,5 @@ namespace Chapeau.Services
                 throw new InvalidOperationException("Failed to retrieve table statuses.", ex);
             }
         }
-
-        public void MarkOrderAsServed(int orderId)
-        {
-            if (orderId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
-
-            try
-            {
-                _orderRepository.UpdateOrderStatus(orderId, OrderStatus.Served);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to mark order as served.", ex);
-            }
-        }
-
-    
     }
 }

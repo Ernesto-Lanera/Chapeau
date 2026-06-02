@@ -72,14 +72,6 @@ namespace Chapeau.Controllers
             }
         }
 
-        public IActionResult Confirmation(int orderId, decimal amount, string method)
-        {
-            ViewBag.OrderId = orderId;
-            ViewBag.Amount = amount;
-            ViewBag.Method = method;
-            return View();
-        }
-
         private PaymentOrderViewModel BuildPaymentViewModel(int orderId, int tableNumber)
         {
             if (orderId <= 0)
