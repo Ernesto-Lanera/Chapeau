@@ -89,6 +89,90 @@ namespace Chapeau.Services
             }
         }
 
+        public void UpdateOrderStatus(int orderId, OrderStatus status)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            try
+            {
+                _orderRepository.UpdateOrderStatus(orderId, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to mark order as served.", ex);
+            }
+        }
+
+        public void UpdateOrderItemStatus(int orderItemId, OrderStatus status)
+        {
+            if (orderItemId <= 0)
+            {
+                throw new ArgumentException("Ongeldig OrderItemId.", nameof(orderItemId));
+            }
+
+            try
+            {
+                _orderRepository.UpdateOrderItemStatus(orderItemId, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to mark order as served.", ex);
+            }
+        }
+
+        public void UpdateOrderIfServed(int orderId)
+        {
+            List<OrderItem> foodItems = _orderRepository.GetOrderItemsByOrderId(orderId, OrderType.Food);
+            List<OrderItem> drinkItems = _orderRepository.GetOrderItemsByOrderId(orderId, OrderType.Drink);
+
+            bool foodDone = !foodItems.Any() || foodItems.All(i => i.OrderItemStatus == OrderStatus.ReadyToBeServed);
+            bool drinkDone = !drinkItems.Any() || drinkItems.All(i => i.OrderItemStatus == OrderStatus.ReadyToBeServed);
+
+            if (foodDone && drinkDone)
+                UpdateOrderStatus(orderId, OrderStatus.ReadyToBeServed);
+            else
+                UpdateOrderStatus(orderId, OrderStatus.BeingPrepared);
+        }
+
+        public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status)
+        {
+            try
+            {
+                _orderRepository.UpdateAllOrderItemStatuses(orderId, type, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to update all order item statuses.", ex);
+            }
+        }
+
+        public void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status)
+        {
+            try
+            {
+                _orderRepository.UpdateCourseItemStatuses(orderId, course, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to update course item statuses.", ex);
+            }
+        }
+
+        public List<Order> GetFinishedOrdersToday(OrderType type)
+        {
+            try
+            {
+                return _orderRepository.GetFinishedOrdersToday(type);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve finished orders.", ex);
+            }
+        }
+
         public PaymentOrderViewModel GetPaymentOrderViewModel(int orderId, int tableNumber)
         {
             if (orderId <= 0)
