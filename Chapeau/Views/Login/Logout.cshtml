@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Logout";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Chapeau</title>
+    <link rel="stylesheet" href="~/css/Logout/globals.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/Logout/styleguide.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/Logout/style.css" asp-append-version="true">
+</head>
+<body>
+    <main class="final-logout">
+        <header class="kitchen-bar-header">
+            <img class="afbeelding" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
+            <div class="text-content-title">
+                <h1 class="title">Logout</h1>
+            </div>
+        </header>
+        <div class="rectangle" aria-hidden="true"></div>
+        <section class="div" aria-labelledby="logout-title" aria-describedby="logout-description">
+            <h2 class="text-wrapper-2" id="logout-title">Confirm Logout?</h2>
+            <p class="p" id="logout-description">This will log you out of this system</p>
+            <form asp-controller="Account" asp-action="Logout" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <button class="button-2" type="submit" aria-label="Confirm logout">
+                    <span class="button-3">Confirm</span>
+                </button>
+                <button class="button" type="button" aria-label="Return to overview" onclick="history.back()">
+                    <span class="text-wrapper">Return to overview</span>
+                </button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
