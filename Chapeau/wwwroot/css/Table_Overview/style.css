@@ -851,7 +851,7 @@ body {
 }
 
 .final-table-overview .sidebar-btn {
-  display: block;
+/*  display: block;*/
   z-index: 1;
 }
 
