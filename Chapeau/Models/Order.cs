@@ -29,10 +29,11 @@ namespace Chapeau.Models
 
         public Order() { }
 
-        public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
+        public Order(int orderId, List<OrderItem> orderitems, int tableId, DateTime date)
         {
             OrderId = orderId;
             Items = order ?? new List<OrderItem>();
+            OrderItems = orderitems;
             TableId = tableId;
             OrderDate = date;
         }
@@ -55,5 +56,6 @@ namespace Chapeau.Models
         public decimal HighVATTotal => Items.Where(i => i.VATRate == 0.21m).Sum(i => i.VATAmount);
         public decimal TotalVAT => Items.Sum(i => i.VATAmount);
         public decimal GrandTotal => Items.Sum(i => i.TotalPrice);
+       
     }
 }

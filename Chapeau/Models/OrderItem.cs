@@ -7,13 +7,12 @@ namespace Chapeau.Models
         public int OrderItemId { get; set; }
         public OrderStatus OrderItemStatus { get; set; }
         public CourseType? Course { get; set; }
-        public int Amount { get; set; }
+        public int AmountOrdered { get; set; }
 
+        public string MenuItemName { get; set; } 
         public int MenuItemId { get; set; }
-        public MenuItem MenuItem { get; set; } = new();
 
         public int OrderId { get; set; }
-        public string? Comment { get; set; }
 
         public string Name
         {
@@ -43,12 +42,13 @@ namespace Chapeau.Models
 
         public decimal Subtotal => GrossPrice;
         public decimal TotalWithVat => Subtotal + VATAmount;
+        public string? Comment;
 
         public OrderItem(int orderItemId, int menuItemId, int amount, int orderId)
         {
             OrderItemId = orderItemId;
             MenuItemId = menuItemId;
-            Amount = amount;
+            AmountOrdered = amount;
             OrderId = orderId;
         }
 

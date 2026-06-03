@@ -14,7 +14,13 @@ namespace Chapeau.Services
         List<Order> GetServedOrdersForPayment();
         TimeSpan GetWaitingTime(Order order);
         List<TableStatus> GetAllTableStatuses();
+        void UpdateOrderStatus(int orderId, OrderStatus status);
+        void UpdateOrderItemStatus(int orderItemId, OrderStatus status);
         void MarkOrderAsServed(int orderId);
         void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback);
+        void UpdateOrderIfServed(int orderId);
+        void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status);
+        void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status);
+        List<Order> GetFinishedOrdersToday(OrderType type);
     }
 }

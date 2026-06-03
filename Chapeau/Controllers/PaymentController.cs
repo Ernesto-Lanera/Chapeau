@@ -34,6 +34,8 @@ namespace Chapeau.Controllers
                 }
 
                 return View(BuildPaymentViewModel(order.OrderId, order.TableNumber));
+               
+                return View();
             }
             catch (Exception ex)
             {

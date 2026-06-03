@@ -25,22 +25,32 @@ public class OrderRepository : IOrderRepository
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
             connection.Open();
-            string query = $@"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+            string query = $@"
+            SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
             FROM Orders o
             JOIN Table_ t ON o.TableID = t.TableID
-            WHERE o.OrderStatus IN (@Ordered, @BeingPrepared)
+            WHERE o.OrderStatus NOT IN (@ReadyToBeServed, @Served, @Paid)
             AND EXISTS (
                 SELECT 1 FROM OrderItem oi
                 JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
                 JOIN Categories c ON c.CategoryID = m.CategoryID
                 WHERE oi.OrderID = o.OrderID {typeFilter}
             )
+            AND EXISTS (
+                SELECT 1 FROM OrderItem oi
+                JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                JOIN Categories c ON c.CategoryID = m.CategoryID
+                WHERE oi.OrderID = o.OrderID
+                AND oi.OrderItemStatus != @ReadyToBeServed
+                {typeFilter}
+            )
             ORDER BY o.OrderDate ASC";
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
-                command.Parameters.AddWithValue("@Ordered", (int)OrderStatus.Ordered);
-                command.Parameters.AddWithValue("@BeingPrepared", (int)OrderStatus.BeingPrepared);
+                command.Parameters.AddWithValue("@ReadyToBeServed", (int)OrderStatus.ReadyToBeServed);
+                command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+                command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
                 command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
                 command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
                 command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
@@ -52,6 +62,7 @@ public class OrderRepository : IOrderRepository
                         var order = MapOrder(reader);
                         order.Items = GetOrderItemsByOrderId(order.OrderId, type);
                         order.OrderItems = order.Items;
+                        order.OrderItems = GetOrderItemsByOrderId(order.OrderId, type);
                         orders.Add(order);
                     }
                 }
@@ -137,8 +148,8 @@ public class OrderRepository : IOrderRepository
 
     public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
-        List<OrderItem> items = new List<OrderItem>();
-
+        List<OrderItem> items = [];
+        
         string typeFilter = type == OrderType.Food
             ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
             : "AND c.MenuCardID = @DrinkCard";
@@ -177,6 +188,7 @@ public class OrderRepository : IOrderRepository
                         bool isAlcoholic = reader["IsAlcoholic"] != DBNull.Value && (bool)reader["IsAlcoholic"];
 
                         items.Add(new OrderItem
+                        OrderItem orderItem = new OrderItem
                         {
                             OrderItemId = (int)reader["OrderItemID"],
                             OrderId = (int)reader["OrderID"],
@@ -188,8 +200,11 @@ public class OrderRepository : IOrderRepository
                             Price = (decimal)reader["Price"],
                             MenuCardID = menuCardId,
                             VATRate = GetVatRate(isAlcoholic),
+                            MenuItemName = (string)reader["Name"],
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
-                        });
+                        };
+                        
+                        items.Add(orderItem);
                     }
                 }
             }

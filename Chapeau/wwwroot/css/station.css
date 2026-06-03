@@ -1,0 +1,163 @@
+﻿/* Kitchen / Bar station views */
+
+.station-page {
+    background: #0f1117;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.order-card {
+    min-width: 350px;
+    width: 350px;
+    flex-shrink: 0;
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    color: #e0e0e0;
+}
+
+.order-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 0 12px 20px 12px;
+    height: calc(100vh - 200px);
+    align-items: flex-start;
+}
+
+.table-label {
+    font-size: 12px;
+    color: #888;
+    display: block;
+}
+
+.table-number {
+    font-size: 36px;
+    font-weight: bold;
+    display: block;
+    color: #ffffff;
+}
+
+.order-time {
+    font-size: 14px;
+    color: #888;
+    display: block;
+}
+
+.waiting-time {
+    font-size: 32px;
+    font-weight: bold;
+    display: block;
+    color: #ff4d4d;
+}
+
+.status-badge {
+    font-weight: 600;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: none;
+}
+
+.order-card .status-badge {
+    background: #2a2d3a;
+    color: #7b8cde;
+    border: 1px solid #7b8cde;
+}
+
+/* Course header row */
+.order-card h6 {
+    color: #cccccc;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0;
+}
+
+/* Item rows */
+.order-card .item-row {
+    background: #22253a;
+    border: 1px solid #2e3248;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    color: #e0e0e0;
+}
+
+/* Buttons */
+.order-card .btn-outline-secondary {
+    border-color: #ff8c00;
+    color: #ff8c00;
+    background: transparent;
+}
+
+    .order-card .btn-outline-secondary:hover {
+        background: #ff8c00;
+        color: #000;
+    }
+
+.order-card .btn-warning {
+    background: #ff8c00;
+    border-color: #ff8c00;
+    color: #000;
+    font-weight: 600;
+}
+
+.order-card .btn-success {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #000;
+    font-weight: 600;
+}
+
+.order-card .btn-secondary {
+    background: transparent;
+    border-color: #ff8c00;
+    color: #ff8c00;
+}
+
+    .order-card .btn-secondary:hover {
+        background: #ff8c00;
+        color: #000;
+    }
+
+.order-card hr {
+    border-color: #2a2d3a;
+}
+
+/* Nav toggle buttons (Running Orders / Finished Orders) */
+.station-nav .btn-primary {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #000000;
+    font-weight: 600;
+}
+
+.station-nav .btn-outline-secondary {
+    border-color: #444;
+    color: #888;
+    background: transparent;
+}
+
+    .station-nav .btn-outline-secondary:hover {
+        background: #2a2d3a;
+        color: #ccc;
+        border-color: #666;
+    }
+
+.order-card small.text-muted {
+    color: #f59e0b !important;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.order-card small.text-muted::before {
+        content: "⚠️";
+        font-size: 12px;
+}
+
