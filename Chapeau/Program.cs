@@ -24,7 +24,10 @@ namespace Chapeau
                     .RequireAuthenticatedUser()
                     .Build();
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
-            });
+            }).AddSessionStateTempDataProvider();
+
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession();
 
             builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
             {
@@ -153,6 +156,7 @@ namespace Chapeau
             app.UseHttpsRedirection();
             app.UseRouting();
 
+            app.UseSession();
             app.UseAuthentication();
             app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
             app.UseAuthorization();
