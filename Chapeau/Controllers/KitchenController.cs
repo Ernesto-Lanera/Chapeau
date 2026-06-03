@@ -37,7 +37,7 @@ namespace Chapeau.Controllers
                     .Select(i => new OrderItemViewModel
                     {
                         OrderItemId = i.OrderItemId,
-                        Name = i.Name,
+                        Name = i.MenuItemName,
                         Amount = i.AmountOrdered,
                         Comment = i.Comment,
                         Status = i.OrderItemStatus
@@ -52,7 +52,7 @@ namespace Chapeau.Controllers
                         Items = g.Select(i => new OrderItemViewModel
                         {
                             OrderItemId = i.OrderItemId,
-                            Name = i.Name,
+                            Name = i.MenuItemName,
                             Amount = i.AmountOrdered,
                             Comment = i.Comment,
                             Status = i.OrderItemStatus
@@ -117,7 +117,7 @@ namespace Chapeau.Controllers
                     .Select(i => new OrderItemViewModel
                     {
                         OrderItemId = i.OrderItemId,
-                        Name = i.Name,
+                        Name = i.MenuItemName,
                         Amount = i.AmountOrdered,
                         Comment = i.Comment,
                         Status = i.OrderItemStatus

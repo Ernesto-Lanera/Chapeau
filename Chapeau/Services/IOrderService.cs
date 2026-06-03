@@ -7,7 +7,6 @@ namespace Chapeau.Services
     public interface IOrderService
     {
         Order GetActiveOrderByTableId(int tableId);
-        PaymentOrderViewModel GetPaymentOrderViewModel(int orderID, int tableNumber);
         List<Order> GetRunningOrders(OrderType type);
         List<Order> GetAllRunningOrders();
         TimeSpan GetWaitingTime(Order order);

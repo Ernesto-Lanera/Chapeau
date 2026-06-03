@@ -1,5 +1,6 @@
 ﻿using Chapeau.Emums;
 using Chapeau.Models;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Chapeau.Repositories
 {
@@ -16,5 +17,7 @@ namespace Chapeau.Repositories
         void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus newStatus);
 
         List<Order> GetFinishedOrdersToday(OrderType type);
+
+        void SaveOrder(Order order);
     }
 }

@@ -5,6 +5,7 @@ using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+
 namespace Chapeau.Controllers
 {
     [Authorize(Policy = "CanPrepareDrinks")]
@@ -35,7 +36,7 @@ namespace Chapeau.Controllers
                 OrderItems = o.OrderItems.Select(i => new OrderItemViewModel
                 {
                     OrderItemId = i.OrderItemId,
-                    Name = i.Name,
+                    Name = i.MenuItemName,
                     Amount = i.AmountOrdered,
                     Comment = i.Comment,
                     Status = i.OrderItemStatus
@@ -91,7 +92,7 @@ namespace Chapeau.Controllers
                 OrderItems = o.OrderItems.Select(i => new OrderItemViewModel
                 {
                     OrderItemId = i.OrderItemId,
-                    Name = i.Name,
+                    Name = i.MenuItemName,
                     Amount = i.AmountOrdered,
                     Comment = i.Comment,
                     Status = i.OrderItemStatus

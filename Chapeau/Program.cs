@@ -24,7 +24,7 @@ namespace Chapeau
                     .RequireAuthenticatedUser()
                     .Build();
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
-            });
+            }).AddSessionStateTempDataProvider();
 
             builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
             {
@@ -98,6 +98,15 @@ namespace Chapeau
                     policy.RequireRole("Kitchen"));
             });
 
+            builder.Services.AddDistributedMemoryCache();
+
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
             // Register repositories and services
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
@@ -119,6 +128,7 @@ namespace Chapeau
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
+            builder.Services.AddScoped<Services.OrderService>();
 
             builder.Services.AddScoped<Services.Login.IAuthService, Services.Login.AuthService>();
             builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
@@ -127,7 +137,17 @@ namespace Chapeau
             // Register Financial services and repositories
             builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
             builder.Services.AddScoped<IFinancialService, FinancialService>();
+
+            // Register Table repository
+            builder.Services.AddScoped<TableRepository>();
+
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var tableRepo = scope.ServiceProvider.GetRequiredService<TableRepository>();
+                tableRepo.EnsureColumnExists();
+            }
 
             if (!app.Environment.IsDevelopment())
             {
@@ -144,8 +164,11 @@ namespace Chapeau
             app.UseRouting();
 
             app.UseAuthentication();
-            app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
             app.UseAuthorization();
+
+            app.UseSession();
+            app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
+
 
             app.MapStaticAssets();
             app.MapControllerRoute(
