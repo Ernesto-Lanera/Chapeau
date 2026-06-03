@@ -13,5 +13,6 @@ namespace Chapeau.Services
         List<TableStatus> GetAllTableStatuses();
         void MarkOrderAsServed(int orderId);
         int MarkTableServed(int tableId);
+        void SaveOrderToDb(Order order);
     }
 }

@@ -329,6 +329,39 @@ public class OrderRepository : IOrderRepository
             return command.ExecuteNonQuery();
         }
 
+        public int InsertOrder(Order order)
+        {
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            connection.Open();
+            string query = @"INSERT INTO Orders (TableID, GuestName, OrderDate, OrderStatus)
+                             OUTPUT INSERTED.OrderID
+                             VALUES (@TableID, @GuestName, @OrderDate, @OrderStatus)";
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@TableID", order.TableId);
+            command.Parameters.AddWithValue("@GuestName", (object?)order.GuestName ?? DBNull.Value);
+            command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
+            command.Parameters.AddWithValue("@OrderStatus", (int)OrderStatus.Ordered);
+            return (int)command.ExecuteScalar();
+        }
+
+        public void InsertOrderItems(int orderId, List<OrderItem> items)
+        {
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            connection.Open();
+            foreach (var item in items)
+            {
+                string query = @"INSERT INTO OrderItem (OrderID, MenuItemID, AmountOrdered, Comment, OrderItemStatus)
+                                 VALUES (@OrderID, @MenuItemID, @AmountOrdered, @Comment, @OrderItemStatus)";
+                using SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.Parameters.AddWithValue("@MenuItemID", item.MenuItemId);
+                command.Parameters.AddWithValue("@AmountOrdered", item.Amount);
+                command.Parameters.AddWithValue("@Comment", (object?)item.Comment ?? DBNull.Value);
+                command.Parameters.AddWithValue("@OrderItemStatus", (int)OrderStatus.Ordered);
+                command.ExecuteNonQuery();
+            }
+        }
+
         public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
     {
         using (SqlConnection connection = new SqlConnection(_connectionString))

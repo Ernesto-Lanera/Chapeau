@@ -22,14 +22,25 @@ namespace Chapeau.Controllers
             _categoryService = categoryService;
         }
 
-        private Order GetOrder()
+        private Order GetOrder(int? tableId = null, int? tableNumber = null, string? guestNames = null)
         {
             var sessionData = HttpContext.Session.GetString("ActiveOrder");
-            if (string.IsNullOrEmpty(sessionData))
+            if (!string.IsNullOrEmpty(sessionData))
             {
-                return _orderService.MakeNewOrder(1);
+                var existingOrder = JsonSerializer.Deserialize<Order>(sessionData)!;
+                if (tableId.HasValue && existingOrder.TableId != tableId.Value)
+                {
+                    sessionData = null;
+                }
             }
 
+            if (string.IsNullOrEmpty(sessionData))
+            {
+                var order = _orderService.MakeNewOrder(tableId ?? 1);
+                order.TableNumber = tableNumber ?? 0;
+                order.GuestName = guestNames;
+                return order;
+            }
 
             return JsonSerializer.Deserialize<Order>(sessionData)!;
         }
@@ -39,11 +50,13 @@ namespace Chapeau.Controllers
             HttpContext.Session.SetString("ActiveOrder", JsonSerializer.Serialize(order));
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int? tableId, int? tableNumber, string? guestNames = null)
         {
             try
             {
-                ViewBag.Order = GetOrder();
+                var order = GetOrder(tableId, tableNumber, guestNames);
+                ViewBag.Order = order;
+                ViewBag.TableNumber = tableNumber ?? order.TableNumber;
                 ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();
                 var menuItems = _menuService.GetMenuItems(null, null) ?? new List<MenuItem>();
@@ -98,6 +111,25 @@ namespace Chapeau.Controllers
             order = _orderService.AddCommentoItem(MenuItemId, order, Comment);
             SaveOrder(order);
             return Json(new { success = true, items = order.OrderItems });
+        }
+
+        [HttpPost]
+        public IActionResult PlaceOrder()
+        {
+            try
+            {
+                Order order = GetOrder();
+                if (order.OrderItems == null || !order.OrderItems.Any())
+                    return Json(new { success = false, message = "Geen items in de bestelling." });
+
+                _orderService.SaveOrderToDb(order);
+                HttpContext.Session.Remove("ActiveOrder");
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()

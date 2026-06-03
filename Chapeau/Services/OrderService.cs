@@ -113,7 +113,18 @@ namespace Chapeau.Services
 
         public void SaveOrderToDb(Order order)
         {
+            if (order.OrderItems == null || !order.OrderItems.Any())
+                throw new InvalidOperationException("Order heeft geen items.");
 
+            try
+            {
+                int orderId = _orderRepository.InsertOrder(order);
+                _orderRepository.InsertOrderItems(orderId, order.OrderItems);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Bestelling kon niet worden opgeslagen.", ex);
+            }
         }
 
         public Order GetActiveOrderByTableId(int tableId)

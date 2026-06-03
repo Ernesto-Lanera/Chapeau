@@ -13,5 +13,7 @@ namespace Chapeau.Repositories
         void UpdateOrderStatus(int orderId, OrderStatus newStatus);
         void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus);
         int MarkReadyOrdersAsServed(int tableId);
+        int InsertOrder(Order order);
+        void InsertOrderItems(int orderId, List<OrderItem> items);
     }
 }

@@ -76,20 +76,27 @@
         <div class="ordered">
             <div class="title" id="sidebar-table-@table.TableId">@status</div>
         </div>
-        <form method="post" asp-action="ToggleStatus" asp-controller="Table" style="position: absolute; top: 0; left: 80%; width: 18.8%; height: 96.67%;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="tableId" value="@table.TableId" />
-            <input type="hidden" name="occupied" value="false" />
-            <button class="title-wrapper" type="submit" aria-label="Delete Table @table.TableNumber order">
-                <span class="text-wrapper">Delete</span>
-            </button>
-        </form>
         <h2 class="div">Table @table.TableNumber</h2>
         <div class="rectangle-2" aria-hidden="true"></div>
         <div class="text-wrapper-2">Occupied</div>
-        <a href="/Menu/Index?tableId=@table.TableId&tableNumber=@table.TableNumber" class="rectangle-3" aria-label="Edit Table @table.TableNumber order">
-            <span class="text-wrapper-3">Edit</span>
+        <a href="/Menu/Index?tableId=@table.TableId&tableNumber=@table.TableNumber" class="sidebar-btn sidebar-btn-edit" aria-label="Edit Table @table.TableNumber order">
+            <span class="sidebar-btn-text sidebar-btn-text-edit">Edit</span>
         </a>
+        <form method="post" asp-action="MarkTableServed" asp-controller="Table" class="sidebar-btn sidebar-btn-served" aria-label="Mark Table @table.TableNumber as served">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="tableId" value="@table.TableId" />
+            <button class="sidebar-btn-inner" type="submit">
+                <span class="sidebar-btn-text sidebar-btn-text-served">Served</span>
+            </button>
+        </form>
+        <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="sidebar-btn sidebar-btn-free" aria-label="Free Table @table.TableNumber">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="tableId" value="@table.TableId" />
+            <input type="hidden" name="occupied" value="false" />
+            <button class="sidebar-btn-inner" type="submit">
+                <span class="sidebar-btn-text sidebar-btn-text-free">Free</span>
+            </button>
+        </form>
     </section>
 }
 
@@ -134,6 +141,7 @@
             <input type="hidden" name="tableId" value="@table.TableId" />
             <input type="hidden" name="occupied" value="true" />
             <input type="hidden" name="returnUrl" value="/Menu/Index?tableId=@table.TableId&amp;tableNumber=@table.TableNumber" />
+            <input type="hidden" name="guestNames" id="guest-names-@table.TableId" value="" />
             <button class="available-table" type="button" aria-label="Available Table @table.TableNumber"
                     onclick="openGuestModal(@table.TableId, @table.TableNumber)"
                     style="top: 0; left: 0; width: 100%; height: 100%; position: absolute;">
@@ -182,7 +190,7 @@
 </main>
 
 <div id="guest-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#25272c; padding:32px; border-radius:12px; width:320px; text-align:center;">
+    <div style="background:#25272c; padding:32px; border-radius:12px; width:360px; text-align:center;">
         <h3 style="font-family:'Inter-Bold',Helvetica; color:#fff; font-size:20px; margin-bottom:8px;">Aantal gasten</h3>
         <p style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:14px; margin-bottom:24px;">Wat is het aantal gasten voor deze tafel?</p>
         <div style="display:flex; gap:12px; justify-content:center; margin-bottom:24px;">
@@ -192,6 +200,7 @@
             <button type="button" onclick="setGuestCount(4)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">4</button>
         </div>
         <input type="hidden" id="selected-guests" value="2" />
+        <div id="guest-name-fields" style="margin-bottom:24px;"></div>
         <div style="display:flex; gap:8px; justify-content:flex-end;">
             <button type="button" onclick="closeGuestModal()" style="padding:8px 24px; border-radius:8px; border:1px solid #555; background:transparent; color:#9f9fa9; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Annuleren</button>
             <button type="button" onclick="confirmGuest()" style="padding:8px 24px; border-radius:8px; border:1px solid #16a34a; background:#3e9b4b40; color:#16a34a; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Opslaan</button>
@@ -227,6 +236,7 @@ function openGuestModal(tableId, tableNumber) {
     options[1].style.background = '#3e9b4b40';
     options[1].style.color = '#16a34a';
     document.getElementById('guest-modal').style.display = 'flex';
+    renderGuestNameFields(2);
 }
 
 function closeGuestModal() {
@@ -247,10 +257,33 @@ function setGuestCount(count) {
             btn.style.color = '#fff';
         }
     });
+    renderGuestNameFields(count);
+}
+
+function renderGuestNameFields(count) {
+    var container = document.getElementById('guest-name-fields');
+    var html = '';
+    for (var i = 1; i <= count; i++) {
+        html += '<div style="margin-bottom:8px; text-align:left;">' +
+            '<label style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:12px; display:block; margin-bottom:4px;">Gast ' + i + '</label>' +
+            '<input type="text" id="guest-name-' + i + '" placeholder="Naam gast ' + i + '" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-family:Inter,Helvetica; font-size:14px; box-sizing:border-box;" />' +
+            '</div>';
+    }
+    container.innerHTML = html;
+    var firstInput = document.getElementById('guest-name-1');
+    if (firstInput) firstInput.focus();
 }
 
 function confirmGuest() {
     if (currentTableId === 0) return;
+    var count = parseInt(document.getElementById('selected-guests').value);
+    var names = [];
+    for (var i = 1; i <= count; i++) {
+        var input = document.getElementById('guest-name-' + i);
+        var name = input ? input.value.trim() : '';
+        names.push(name || 'Gast ' + i);
+    }
+    document.getElementById('guest-names-' + currentTableId).value = names.join(', ');
     closeGuestModal();
     var form = document.getElementById('available-form-' + currentTableId);
     if (form) {
