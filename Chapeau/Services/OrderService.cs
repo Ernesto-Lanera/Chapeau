@@ -4,7 +4,6 @@ using System.Linq;
 using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Repositories;
-using Chapeau.ViewModels;
 
 namespace Chapeau.Services
 {
@@ -33,9 +32,16 @@ namespace Chapeau.Services
         {
             var food = _orderRepository.GetRunningOrders(OrderType.Food);
             var drink = _orderRepository.GetRunningOrders(OrderType.Drink);
-            return food.Concat(drink).ToList();
-        }
 
+            return food.Concat(drink)
+                .GroupBy(o => o.OrderId)
+                .Select(g => {
+                    var order = g.First();
+                    order.Items = g.SelectMany(o => o.Items ?? new List<OrderItem>()).ToList();
+                    return order;
+                })
+                .ToList();
+        }
 
         public TimeSpan GetWaitingTime(Order order)
         {
@@ -85,6 +91,17 @@ namespace Chapeau.Services
             return order;
         }
 
+        public List<OrderItem> GetOrderItemsByOrderId(int orderId)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            return _orderRepository.GetOrderItemsByOrderId(orderId);
+        }
+
+        public List<TableStatus> GetAllTableStatuses()
         public Order UpdateItemFromOrder (int MenuItemId, Order order, int NewAmount)
         {
             if (order.OrderItems != null)
@@ -133,6 +150,7 @@ namespace Chapeau.Services
             }
         }
 
+        public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
         public void UpdateOrderItemStatus(int orderItemId, OrderStatus status)
         {
             if (orderItemId <= 0)
@@ -164,6 +182,24 @@ namespace Chapeau.Services
                 UpdateOrderStatus(orderId, OrderStatus.BeingPrepared);
         }
 
+            _orderRepository.SavePayment(orderId, tableNumber, tipAmount, feedback);
+        }
+
+        public Order? GetOrderById(int orderId)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            return _orderRepository.GetOrderById(orderId);
+        }
+
+        public Order? GetServedOrderByTableId(int tableId)
+        {
+            if (tableId <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
         public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status)
         {
             try
@@ -198,8 +234,18 @@ namespace Chapeau.Services
             {
                 throw new InvalidOperationException("Failed to retrieve finished orders.", ex);
             }
+
+            return _orderRepository.GetServedOrderByTableId(tableId);
         }
 
+        public List<Order> GetServedOrdersForPayment()
+        {
+            List<Order> orders = _orderRepository.GetOrdersByStatus(OrderStatus.Served);
+
+            foreach (var order in orders)
+            {
+                order.Items = _orderRepository.GetOrderItemsByOrderId(order.OrderId);
+                order.OrderItems = order.Items;
         public void SaveOrderToDb(Order order)
         {
             _orderRepository.SaveOrder(order);
@@ -234,6 +280,7 @@ namespace Chapeau.Services
             }
         }
 
+            return orders;
         public void MarkOrderAsServed(int orderId)
         {
             if (orderId <= 0)
