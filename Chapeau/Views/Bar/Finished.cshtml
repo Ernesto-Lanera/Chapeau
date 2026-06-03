@@ -43,27 +43,45 @@
 }
 
 @{
-    ViewData["Title"] = "Kitchen";
+    ViewData["Title"] = "Bar - Finished";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex gap-2 station-nav">
-        <a asp-action="Index" class="btn btn-primary">Running Orders</a>
-        <a asp-action="Finished" class="btn btn-outline-secondary">Finished Orders</a>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Running Orders</a>
+        <a asp-action="Finished" class="btn btn-primary">Finished Orders</a>
     </div>
-    <a asp-action="Index" class="btn btn-outline-secondary">Refresh ↻</a>
+    <a asp-action="Finished" class="btn btn-outline-secondary">Refresh ↻</a>
 </div>
 
 @if (Model == null || !Model.Any())
 {
-    <p>No running orders.</p>
+    <p>No finished orders today.</p>
 }
 else
 {
-    <div class="order-list">
-        @foreach (var order in Model)
-        {
-            @await Html.PartialAsync("_OrderView", order)
-        }
-    </div>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Table</th>
+                <th>Order time</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.TableNumber</td>
+                    <td>@order.OrderDate.ToString("HH:mm")</td>
+                    <td>
+                        @foreach (var item in order.OrderItems)
+                        {
+                            <span class="badge bg-secondary me-1">@item.Amount x @item.Name</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
