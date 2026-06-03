@@ -4,33 +4,50 @@ using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Text.Json;
 
 namespace Chapeau.Controllers
 {
     [Authorize(Policy = "CanViewMenu")]
     public class MenuController : Controller
     {
-        private readonly IMenuService _menuService;
-        private readonly ICategoryService _categoryService;
+        private readonly MenuService _menuService;
+        private readonly OrderService _orderService;
+        private readonly CategoryService _categoryService;
 
-        public MenuController(
-            IMenuService menuService,
-            ICategoryService categoryService)
+        public MenuController(MenuService menuService, CategoryService categoryService, OrderService orderService)
         {
             _menuService = menuService;
+            _orderService = orderService;
             _categoryService = categoryService;
         }
-        public IActionResult Index(int? tableId, int? tableNumber)
+
+        private Order GetOrder()
+        {
+            var sessionData = HttpContext.Session.GetString("ActiveOrder");
+            if (string.IsNullOrEmpty(sessionData))
+            {
+                return _orderService.MakeNewOrder(1);
+            }
+
+
+            return JsonSerializer.Deserialize<Order>(sessionData)!;
+        }
+
+        private void SaveOrder(Order order)
+        {
+            HttpContext.Session.SetString("ActiveOrder", JsonSerializer.Serialize(order));
+        }
+
+        public IActionResult Index()
         {
             try
             {
-                var menuItems = _menuService.GetMenuItems(null, null);
-                var allCategories = _categoryService.GetCategories();
-
-                ViewBag.AllCategories = allCategories;
+                ViewBag.Order = GetOrder();
+                ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();
-                ViewBag.TableId = tableId;
-                ViewBag.TableNumber = tableNumber;
+                var menuItems = _menuService.GetMenuItems(null, null) ?? new List<MenuItem>();
+
                 return View(menuItems);
             }
             catch (InvalidOperationException ex)
@@ -38,6 +55,49 @@ namespace Chapeau.Controllers
                 ViewBag.ErrorMessage = ex.Message;
                 return View("Error");
             }
+        }
+
+        [HttpGet]
+        public IActionResult GetActiveOrderItems()
+        {
+            Order order = GetOrder();
+            return Json(new { success = true, items = order.OrderItems});
+        }
+
+        [HttpPost]
+        public IActionResult AddMenuItemToOrder(int MenuItemId, string MenuItemName)
+        {
+            Order order = GetOrder();
+            order = _orderService.AddOrderItemToOrder(MenuItemId, order, MenuItemName);
+            SaveOrder(order);
+            return Json(new { success = true, items = order.OrderItems });
+        }
+
+        [HttpPost]
+        public IActionResult RemoveMenuItemFromOrder(int MenuItemId)
+        {
+            Order order = GetOrder();
+            order = _orderService.RemoveItemFormOrder(MenuItemId, order);
+            SaveOrder(order);
+            return Json(new { success = true, items = order.OrderItems});
+        }
+
+        [HttpPost]
+        public IActionResult UpdateMenuItemQuantity(int MenuItemId, int NewQuantity)
+        {
+            Order order = GetOrder();
+            order = _orderService.UpdateItemFormOrder(MenuItemId, order, NewQuantity);
+            SaveOrder(order);
+            return Json(new { success = true, items = order.OrderItems });
+        }
+
+        [HttpPost]
+        public IActionResult AddCommentToItem(int MenuItemId, string Comment)
+        {
+            Order order = GetOrder();
+            order = _orderService.AddCommentoItem(MenuItemId, order, Comment);
+            SaveOrder(order);
+            return Json(new { success = true, items = order.OrderItems });
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()

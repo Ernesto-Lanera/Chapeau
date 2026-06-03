@@ -32,8 +32,8 @@ namespace Chapeau.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                PaymentOrderViewModel viewModel = _orderService.GetPaymentOrderViewModel(order.OrderId, order.TableNumber);
-                return View(viewModel);
+               
+                return View();
             }
             catch (InvalidOperationException ex)
             {

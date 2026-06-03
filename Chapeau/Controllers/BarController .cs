@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Chapeau.Services;
 using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using Chapeau.Services;
 using Chapeau.Models;
 
 namespace Chapeau.Controllers
@@ -34,8 +31,8 @@ namespace Chapeau.Controllers
                 WaitingTime = _orderService.GetWaitingTime(o),
                 OrderItems = o.OrderItems.Select(i => new OrderItemViewModel
                 {
-                    Name = i.Name,
-                    Amount = i.AmountOrdered,
+                    Name = i.MenuItemName,
+                    Amount = i.Amount,
                     Comment = i.Comment
                 }).ToList()
             }).ToList();

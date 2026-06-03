@@ -31,7 +31,7 @@ namespace Chapeau.ViewModels
         /// <summary>
         /// Gross total (before VAT). Computed from items.
         /// </summary>
-        public decimal GrossTotal => Items.Sum(i => i.GrossPrice);
+        //public decimal GrossTotal => Items.Sum(i => i.GrossPrice);
 
         /// <summary>
         /// Total tip amount (if applicable). Default 0.
