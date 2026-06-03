@@ -34,7 +34,7 @@ namespace Chapeau.Controllers
             return JsonSerializer.Deserialize<Order>(sessionData)!;
         }
 
-        private void SaveOrder(Order order)
+        private void SaveOrdertoJson(Order order)
         {
             HttpContext.Session.SetString("ActiveOrder", JsonSerializer.Serialize(order));
         }
@@ -69,7 +69,7 @@ namespace Chapeau.Controllers
         {
             Order order = GetOrder();
             order = _orderService.AddOrderItemToOrder(MenuItemId, order, MenuItemName);
-            SaveOrder(order);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }
 
@@ -78,7 +78,7 @@ namespace Chapeau.Controllers
         {
             Order order = GetOrder();
             order = _orderService.RemoveItemFormOrder(MenuItemId, order);
-            SaveOrder(order);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems});
         }
 
@@ -87,7 +87,7 @@ namespace Chapeau.Controllers
         {
             Order order = GetOrder();
             order = _orderService.UpdateItemFormOrder(MenuItemId, order, NewQuantity);
-            SaveOrder(order);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }
 
@@ -96,8 +96,18 @@ namespace Chapeau.Controllers
         {
             Order order = GetOrder();
             order = _orderService.AddCommentoItem(MenuItemId, order, Comment);
-            SaveOrder(order);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
+        }
+
+        [HttpPost]
+        public IActionResult SaveOrderToDb()
+        {
+            Order order = GetOrder();
+            _orderService.SaveOrderToDb(order);
+            TempData["SuccessMessage"] = "Your order was saved successfully!";
+            return RedirectToAction("Index", "Table");
+
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()

@@ -98,7 +98,9 @@
 
             <div class="mt-auto d-flex justify-content-between pt-3 border-top">
                 <button class="btn btn-danger w-50 me-1 fw-bold rounded-3">Cancel</button>
-                <button class="btn btn-primary w-50 ms-1 fw-bold rounded-3">Send To Kitchen/Bar</button>
+                <form method="post" asp-controller="Menu" asp-action="SaveOrderToDb">
+                <button class="btn btn-primary w-50 ms-1 fw-bold rounded-3" type="submit">Send To Kitchen/Bar</button>
+                </form>
             </div>
         </div>
 

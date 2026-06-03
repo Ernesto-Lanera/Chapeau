@@ -47,7 +47,7 @@ namespace Chapeau.Services
         {
             List<OrderItem> orderItems = [];
 
-            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems };
+            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems, GuestName = "bob"};
             return order;
         }
 
@@ -113,7 +113,7 @@ namespace Chapeau.Services
 
         public void SaveOrderToDb(Order order)
         {
-
+            _orderRepository.SaveOrder(order);
         }
 
         public Order GetActiveOrderByTableId(int tableId)

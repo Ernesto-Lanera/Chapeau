@@ -12,5 +12,6 @@ namespace Chapeau.Repositories
         List<TableStatus> GetAllTableStatuses();
         void UpdateOrderStatus(int orderId, OrderStatus newStatus);
         void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus);
+        void SaveOrder(Order order);
     }
 }
