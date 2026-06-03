@@ -93,7 +93,7 @@ namespace Chapeau.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddCommentToItem(int MenuItemId, string Comment)
+        public IActionResult UpdateItemComment(int MenuItemId, string Comment)
         {
             Order order = GetOrder();
             order = _orderService.ChangeCommentinItem(MenuItemId, order, Comment);

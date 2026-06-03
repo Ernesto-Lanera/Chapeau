@@ -103,14 +103,12 @@ namespace Chapeau.Services
             if (order.OrderItems != null)
             {
                 var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToComment != null && String.IsNullOrEmpty(Comment))
+
+                if (itemToComment != null)
                 {
                     itemToComment.Comment = Comment;
                 }
-                else
-                {
-                    itemToComment?.Comment = null;
-                }
+               
  
             }
             return order;

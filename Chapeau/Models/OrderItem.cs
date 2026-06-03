@@ -15,7 +15,7 @@ namespace Chapeau.Models
 
         public int OrderId { get; set; }
 
-        public string? Comment;
+        public string? Comment { get; set; }
 
         public OrderItem(int orderItemId, int menuItemId, int amount, int orderId)
         {
