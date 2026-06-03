@@ -1,5 +1,6 @@
 using Chapeau.Constants;
 using Chapeau.Services.Overview;
+using Chapeau.Extensions;
 using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -59,10 +60,24 @@ namespace Chapeau.Controllers
         {
             try
             {
+                if (!active && id == User.GetEmployeeId())
+                {
+                    TempData[FlashMessages.ErrorKey] = "Je kunt je eigen account niet deactiveren.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 _employeeService.SetEmployeeActive(id, active);
                 TempData[FlashMessages.SuccessKey] = active
                     ? "Medewerker geactiveerd. Deze medewerker kan weer inloggen."
                     : "Medewerker gedeactiveerd. Deze medewerker kan niet meer inloggen.";
+            }
+            catch (ArgumentException exception)
+            {
+                TempData[FlashMessages.ErrorKey] = exception.Message;
+            }
+            catch (InvalidOperationException exception)
+            {
+                TempData[FlashMessages.ErrorKey] = exception.Message;
             }
             catch (Exception exception)
             {
