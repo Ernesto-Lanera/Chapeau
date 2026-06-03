@@ -38,7 +38,7 @@ namespace Chapeau.Controllers
                .Select(i => new OrderItemViewModel
                 {
                     Name = i.MenuItemName,
-                    Amount = i.Amount,
+                    Amount = i.AmountOrdered,
                     Comment = i.Comment
                 }).ToList(),
 
@@ -51,7 +51,7 @@ namespace Chapeau.Controllers
                     Items = g.Select(i => new OrderItemViewModel
                     {
                         Name = i.MenuItemName,
-                        Amount = i.Amount,
+                        Amount = i.AmountOrdered,
                         Comment = i.Comment
                     }).ToList()
                 }).ToList()

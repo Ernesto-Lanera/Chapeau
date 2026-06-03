@@ -95,7 +95,7 @@ namespace Chapeau.Controllers
         public IActionResult AddCommentToItem(int MenuItemId, string Comment)
         {
             Order order = GetOrder();
-            order = _orderService.AddCommentoItem(MenuItemId, order, Comment);
+            order = _orderService.ChangeCommeninItem(MenuItemId, order, Comment);
             SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }

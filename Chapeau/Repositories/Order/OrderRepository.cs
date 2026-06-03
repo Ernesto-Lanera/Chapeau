@@ -179,7 +179,7 @@ public class OrderRepository : IOrderRepository
                             OrderItemId = (int)reader["OrderItemID"],
                             OrderId = (int)reader["OrderID"],
                             MenuItemId = (int)reader["MenuItemID"],
-                            Amount = (int)reader["AmountOrdered"],
+                            AmountOrdered = (int)reader["AmountOrdered"],
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
                             MenuItemName = (string)reader["Name"],
@@ -305,7 +305,7 @@ public class OrderRepository : IOrderRepository
             OrderItemId = (int)reader["OrderItemID"],
             OrderId = (int)reader["OrderID"],
             MenuItemId = (int)reader["MenuItemID"],
-            Amount = (int)reader["AmountOrdered"],
+            AmountOrdered = (int)reader["AmountOrdered"],
             MenuItemName = reader["Name"].ToString(), 
             Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
             OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"]
@@ -368,7 +368,7 @@ public class OrderRepository : IOrderRepository
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@OrderId", item.OrderId);
         command.Parameters.AddWithValue("@MenuItemId", item.MenuItemId);
-        command.Parameters.AddWithValue("@AmountOrdered", item.Amount);
+        command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
         command.Parameters.AddWithValue("@OrderItemStatus", 0);
         command.Parameters.AddWithValue("@Comment", (object)item.Comment ?? DBNull.Value);
 

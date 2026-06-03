@@ -57,13 +57,13 @@ namespace Chapeau.Services
             {
                 if (!order.OrderItems.Any(i => i.MenuItemId == MenuItemId))
                 {
-                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, Amount = 1, MenuItemName = MenuItemName };
+                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, AmountOrdered = 1, MenuItemName = MenuItemName };
                     order.OrderItems.Add(orderitem);
                 }
                 else
                 {
                     var existingItem = order.OrderItems.First(i => i.MenuItemId == MenuItemId);
-                    existingItem.Amount++;
+                    existingItem.AmountOrdered++;
                 }
             }
              
@@ -72,7 +72,7 @@ namespace Chapeau.Services
         }
 
 
-        public Order RemoveItemFormOrder(int MenuItemId, Order order)
+        public Order RemoveItemFromOrder(int MenuItemId, Order order)
         {
             if (order.OrderItems != null)
             {
@@ -85,28 +85,33 @@ namespace Chapeau.Services
             return order;
         }
 
-        public Order UpdateItemFormOrder (int MenuItemId, Order order, int NewAmount)
+        public Order UpdateItemFromOrder (int MenuItemId, Order order, int NewAmount)
         {
             if (order.OrderItems != null)
             {
                 var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
                 if (itemToUpdate != null)
                 {
-                    itemToUpdate.Amount = NewAmount;
+                    itemToUpdate.AmountOrdered = NewAmount;
                 }
             }
             return order;
         }
 
-        public Order AddCommentoItem(int MenuItemId, Order order,String Comment)
+        public Order ChangeCommentinItem(int MenuItemId, Order order,String Comment)
         {
             if (order.OrderItems != null)
             {
                 var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToComment != null)
+                if (itemToComment != null && String.IsNullOrEmpty(Comment))
                 {
                     itemToComment.Comment = Comment;
                 }
+                else
+                {
+                    itemToComment?.Comment = null;
+                }
+ 
             }
             return order;
         }

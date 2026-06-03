@@ -32,7 +32,7 @@ namespace Chapeau.Controllers
                 OrderItems = o.OrderItems.Select(i => new OrderItemViewModel
                 {
                     Name = i.MenuItemName,
-                    Amount = i.Amount,
+                    Amount = i.AmountOrdered,
                     Comment = i.Comment
                 }).ToList()
             }).ToList();
