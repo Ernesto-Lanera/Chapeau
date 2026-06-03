@@ -7,7 +7,7 @@ namespace Chapeau.Models
        public int OrderItemId { get; set; }
         public OrderStatus OrderItemStatus { get; set; }
         public CourseType? Course { get; set; }
-        public int Amount { get; set; }
+        public int AmountOrdered { get; set; }
 
         public string MenuItemName { get; set; } 
         public int MenuItemId { get; set; }
@@ -20,7 +20,7 @@ namespace Chapeau.Models
         {
             OrderItemId = orderItemId;
             MenuItemId = menuItemId;
-            Amount = amount;
+            AmountOrdered = amount;
             OrderId = orderId;
         }
 
