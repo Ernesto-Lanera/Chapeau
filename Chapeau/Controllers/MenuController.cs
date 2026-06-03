@@ -77,7 +77,7 @@ namespace Chapeau.Controllers
         public IActionResult RemoveMenuItemFromOrder(int MenuItemId)
         {
             Order order = GetOrder();
-            order = _orderService.RemoveItemFormOrder(MenuItemId, order);
+            order = _orderService.RemoveItemFromOrder(MenuItemId, order);
             SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems});
         }
@@ -86,7 +86,7 @@ namespace Chapeau.Controllers
         public IActionResult UpdateMenuItemQuantity(int MenuItemId, int NewQuantity)
         {
             Order order = GetOrder();
-            order = _orderService.UpdateItemFormOrder(MenuItemId, order, NewQuantity);
+            order = _orderService.UpdateItemFromOrder(MenuItemId, order, NewQuantity);
             SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }
@@ -95,7 +95,7 @@ namespace Chapeau.Controllers
         public IActionResult AddCommentToItem(int MenuItemId, string Comment)
         {
             Order order = GetOrder();
-            order = _orderService.ChangeCommeninItem(MenuItemId, order, Comment);
+            order = _orderService.ChangeCommentinItem(MenuItemId, order, Comment);
             SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }
