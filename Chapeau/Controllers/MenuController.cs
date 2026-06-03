@@ -43,6 +43,7 @@ namespace Chapeau.Controllers
         {
             try
             {
+                HttpContext.Session.SetString("ActiveOrder", "");
                 ViewBag.Order = GetOrder();
                 ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();

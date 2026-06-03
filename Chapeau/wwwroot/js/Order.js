@@ -13,18 +13,18 @@ function updateCartUI(items) {
     items.forEach(item => {
         htmlContent += `
                 <div class="mb-2 p-2 border rounded d-flex flex-wrap align-items-center justify-content-between" style="background-color: #212529; color: white;">
-                    <span class="fw-bold text-truncate me-2"  font-size: 0.9rem;">${item.menuItemName}</span>
+                    <span class="fw-bold text-truncate me-2" style="font-size: 0.9rem;">${item.menuItemName}</span>
                     
                     <div class="d-flex align-items-center gap-1">
                         <button class="btn btn-sm btn-outline-danger rounded-circle p-0 d-flex justify-content-center align-items-center fw-bold" 
                                 style="width: 22px; height: 22px; font-size: 14px;" 
-                                onclick="updateQuantity(${item.menuItemId}, ${item.amount - 1})">-</button>
+                                onclick="updateQuantity(${item.menuItemId}, ${item.amountOrdered - 1})">-</button>
                         
-                        <span id="qty-${item.menuItemId}" class="fw-bold mx-1" style="min-width: 15px; text-align: center; font-size: 0.9rem;">${item.amount}</span>
+                        <span id="qty-${item.menuItemId}" class="fw-bold mx-1" style="min-width: 15px; text-align: center; font-size: 0.9rem;">${item.amountOrdered}</span>
                         
                         <button class="btn btn-sm btn-outline-success rounded-circle p-0 d-flex justify-content-center align-items-center fw-bold" 
                                 style="width: 22px; height: 22px; font-size: 14px;" 
-                                onclick="updateQuantity(${item.menuItemId}, ${item.amount + 1})">+</button>
+                                onclick="updateQuantity(${item.menuItemId}, ${item.amountOrdered + 1})">+</button>
                         
                         <button class="btn btn-sm btn-outline-danger ms-2 d-flex justify-content-center align-items-center" 
                                 style="width: 26px; height: 26px;" 
@@ -42,9 +42,18 @@ function updateCartUI(items) {
 function addToOrder(menuItemId, menuItemName) {
     if (isUpdating) return;
 
+    let maxStock = window.stockLevels[menuItemId] || 0;
+
+    if (maxStock <= 0)
+    { return }
+
     let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
     if (existingQtySpan) {
         let currentQty = parseInt(existingQtySpan.innerText);
+        if (currentQty >= maxStock) {
+            alert(`Maximum stock reached. Only ${maxStock} available.`);
+            return;
+        }
         updateQuantity(menuItemId, currentQty + 1);
         return;
     }
@@ -76,6 +85,13 @@ function removeFromOrder(menuItemId) {
 
 function updateQuantity(menuItemId, newQuantity) {
     if (isUpdating) return;
+
+    let maxStock = window.stockLevels[menuItemId] || 0;
+
+    if (newQuantity > maxStock) {
+        alert(`Maximum stock reached. Only ${maxStock} available.`);
+        return;
+    }
 
     if (newQuantity <= 0) {
         removeFromOrder(menuItemId);
