@@ -37,7 +37,7 @@ namespace Chapeau.Controllers
                .OrderBy(i => i.Course)
                .Select(i => new OrderItemViewModel
                 {
-                    Name = i.Name,
+                    Name = i.MenuItemName,
                     Amount = i.AmountOrdered,
                     Comment = i.Comment
                 }).ToList(),
@@ -50,7 +50,7 @@ namespace Chapeau.Controllers
                     Course = g.Key ?? CourseType.Starter,
                     Items = g.Select(i => new OrderItemViewModel
                     {
-                        Name = i.Name,
+                        Name = i.MenuItemName,
                         Amount = i.AmountOrdered,
                         Comment = i.Comment
                     }).ToList()

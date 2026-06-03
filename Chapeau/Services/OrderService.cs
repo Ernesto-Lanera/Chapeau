@@ -43,6 +43,84 @@ namespace Chapeau.Services
             return DateTime.Now - order.OrderDate;
         }
 
+        public Order MakeNewOrder(int tableId)
+        {
+            List<OrderItem> orderItems = [];
+
+            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems, GuestName = "bob"};
+            return order;
+        }
+
+        public Order AddOrderItemToOrder(int MenuItemId, Order order, string MenuItemName)
+        {
+            if (order.OrderItems != null)
+            {
+                if (!order.OrderItems.Any(i => i.MenuItemId == MenuItemId))
+                {
+                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, AmountOrdered = 1, MenuItemName = MenuItemName };
+                    order.OrderItems.Add(orderitem);
+                }
+                else
+                {
+                    var existingItem = order.OrderItems.First(i => i.MenuItemId == MenuItemId);
+                    existingItem.AmountOrdered++;
+                }
+            }
+             
+            return order;
+
+        }
+
+
+        public Order RemoveItemFromOrder(int MenuItemId, Order order)
+        {
+            if (order.OrderItems != null)
+            {
+                var itemToRemove = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
+                if (itemToRemove != null)
+                {
+                    order.OrderItems.Remove(itemToRemove);
+                }
+            }
+            return order;
+        }
+
+        public Order UpdateItemFromOrder (int MenuItemId, Order order, int NewAmount)
+        {
+            if (order.OrderItems != null)
+            {
+                var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
+                if (itemToUpdate != null)
+                {
+                    itemToUpdate.AmountOrdered = NewAmount;
+                }
+            }
+            return order;
+        }
+
+        public Order ChangeCommentinItem(int MenuItemId, Order order,String Comment)
+        {
+            if (order.OrderItems != null)
+            {
+                var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
+                if (itemToComment != null && String.IsNullOrEmpty(Comment))
+                {
+                    itemToComment.Comment = Comment;
+                }
+                else
+                {
+                    itemToComment?.Comment = null;
+                }
+ 
+            }
+            return order;
+        }
+
+        public void SaveOrderToDb(Order order)
+        {
+            _orderRepository.SaveOrder(order);
+        }
+
         public Order GetActiveOrderByTableId(int tableId)
         {
             if (tableId <= 0)
@@ -89,94 +167,6 @@ namespace Chapeau.Services
             }
         }
 
-        public PaymentOrderViewModel GetPaymentOrderViewModel(int orderId, int tableNumber)
-        {
-            if (orderId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
-
-            if (tableNumber <= 0)
-            {
-                throw new ArgumentException("Ongeldig tafel nummer.", nameof(tableNumber));
-            }
-
-            try
-            {
-                List<OrderItem> items = _orderRepository.GetOrderItemsByOrderId(orderId);
-
-                if (items == null || items.Count == 0)
-                {
-                    throw new InvalidOperationException($"No items found for order {orderId}.");
-                }
-
-                return BuildPaymentViewModel(orderId, tableNumber, items);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to build payment view model.", ex);
-            }
-        }
-
-        private static PaymentOrderViewModel BuildPaymentViewModel(int orderId, int tableNumber, List<OrderItem> items)
-        {
-            ArgumentNullException.ThrowIfNull(items);
-
-            if (items.Count == 0)
-            {
-                throw new InvalidOperationException("Cannot create payment view model for empty order.");
-            }
-
-            // Group items by MenuItemId to combine duplicates and sum quantities
-            var groupedItems = items
-                .GroupBy(i => i.MenuItemId)
-                .Select(g =>
-                {
-                    var firstItem = g.First();
-                    return new OrderItem
-                    {
-                        OrderItemId = firstItem.OrderItemId,
-                        MenuItemId = g.Key,
-                        MenuItem = firstItem.MenuItem,
-                        VATRate = firstItem.VATRate,
-                        Amount = g.Sum(x => x.Amount),
-                        Comment = firstItem.Comment,
-                        OrderId = orderId
-                    };
-                })
-                .ToList();
-
-            // Validate prices and VAT rates
-            foreach (var item in groupedItems)
-            {
-                if (item.Price < 0)
-                {
-                    throw new InvalidOperationException($"Invalid price for item {item.Name}: prices cannot be negative.");
-                }
-
-                if (item.VATRate < 0 || item.VATRate > 1)
-                {
-                    throw new InvalidOperationException($"Invalid VAT rate for item {item.Name}: VAT must be between 0 and 100%.");
-                }
-
-                if (item.Amount <= 0)
-                {
-                    throw new InvalidOperationException($"Invalid quantity for item {item.Name}: quantity must be greater than zero.");
-                }
-            }
-
-            // Create a temporary order to leverage domain-computed properties
-            var order = new Order { Items = groupedItems };
-
-            return new PaymentOrderViewModel
-            {
-                OrderID = orderId,
-                TableNumber = tableNumber,
-                Items = groupedItems.AsReadOnly(),
-                LowVAT = Math.Round(order.LowVATTotal, 2),
-                HighVAT = Math.Round(order.HighVATTotal, 2),
-                Total = Math.Round(order.GrandTotal, 2)
-            };
-        }
+    
     }
 }
