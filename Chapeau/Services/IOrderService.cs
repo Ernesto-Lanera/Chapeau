@@ -22,5 +22,13 @@ namespace Chapeau.Services
         void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status);
         void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status);
         List<Order> GetFinishedOrdersToday(OrderType type);
+
+        // Van collega's (MenuController)
+        Order MakeNewOrder(int tableId);
+        Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName);
+        Order RemoveItemFromOrder(int menuItemId, Order order);
+        Order UpdateItemFromOrder(int menuItemId, Order order, int newAmount);
+        Order ChangeCommentInItem(int menuItemId, Order order, string comment);
+        void SaveOrderToDb(Order order);
     }
 }

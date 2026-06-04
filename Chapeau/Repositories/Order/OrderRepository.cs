@@ -25,6 +25,7 @@ public class OrderRepository : IOrderRepository
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
             connection.Open();
+            // Samengevoegde query: gebruikt NOT IN van collega's (ruimer) + jouw EXISTS filter
             string query = $@"
             SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
             FROM Orders o
@@ -62,7 +63,6 @@ public class OrderRepository : IOrderRepository
                         var order = MapOrder(reader);
                         order.Items = GetOrderItemsByOrderId(order.OrderId, type);
                         order.OrderItems = order.Items;
-                        order.OrderItems = GetOrderItemsByOrderId(order.OrderId, type);
                         orders.Add(order);
                     }
                 }
@@ -148,8 +148,8 @@ public class OrderRepository : IOrderRepository
 
     public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
-        List<OrderItem> items = [];
-        
+        List<OrderItem> items = new List<OrderItem>();
+
         string typeFilter = type == OrderType.Food
             ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
             : "AND c.MenuCardID = @DrinkCard";
@@ -188,7 +188,6 @@ public class OrderRepository : IOrderRepository
                         bool isAlcoholic = reader["IsAlcoholic"] != DBNull.Value && (bool)reader["IsAlcoholic"];
 
                         items.Add(new OrderItem
-                        OrderItem orderItem = new OrderItem
                         {
                             OrderItemId = (int)reader["OrderItemID"],
                             OrderId = (int)reader["OrderID"],
@@ -202,9 +201,7 @@ public class OrderRepository : IOrderRepository
                             VATRate = GetVatRate(isAlcoholic),
                             MenuItemName = (string)reader["Name"],
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
-                        };
-                        
-                        items.Add(orderItem);
+                        });
                     }
                 }
             }
@@ -283,7 +280,6 @@ public class OrderRepository : IOrderRepository
         using SqlTransaction transaction = connection.BeginTransaction();
         try
         {
-            // je kan alleen betalen als het served is
             string statusQuery = "SELECT OrderStatus FROM Orders WHERE OrderID = @OrderID";
             using (SqlCommand command = new SqlCommand(statusQuery, connection, transaction))
             {
@@ -419,6 +415,157 @@ public class OrderRepository : IOrderRepository
         }
 
         return orders;
+    }
+
+    public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus newStatus)
+    {
+        string typeFilter = type == OrderType.Food
+            ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
+            : "AND c.MenuCardID = @DrinkCard";
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = $@"
+                UPDATE oi SET oi.OrderItemStatus = @Status
+                FROM OrderItem oi
+                JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                JOIN Categories c ON c.CategoryID = m.CategoryID
+                WHERE oi.OrderID = @OrderID {typeFilter}";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)newStatus);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
+                command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
+                command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
+
+    public void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus newStatus)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = @"
+                UPDATE oi SET oi.OrderItemStatus = @Status
+                FROM OrderItem oi
+                JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                WHERE oi.OrderID = @OrderID
+                AND (
+                    CASE 
+                        WHEN m.CategoryID IN (1, 5, 16) THEN 0
+                        WHEN m.CategoryID IN (2, 14) THEN 1
+                        WHEN m.CategoryID IN (3, 15) THEN 2
+                    END
+                ) = @Course";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)newStatus);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.Parameters.AddWithValue("@Course", (int)course);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
+
+    public List<Order> GetFinishedOrdersToday(OrderType type)
+    {
+        List<Order> orders = new List<Order>();
+
+        string typeFilter = type == OrderType.Food
+            ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
+            : "AND c.MenuCardID = @DrinkCard";
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = $@"
+                SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+                FROM Orders o
+                JOIN Table_ t ON o.TableID = t.TableID
+                WHERE o.OrderStatus = @Served
+                AND CAST(o.OrderDate AS DATE) = CAST(GETDATE() AS DATE)
+                AND EXISTS (
+                    SELECT 1 FROM OrderItem oi
+                    JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                    JOIN Categories c ON c.CategoryID = m.CategoryID
+                    WHERE oi.OrderID = o.OrderID {typeFilter}
+                )
+                ORDER BY o.OrderDate ASC";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
+                command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
+                command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        orders.Add(MapOrder(reader));
+                    }
+                }
+            }
+        }
+        return orders;
+    }
+
+    public void SaveOrder(Order order)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            using SqlTransaction transaction = connection.BeginTransaction();
+            try
+            {
+                string insertOrderQuery = @"
+                    INSERT INTO Orders (TableID, GuestName, OrderDate, OrderStatus, OrderType)
+                    VALUES (@TableID, @GuestName, @OrderDate, @OrderStatus, @OrderType);
+                    SELECT SCOPE_IDENTITY();";
+
+                int newOrderId;
+                using (SqlCommand command = new SqlCommand(insertOrderQuery, connection, transaction))
+                {
+                    command.Parameters.AddWithValue("@TableID", order.TableId);
+                    command.Parameters.AddWithValue("@GuestName", (object?)order.GuestName ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
+                    command.Parameters.AddWithValue("@OrderStatus", (int)order.OrderStatus);
+                    command.Parameters.AddWithValue("@OrderType", (int)order.OrderType);
+                    newOrderId = Convert.ToInt32(command.ExecuteScalar());
+                }
+
+                foreach (var item in order.Items)
+                {
+                    string insertItemQuery = @"
+                        INSERT INTO OrderItem (OrderID, MenuItemID, AmountOrdered, Comment, OrderItemStatus)
+                        VALUES (@OrderID, @MenuItemID, @AmountOrdered, @Comment, @OrderItemStatus)";
+
+                    using (SqlCommand command = new SqlCommand(insertItemQuery, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@OrderID", newOrderId);
+                        command.Parameters.AddWithValue("@MenuItemID", item.MenuItemId);
+                        command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
+                        command.Parameters.AddWithValue("@Comment", (object?)item.Comment ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@OrderItemStatus", (int)item.OrderItemStatus);
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 
     private static decimal GetVatRate(bool isAlcoholic)

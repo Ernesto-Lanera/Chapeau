@@ -49,43 +49,87 @@ namespace Chapeau.Services
             return DateTime.Now - order.OrderDate;
         }
 
+        public Order GetActiveOrderByTableId(int tableId)
+        {
+            if (tableId <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
+            }
+
+            try
+            {
+                return _orderRepository.GetActiveOrderByTableId(tableId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve order for table.", ex);
+            }
+        }
+
+        // Van collega's: nieuwe order aanmaken
         public Order MakeNewOrder(int tableId)
         {
-            List<OrderItem> orderItems = [];
-
-            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems, GuestName = "bob"};
+            List<OrderItem> orderItems = new List<OrderItem>();
+            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems, GuestName = "bob" };
             return order;
         }
 
-        public Order AddOrderItemToOrder(int MenuItemId, Order order, string MenuItemName)
+        // Van collega's: item toevoegen aan order
+        public Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName)
         {
             if (order.OrderItems != null)
             {
-                if (!order.OrderItems.Any(i => i.MenuItemId == MenuItemId))
+                if (!order.OrderItems.Any(i => i.MenuItemId == menuItemId))
                 {
-                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, AmountOrdered = 1, MenuItemName = MenuItemName };
-                    order.OrderItems.Add(orderitem);
+                    OrderItem orderItem = new OrderItem { MenuItemId = menuItemId, AmountOrdered = 1, MenuItemName = menuItemName };
+                    order.OrderItems.Add(orderItem);
                 }
                 else
                 {
-                    var existingItem = order.OrderItems.First(i => i.MenuItemId == MenuItemId);
+                    var existingItem = order.OrderItems.First(i => i.MenuItemId == menuItemId);
                     existingItem.AmountOrdered++;
                 }
             }
-             
             return order;
-
         }
 
-
-        public Order RemoveItemFromOrder(int MenuItemId, Order order)
+        // Van collega's: item verwijderen uit order
+        public Order RemoveItemFromOrder(int menuItemId, Order order)
         {
             if (order.OrderItems != null)
             {
-                var itemToRemove = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
+                var itemToRemove = order.OrderItems.FirstOrDefault(i => i.MenuItemId == menuItemId);
                 if (itemToRemove != null)
                 {
                     order.OrderItems.Remove(itemToRemove);
+                }
+            }
+            return order;
+        }
+
+        // Van collega's: hoeveelheid van item aanpassen
+        public Order UpdateItemFromOrder(int menuItemId, Order order, int newAmount)
+        {
+            if (order.OrderItems != null)
+            {
+                var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == menuItemId);
+                if (itemToUpdate != null)
+                {
+                    itemToUpdate.AmountOrdered = newAmount;
+                }
+            }
+            return order;
+        }
+
+        // Van collega's: commentaar toevoegen aan item
+        public Order ChangeCommentInItem(int menuItemId, Order order, string comment)
+        {
+            if (order.OrderItems != null)
+            {
+                var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == menuItemId);
+                if (itemToComment != null)
+                {
+                    itemToComment.Comment = string.IsNullOrEmpty(comment) ? null : comment;
                 }
             }
             return order;
@@ -102,35 +146,32 @@ namespace Chapeau.Services
         }
 
         public List<TableStatus> GetAllTableStatuses()
-        public Order UpdateItemFromOrder (int MenuItemId, Order order, int NewAmount)
         {
-            if (order.OrderItems != null)
+            try
             {
-                var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToUpdate != null)
-                {
-                    itemToUpdate.AmountOrdered = NewAmount;
-                }
+                return _orderRepository.GetAllTableStatuses();
             }
-            return order;
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve table statuses.", ex);
+            }
         }
 
-        public Order ChangeCommentinItem(int MenuItemId, Order order,String Comment)
+        public void MarkOrderAsServed(int orderId)
         {
-            if (order.OrderItems != null)
+            if (orderId <= 0)
             {
-                var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToComment != null && String.IsNullOrEmpty(Comment))
-                {
-                    itemToComment.Comment = Comment;
-                }
-                else
-                {
-                    itemToComment?.Comment = null;
-                }
- 
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
             }
-            return order;
+
+            try
+            {
+                _orderRepository.UpdateOrderStatus(orderId, OrderStatus.Served);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to mark order as served.", ex);
+            }
         }
 
         public void UpdateOrderStatus(int orderId, OrderStatus status)
@@ -146,11 +187,10 @@ namespace Chapeau.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Failed to mark order as served.", ex);
+                throw new InvalidOperationException("Failed to update order status.", ex);
             }
         }
 
-        public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
         public void UpdateOrderItemStatus(int orderItemId, OrderStatus status)
         {
             if (orderItemId <= 0)
@@ -164,7 +204,7 @@ namespace Chapeau.Services
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Failed to mark order as served.", ex);
+                throw new InvalidOperationException("Failed to update order item status.", ex);
             }
         }
 
@@ -182,24 +222,6 @@ namespace Chapeau.Services
                 UpdateOrderStatus(orderId, OrderStatus.BeingPrepared);
         }
 
-            _orderRepository.SavePayment(orderId, tableNumber, tipAmount, feedback);
-        }
-
-        public Order? GetOrderById(int orderId)
-        {
-            if (orderId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
-
-            return _orderRepository.GetOrderById(orderId);
-        }
-
-        public Order? GetServedOrderByTableId(int tableId)
-        {
-            if (tableId <= 0)
-            {
-                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
         public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status)
         {
             try
@@ -234,6 +256,44 @@ namespace Chapeau.Services
             {
                 throw new InvalidOperationException("Failed to retrieve finished orders.", ex);
             }
+        }
+
+        public void SaveOrderToDb(Order order)
+        {
+            _orderRepository.SaveOrder(order);
+        }
+
+        public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            if (tableNumber <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel nummer.", nameof(tableNumber));
+            }
+
+            _orderRepository.SavePayment(orderId, tableNumber, tipAmount, feedback);
+        }
+
+        public Order? GetOrderById(int orderId)
+        {
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
+
+            return _orderRepository.GetOrderById(orderId);
+        }
+
+        public Order? GetServedOrderByTableId(int tableId)
+        {
+            if (tableId <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
+            }
 
             return _orderRepository.GetServedOrderByTableId(tableId);
         }
@@ -246,58 +306,9 @@ namespace Chapeau.Services
             {
                 order.Items = _orderRepository.GetOrderItemsByOrderId(order.OrderId);
                 order.OrderItems = order.Items;
-        public void SaveOrderToDb(Order order)
-        {
-            _orderRepository.SaveOrder(order);
-        }
-
-        public Order GetActiveOrderByTableId(int tableId)
-        {
-            if (tableId <= 0)
-            {
-                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
             }
-
-            try
-            {
-                return _orderRepository.GetActiveOrderByTableId(tableId);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to retrieve order for table.", ex);
-            }
-        }
-
-        public List<TableStatus> GetAllTableStatuses()
-        {
-            try
-            {
-                return _orderRepository.GetAllTableStatuses();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to retrieve table statuses.", ex);
-            }
-        }
 
             return orders;
-        public void MarkOrderAsServed(int orderId)
-        {
-            if (orderId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
-
-            try
-            {
-                _orderRepository.UpdateOrderStatus(orderId, OrderStatus.Served);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to mark order as served.", ex);
-            }
         }
-
-    
     }
 }
