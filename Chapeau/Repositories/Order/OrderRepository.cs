@@ -25,22 +25,32 @@ public class OrderRepository : IOrderRepository
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
             connection.Open();
-            string query = $@"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+            string query = $@"
+            SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
             FROM Orders o
             JOIN Table_ t ON o.TableID = t.TableID
-            WHERE o.OrderStatus IN (@Ordered, @BeingPrepared)
+            WHERE o.OrderStatus NOT IN (@ReadyToBeServed, @Served, @Paid)
             AND EXISTS (
                 SELECT 1 FROM OrderItem oi
                 JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
                 JOIN Categories c ON c.CategoryID = m.CategoryID
                 WHERE oi.OrderID = o.OrderID {typeFilter}
             )
+            AND EXISTS (
+                SELECT 1 FROM OrderItem oi
+                JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                JOIN Categories c ON c.CategoryID = m.CategoryID
+                WHERE oi.OrderID = o.OrderID
+                AND oi.OrderItemStatus != @ReadyToBeServed
+                {typeFilter}
+            )
             ORDER BY o.OrderDate ASC";
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
-                command.Parameters.AddWithValue("@Ordered", (int)OrderStatus.Ordered);
-                command.Parameters.AddWithValue("@BeingPrepared", (int)OrderStatus.BeingPrepared);
+                command.Parameters.AddWithValue("@ReadyToBeServed", (int)OrderStatus.ReadyToBeServed);
+                command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+                command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
                 command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
                 command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
                 command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
@@ -137,8 +147,8 @@ public class OrderRepository : IOrderRepository
 
     public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
-        List<OrderItem> items = [];
-        
+        List<OrderItem> items = new List<OrderItem>();
+
         string typeFilter = type == OrderType.Food
             ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
             : "AND c.MenuCardID = @DrinkCard";
@@ -173,7 +183,10 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
-                        OrderItem orderItem = new OrderItem
+                        int menuCardId = (int)reader["MenuCardID"];
+                        bool isAlcoholic = reader["IsAlcoholic"] != DBNull.Value && (bool)reader["IsAlcoholic"];
+
+                        items.Add(new OrderItem
                         {
                             OrderItemId = (int)reader["OrderItemID"],
                             OrderId = (int)reader["OrderID"],
@@ -181,11 +194,13 @@ public class OrderRepository : IOrderRepository
                             AmountOrdered = (int)reader["AmountOrdered"],
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
+                            Name = (string)reader["Name"],
+                            Price = (decimal)reader["Price"],
+                            MenuCardID = menuCardId,
+                            VATRate = GetVatRate(isAlcoholic),
                             MenuItemName = (string)reader["Name"],
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
-                        };
-                        
-                        items.Add(orderItem);
+                        });
                     }
                 }
             }
@@ -264,6 +279,19 @@ public class OrderRepository : IOrderRepository
         using SqlTransaction transaction = connection.BeginTransaction();
         try
         {
+            string statusQuery = "SELECT OrderStatus FROM Orders WHERE OrderID = @OrderID";
+            using (SqlCommand command = new SqlCommand(statusQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                object? statusObj = command.ExecuteScalar();
+
+                var status = (OrderStatus)(int)statusObj;
+                if (statusObj == null || (status != OrderStatus.Served && status != OrderStatus.Paid))
+                {
+                    throw new InvalidOperationException("Order is not served yet.");
+                }
+            }
+
             string insertPaymentQuery = @"
                 INSERT INTO Payment (OrderID, TableID, TotalTipAmount, Feedback)
                 VALUES (@OrderID, @TableID, @TipAmount, @Feedback)";
@@ -302,6 +330,157 @@ public class OrderRepository : IOrderRepository
         {
             transaction.Rollback();
             throw;
+        }
+    }
+
+    public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus newStatus)
+    {
+        string typeFilter = type == OrderType.Food
+            ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
+            : "AND c.MenuCardID = @DrinkCard";
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = $@"
+                UPDATE oi SET oi.OrderItemStatus = @Status
+                FROM OrderItem oi
+                JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                JOIN Categories c ON c.CategoryID = m.CategoryID
+                WHERE oi.OrderID = @OrderID {typeFilter}";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)newStatus);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
+                command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
+                command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
+
+    public void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus newStatus)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = @"
+                UPDATE oi SET oi.OrderItemStatus = @Status
+                FROM OrderItem oi
+                JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                WHERE oi.OrderID = @OrderID
+                AND (
+                    CASE 
+                        WHEN m.CategoryID IN (1, 5, 16) THEN 0
+                        WHEN m.CategoryID IN (2, 14) THEN 1
+                        WHEN m.CategoryID IN (3, 15) THEN 2
+                    END
+                ) = @Course";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Status", (int)newStatus);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.Parameters.AddWithValue("@Course", (int)course);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
+
+    public List<Order> GetFinishedOrdersToday(OrderType type)
+    {
+        List<Order> orders = new List<Order>();
+
+        string typeFilter = type == OrderType.Food
+            ? "AND c.MenuCardID IN (@FoodCard1, @FoodCard2)"
+            : "AND c.MenuCardID = @DrinkCard";
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            string query = $@"
+                SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+                FROM Orders o
+                JOIN Table_ t ON o.TableID = t.TableID
+                WHERE o.OrderStatus = @Served
+                AND CAST(o.OrderDate AS DATE) = CAST(GETDATE() AS DATE)
+                AND EXISTS (
+                    SELECT 1 FROM OrderItem oi
+                    JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
+                    JOIN Categories c ON c.CategoryID = m.CategoryID
+                    WHERE oi.OrderID = o.OrderID {typeFilter}
+                )
+                ORDER BY o.OrderDate ASC";
+
+            using (SqlCommand command = new SqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+                command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
+                command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
+                command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        orders.Add(MapOrder(reader));
+                    }
+                }
+            }
+        }
+        return orders;
+    }
+
+    public void SaveOrder(Order order)
+    {
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            using SqlTransaction transaction = connection.BeginTransaction();
+            try
+            {
+                string insertOrderQuery = @"
+                    INSERT INTO Orders (TableID, GuestName, OrderDate, OrderStatus, OrderType)
+                    VALUES (@TableID, @GuestName, @OrderDate, @OrderStatus, @OrderType);
+                    SELECT SCOPE_IDENTITY();";
+
+                int newOrderId;
+                using (SqlCommand command = new SqlCommand(insertOrderQuery, connection, transaction))
+                {
+                    command.Parameters.AddWithValue("@TableID", order.TableId);
+                    command.Parameters.AddWithValue("@GuestName", (object?)order.GuestName ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
+                    command.Parameters.AddWithValue("@OrderStatus", (int)order.OrderStatus);
+                    command.Parameters.AddWithValue("@OrderType", (int)order.OrderType);
+                    newOrderId = Convert.ToInt32(command.ExecuteScalar());
+                }
+
+                foreach (var item in order.Items)
+                {
+                    string insertItemQuery = @"
+                        INSERT INTO OrderItem (OrderID, MenuItemID, AmountOrdered, Comment, OrderItemStatus)
+                        VALUES (@OrderID, @MenuItemID, @AmountOrdered, @Comment, @OrderItemStatus)";
+
+                    using (SqlCommand command = new SqlCommand(insertItemQuery, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@OrderID", newOrderId);
+                        command.Parameters.AddWithValue("@MenuItemID", item.MenuItemId);
+                        command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
+                        command.Parameters.AddWithValue("@Comment", (object?)item.Comment ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@OrderItemStatus", (int)item.OrderItemStatus);
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
     }
 
@@ -370,94 +549,5 @@ public class OrderRepository : IOrderRepository
             OrderDate = (DateTime)reader["OrderDate"],
             OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
         };
-    }
-
-    private static OrderItem MapOrderItem(SqlDataReader reader)
-    {
-        var menuItem = new MenuItem
-        {
-            MenuItemID = (int)reader["MenuItemID"],
-            Name = reader["Name"].ToString() ?? string.Empty,
-            RetailPrice = (decimal)reader["Price"],
-            Stock = (int)reader["Stock"],
-            IsActive = (bool)reader["IsActive"],
-            CategoryID = (int)reader["CategoryID"],
-            ImagePath = reader["ImagePath"].ToString() ?? string.Empty,
-            IsAlcoholic = (bool)reader["IsAlcoholic"]
-        };
-
-        return new OrderItem
-        {
-            OrderItemId = (int)reader["OrderItemID"],
-            OrderId = (int)reader["OrderID"],
-            MenuItemId = (int)reader["MenuItemID"],
-            AmountOrdered = (int)reader["AmountOrdered"],
-            MenuItemName = reader["Name"].ToString(), 
-            Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
-            OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"]
-        };
-    }
-
-    public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
-    {
-        using (SqlConnection connection = new SqlConnection(_connectionString))
-        {
-            connection.Open();
-            string query = "UPDATE OrderItem SET OrderItemStatus = @Status WHERE OrderItemID = @OrderItemID";
-
-            using (SqlCommand command = new SqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@Status", (int)newStatus);
-                command.Parameters.AddWithValue("@OrderItemID", orderItemId);
-                command.ExecuteNonQuery();
-            }
-        }
-    }
-
-    public void SaveOrder(Order order)
-    {
-        using var connection = new SqlConnection(_connectionString);
-        connection.Open();
-
-        string query = @"INSERT INTO Orders (tableid, orderdate, GuestName, orderstatus) 
-                     OUTPUT INSERTED.OrderID
-                     VALUES (@TableId, @OrderDate, @GuestName, @OrderStatus);";
-
-        using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@TableId", order.TableId);
-        command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
-        command.Parameters.AddWithValue("@GuestName", order.GuestName);
-        command.Parameters.AddWithValue("@OrderStatus", 0);
-
-        int newOrderId = (int)command.ExecuteScalar();
-
-        if (order.OrderItems != null)
-        {
-            foreach (var item in order.OrderItems)
-            {
-                item.OrderId = newOrderId;
-                SaveOrderItems(item);
-            }
-        }
-    }
-
-    private void SaveOrderItems(OrderItem item)
-    {
-        using var connection = new SqlConnection(_connectionString);
-        connection.Open();
-
-        string query = @"INSERT INTO OrderItem (orderid, MenuItemid, AmountOrdered, comment,OrderItemStatus) 
-                     VALUES (@OrderId, @MenuItemId, @AmountOrdered, @Comment,@OrderItemStatus); 
-                     UPDATE MenuItems SET Stock = Stock - @AmountOrdered
-                     WHERE MenuItemId = @MenuItemId;";
-
-        using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@OrderId", item.OrderId);
-        command.Parameters.AddWithValue("@MenuItemId", item.MenuItemId);
-        command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
-        command.Parameters.AddWithValue("@OrderItemStatus", 0);
-        command.Parameters.AddWithValue("@Comment", (object)item.Comment ?? DBNull.Value);
-
-        command.ExecuteNonQuery();
     }
 }

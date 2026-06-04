@@ -11,5 +11,7 @@ namespace Chapeau.ViewModels
         public decimal LowVAT { get; set; }
         public decimal HighVAT { get; set; }
         public decimal Total { get; set; }
+        public decimal TipAmount { get; set; } = 0;
+        public decimal GrandTotalWithTip => Total + TipAmount;
     }
 }

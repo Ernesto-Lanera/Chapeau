@@ -46,7 +46,6 @@ function calcStatus() {
     const remainDisp = document.getElementById('remainingDisplay');
 
     if (diff > 0.001) {
-        // Overpay: show tip badge
         tipRow.style.display = 'flex';
         document.getElementById('tipDisp').textContent = fmt(diff);
         remainDisp.textContent = '€0,00';
@@ -64,6 +63,8 @@ function calcStatus() {
 function toggleSplit() {
     const on = document.getElementById('splitCheck').checked;
     document.getElementById('splitSection').style.display = on ? 'block' : 'none';
+    document.getElementById('feedbackInput').closest('.payment-form-group').style.display = on ? 'none' : 'block';
+    document.getElementById('paymentMethod').closest('.payment-method-group').style.display = on ? 'none' : 'block';
     if (on) {
         applySplit();
     } else {
@@ -78,7 +79,28 @@ function applySplit() {
     const pp = remaining / n;
     document.getElementById('perPerson').textContent = fmt(pp);
     document.getElementById('amountInput').value = pp.toFixed(2);
+    renderSplitFeedbackFields(n);
     calcStatus();
+}
+
+function renderSplitFeedbackFields(n) {
+    const container = document.getElementById('splitFeedbackFields');
+    container.innerHTML = '';
+
+    for (let i = 1; i <= n; i++) {
+        container.innerHTML += `
+            <div class="mb-3 border-top pt-2">
+                <p class="small fw-bold mb-1">Persoon ${i}</p>
+                <label class="form-label small text-muted">Betaalmethode:</label>
+                <select class="form-select form-select-sm split-method mb-2" data-person="${i}">
+                    <option value="Card">Card</option>
+                    <option value="Cash">Cash</option>
+                </select>
+                <label class="form-label small text-muted">Feedback (optioneel):</label>
+                <input type="text" class="form-control form-control-sm split-feedback"
+                       data-person="${i}" placeholder="e.g. Great service!" maxlength="255" />
+            </div>`;
+    }
 }
 
 function addPayment() {
@@ -91,14 +113,38 @@ function addPayment() {
     const method = document.getElementById('paymentMethod').value;
     const remaining = TOTAL - paidSoFar();
     const tip = parseFloat(Math.max(0, amount - remaining).toFixed(2));
+    const isSplit = document.getElementById('splitCheck').checked;
 
-    payments.push({ amount: parseFloat(amount.toFixed(2)), method, tip });
+    if (isSplit) {
+        const feedbackFields = document.querySelectorAll('.split-feedback');
+        const methodFields = document.querySelectorAll('.split-method');
+        const n = feedbackFields.length || 1;
+        const perPersonAmount = parseFloat((amount / n).toFixed(2));
+        const perPersonTip = parseFloat((tip / n).toFixed(2));
+
+        feedbackFields.forEach((field, i) => {
+            payments.push({
+                amount: perPersonAmount,
+                method: methodFields[i] ? methodFields[i].value : 'Card',
+                tip: perPersonTip,
+                feedback: field.value || ''
+            });
+        });
+
+        document.getElementById('splitFeedbackFields').innerHTML = '';
+    } else {
+        const feedback = document.getElementById('feedbackInput').value || '';
+        payments.push({ amount: parseFloat(amount.toFixed(2)), method, tip, feedback });
+    }
+
     renderPayments();
 
     // Reset inputs
     document.getElementById('amountInput').value = '';
+    document.getElementById('feedbackInput').value = '';
     document.getElementById('splitCheck').checked = false;
     document.getElementById('splitSection').style.display = 'none';
+    document.getElementById('feedbackInput').closest('.payment-form-group').style.display = 'block';
     document.getElementById('tipRow').style.display = 'none';
     calcStatus();
 }
@@ -108,11 +154,13 @@ function renderPayments() {
     const list = document.getElementById('paymentsList');
     list.style.display = payments.length > 0 ? 'block' : 'none';
 
-    container.innerHTML = payments.map(p =>
+    container.innerHTML = payments.map((p, i) =>
         `<div class="payment-added-row">
-            <span>${p.method}${p.tip > 0.001
+            <span>Persoon ${i + 1} – ${p.method}${p.tip > 0.001
             ? ' <span class="badge bg-success ms-1">tip ' + fmt(p.tip) + '</span>'
-            : ''}</span>
+            : ''}${p.feedback
+                ? ' <span class="text-muted small ms-1">"' + p.feedback + '"</span>'
+                : ''}</span>
             <strong>${fmt(p.amount)}</strong>
         </div>`
     ).join('');
@@ -129,14 +177,11 @@ function doPay() {
 
     const totalPaid = paidSoFar();
     const totalTip = payments.reduce((s, p) => s + (p.tip || 0), 0);
-    const feedback = document.getElementById('feedbackInput').value || '';
 
-    // Confirmation subtitle
     let sub = fmt(totalPaid);
     if (totalTip > 0.001) sub += ' (tip: ' + fmt(totalTip) + ')';
     document.getElementById('confirmSub').textContent = sub;
 
-    // Confirmation details
     let details =
         `<div class="confirm-detail-row">
             <span>Table</span><strong>${TABLE_NUMBER}</strong>
@@ -145,12 +190,17 @@ function doPay() {
             <span>Order</span><strong>#${ORDER_ID}</strong>
         </div><hr/>`;
 
-    payments.forEach(p => {
+    payments.forEach((p, i) => {
         details +=
             `<div class="confirm-detail-row">
-                <span>${p.method}</span>
+                <span>Persoon ${i + 1} – ${p.method}</span>
                 <strong>${fmt(p.amount)}</strong>
             </div>`;
+        if (p.feedback) {
+            details += `<div style="font-size:12px;font-style:italic;color:#6b7280;margin-bottom:4px;">
+                "${p.feedback}"
+            </div>`;
+        }
     });
 
     if (totalTip > 0.001) {
@@ -162,43 +212,35 @@ function doPay() {
             </div>`;
     }
 
-    if (feedback) {
-        details +=
-            `<hr/>
-            <div style="font-size: 12px; font-style: italic; color: #6b7280;">
-                <strong>Feedback:</strong> "${feedback}"
-            </div>`;
-    }
-
     document.getElementById('confirmDetails').innerHTML = details;
     document.getElementById('checkoutSection').style.display = 'none';
     document.getElementById('confirmSection').style.display = 'block';
 
-    // Save to database
-    savePaymentToDatabase(totalTip, feedback);
+    saveAllPayments();
 }
 
-function savePaymentToDatabase(totalTip, feedback) {
-    // POST to server to save payment
-    fetch('/Payment/SavePayment', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            orderId: ORDER_ID,
-            tableNumber: TABLE_NUMBER,
-            tipAmount: totalTip,
-            feedback: feedback
-        })
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('Payment saved successfully');
+function saveAllPayments() {
+    const promises = payments.map(p =>
+        fetch('/Payment/SavePayment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId: ORDER_ID,
+                tableNumber: TABLE_NUMBER,
+                tipAmount: p.tip || 0,
+                feedback: p.feedback || ''
+            })
+        }).then(r => r.json())
+    );
+
+    Promise.all(promises)
+        .then(results => {
+            const failed = results.filter(r => !r.success);
+            if (failed.length > 0) {
+                console.error('Some payments failed:', failed);
             } else {
-                console.error('Failed to save payment:', data.message);
+                console.log('All payments saved successfully');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => console.error('Error saving payments:', error));
 }

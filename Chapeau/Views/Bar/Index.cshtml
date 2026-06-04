@@ -1,24 +1,69 @@
 ﻿@model List<Chapeau.ViewModels.OrderViewModel>
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/station.css" asp-append-version="true" />
+    <style>
+        body {
+            background: #0e0f11 !important;
+        }
+
+        header {
+            background: #16181c !important;
+            border-bottom: 1px solid #25272c !important;
+        }
+
+            header .navbar {
+                background: #16181c !important;
+            }
+
+                header .navbar * {
+                    color: #ffffff !important;
+                }
+
+        /* Running Orders / Finished Orders / Refresh buttons */
+        .station-nav a.btn,
+        .d-flex > a.btn-outline-secondary {
+            background: #16181c !important;
+            border-color: #25272c !important;
+            color: #ffffff !important;
+        }
+
+            .station-nav a.btn:hover,
+            .d-flex > a.btn-outline-secondary:hover {
+                background: #25272c !important;
+            }
+
+        .station-nav a.btn-primary {
+            background: #16181c !important;
+            border-color: #25272c !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+    </style>
+}
+
 @{
     ViewData["Title"] = "Bar";
 }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex gap-2 station-nav">
+        <a asp-action="Index" class="btn btn-primary">Running Orders</a>
+        <a asp-action="Finished" class="btn btn-outline-secondary">Finished Orders</a>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Refresh ↻</a>
+</div>
+
 @if (Model == null || !Model.Any())
 {
     <p>No running orders.</p>
 }
 else
 {
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Running Orders</h1>
-    <a asp-action="Index" class="btn btn-outline-secondary">Refresh ↻</a>
-</div>
-
-<div class="order-list">
-    @foreach (var order in Model)
-    {
-        @await Html.PartialAsync("_OrderView", order)
-    }
-</div>
+    <div class="order-list">
+        @foreach (var order in Model)
+        {
+            @await Html.PartialAsync("_OrderView", order)
+        }
+    </div>
 }

@@ -11,11 +11,14 @@ namespace Chapeau.Controllers
     [Authorize(Policy = "CanViewMenu")]
     public class MenuController : Controller
     {
-        private readonly MenuService _menuService;
-        private readonly OrderService _orderService;
-        private readonly CategoryService _categoryService;
+        private readonly IMenuService _menuService;
+        private readonly IOrderService _orderService;
+        private readonly ICategoryService _categoryService;
 
-        public MenuController(MenuService menuService, CategoryService categoryService, OrderService orderService)
+        public MenuController(
+            IMenuService menuService,
+            ICategoryService categoryService,
+            IOrderService orderService)
         {
             _menuService = menuService;
             _orderService = orderService;
@@ -29,7 +32,6 @@ namespace Chapeau.Controllers
             {
                 return _orderService.MakeNewOrder(1);
             }
-
 
             return JsonSerializer.Deserialize<Order>(sessionData)!;
         }
@@ -62,7 +64,7 @@ namespace Chapeau.Controllers
         public IActionResult GetActiveOrderItems()
         {
             Order order = GetOrder();
-            return Json(new { success = true, items = order.OrderItems});
+            return Json(new { success = true, items = order.OrderItems });
         }
 
         [HttpPost]
@@ -80,7 +82,7 @@ namespace Chapeau.Controllers
             Order order = GetOrder();
             order = _orderService.RemoveItemFromOrder(MenuItemId, order);
             SaveOrdertoJson(order);
-            return Json(new { success = true, items = order.OrderItems});
+            return Json(new { success = true, items = order.OrderItems });
         }
 
         [HttpPost]
@@ -96,7 +98,7 @@ namespace Chapeau.Controllers
         public IActionResult UpdateItemComment(int MenuItemId, string Comment)
         {
             Order order = GetOrder();
-            order = _orderService.ChangeCommentinItem(MenuItemId, order, Comment);
+            order = _orderService.ChangeCommentInItem(MenuItemId, order, Comment);
             SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }
@@ -108,7 +110,6 @@ namespace Chapeau.Controllers
             _orderService.SaveOrderToDb(order);
             TempData["SuccessMessage"] = "Your order was saved successfully!";
             return RedirectToAction("Index", "Table");
-
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()
