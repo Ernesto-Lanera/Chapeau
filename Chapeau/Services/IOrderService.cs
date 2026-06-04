@@ -23,7 +23,6 @@ namespace Chapeau.Services
         void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status);
         List<Order> GetFinishedOrdersToday(OrderType type);
 
-        // Van collega's (MenuController)
         Order MakeNewOrder(int tableId);
         Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName);
         Order RemoveItemFromOrder(int menuItemId, Order order);

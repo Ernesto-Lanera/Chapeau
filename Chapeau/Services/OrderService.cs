@@ -66,7 +66,6 @@ namespace Chapeau.Services
             }
         }
 
-        // Van collega's: nieuwe order aanmaken
         public Order MakeNewOrder(int tableId)
         {
             List<OrderItem> orderItems = new List<OrderItem>();
@@ -74,7 +73,7 @@ namespace Chapeau.Services
             return order;
         }
 
-        // Van collega's: item toevoegen aan order
+
         public Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName)
         {
             if (order.OrderItems != null)
@@ -93,7 +92,6 @@ namespace Chapeau.Services
             return order;
         }
 
-        // Van collega's: item verwijderen uit order
         public Order RemoveItemFromOrder(int menuItemId, Order order)
         {
             if (order.OrderItems != null)
@@ -107,7 +105,6 @@ namespace Chapeau.Services
             return order;
         }
 
-        // Van collega's: hoeveelheid van item aanpassen
         public Order UpdateItemFromOrder(int menuItemId, Order order, int newAmount)
         {
             if (order.OrderItems != null)
@@ -121,7 +118,6 @@ namespace Chapeau.Services
             return order;
         }
 
-        // Van collega's: commentaar toevoegen aan item
         public Order ChangeCommentInItem(int menuItemId, Order order, string comment)
         {
             if (order.OrderItems != null)
