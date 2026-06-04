@@ -34,7 +34,7 @@ namespace Chapeau.Controllers
             return JsonSerializer.Deserialize<Order>(sessionData)!;
         }
 
-        private void SaveOrder(Order order)
+        private void SaveOrdertoJson(Order order)
         {
             HttpContext.Session.SetString("ActiveOrder", JsonSerializer.Serialize(order));
         }
@@ -43,6 +43,7 @@ namespace Chapeau.Controllers
         {
             try
             {
+                HttpContext.Session.SetString("ActiveOrder", "");
                 ViewBag.Order = GetOrder();
                 ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();
@@ -69,7 +70,7 @@ namespace Chapeau.Controllers
         {
             Order order = GetOrder();
             order = _orderService.AddOrderItemToOrder(MenuItemId, order, MenuItemName);
-            SaveOrder(order);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }
 
@@ -77,8 +78,8 @@ namespace Chapeau.Controllers
         public IActionResult RemoveMenuItemFromOrder(int MenuItemId)
         {
             Order order = GetOrder();
-            order = _orderService.RemoveItemFormOrder(MenuItemId, order);
-            SaveOrder(order);
+            order = _orderService.RemoveItemFromOrder(MenuItemId, order);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems});
         }
 
@@ -86,18 +87,28 @@ namespace Chapeau.Controllers
         public IActionResult UpdateMenuItemQuantity(int MenuItemId, int NewQuantity)
         {
             Order order = GetOrder();
-            order = _orderService.UpdateItemFormOrder(MenuItemId, order, NewQuantity);
-            SaveOrder(order);
+            order = _orderService.UpdateItemFromOrder(MenuItemId, order, NewQuantity);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }
 
         [HttpPost]
-        public IActionResult AddCommentToItem(int MenuItemId, string Comment)
+        public IActionResult UpdateItemComment(int MenuItemId, string Comment)
         {
             Order order = GetOrder();
-            order = _orderService.AddCommentoItem(MenuItemId, order, Comment);
-            SaveOrder(order);
+            order = _orderService.ChangeCommentinItem(MenuItemId, order, Comment);
+            SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
+        }
+
+        [HttpPost]
+        public IActionResult SaveOrderToDb()
+        {
+            Order order = GetOrder();
+            _orderService.SaveOrderToDb(order);
+            TempData["SuccessMessage"] = "Your order was saved successfully!";
+            return RedirectToAction("Index", "Table");
+
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()

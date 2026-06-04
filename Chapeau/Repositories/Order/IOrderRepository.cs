@@ -13,5 +13,6 @@ namespace Chapeau.Repositories
         void UpdateOrderStatus(int orderId, OrderStatus newStatus);
         void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus);
         void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback);
+        void SaveOrder(Order order);
     }
 }

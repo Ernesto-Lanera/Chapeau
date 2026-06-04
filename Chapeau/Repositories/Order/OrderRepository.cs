@@ -178,7 +178,7 @@ public class OrderRepository : IOrderRepository
                             OrderItemId = (int)reader["OrderItemID"],
                             OrderId = (int)reader["OrderID"],
                             MenuItemId = (int)reader["MenuItemID"],
-                            Amount = (int)reader["AmountOrdered"],
+                            AmountOrdered = (int)reader["AmountOrdered"],
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
                             MenuItemName = (string)reader["Name"],
@@ -391,7 +391,7 @@ public class OrderRepository : IOrderRepository
             OrderItemId = (int)reader["OrderItemID"],
             OrderId = (int)reader["OrderID"],
             MenuItemId = (int)reader["MenuItemID"],
-            Amount = (int)reader["AmountOrdered"],
+            AmountOrdered = (int)reader["AmountOrdered"],
             MenuItemName = reader["Name"].ToString(), 
             Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
             OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"]
@@ -412,5 +412,52 @@ public class OrderRepository : IOrderRepository
                 command.ExecuteNonQuery();
             }
         }
+    }
+
+    public void SaveOrder(Order order)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        string query = @"INSERT INTO Orders (tableid, orderdate, GuestName, orderstatus) 
+                     OUTPUT INSERTED.OrderID
+                     VALUES (@TableId, @OrderDate, @GuestName, @OrderStatus);";
+
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@TableId", order.TableId);
+        command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
+        command.Parameters.AddWithValue("@GuestName", order.GuestName);
+        command.Parameters.AddWithValue("@OrderStatus", 0);
+
+        int newOrderId = (int)command.ExecuteScalar();
+
+        if (order.OrderItems != null)
+        {
+            foreach (var item in order.OrderItems)
+            {
+                item.OrderId = newOrderId;
+                SaveOrderItems(item);
+            }
+        }
+    }
+
+    private void SaveOrderItems(OrderItem item)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        string query = @"INSERT INTO OrderItem (orderid, MenuItemid, AmountOrdered, comment,OrderItemStatus) 
+                     VALUES (@OrderId, @MenuItemId, @AmountOrdered, @Comment,@OrderItemStatus); 
+                     UPDATE MenuItems SET Stock = Stock - @AmountOrdered
+                     WHERE MenuItemId = @MenuItemId;";
+
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@OrderId", item.OrderId);
+        command.Parameters.AddWithValue("@MenuItemId", item.MenuItemId);
+        command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
+        command.Parameters.AddWithValue("@OrderItemStatus", 0);
+        command.Parameters.AddWithValue("@Comment", (object)item.Comment ?? DBNull.Value);
+
+        command.ExecuteNonQuery();
     }
 }
