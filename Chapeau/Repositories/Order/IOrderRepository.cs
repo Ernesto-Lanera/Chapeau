@@ -9,7 +9,7 @@ namespace Chapeau.Repositories
         List<Order> GetRunningOrders(OrderType type);
         List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type);
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
-        Order GetActiveOrderByTableId(int tableId);
+        Order? GetActiveOrderByTableId(int tableId);
         Order? GetServedOrderByTableId(int tableId);
         Order? GetOrderById(int orderId);
         List<Order> GetOrdersByStatus(OrderStatus status);

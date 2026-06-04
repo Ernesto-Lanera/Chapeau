@@ -49,7 +49,7 @@ namespace Chapeau.Services
             return DateTime.Now - order.OrderDate;
         }
 
-        public Order GetActiveOrderByTableId(int tableId)
+        public Order? GetActiveOrderByTableId(int tableId)
         {
             if (tableId <= 0)
             {

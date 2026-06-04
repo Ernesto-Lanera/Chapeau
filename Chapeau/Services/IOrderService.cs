@@ -5,7 +5,7 @@ namespace Chapeau.Services
 {
     public interface IOrderService
     {
-        Order GetActiveOrderByTableId(int tableId);
+        Order? GetActiveOrderByTableId(int tableId);
         Order? GetServedOrderByTableId(int tableId);
         Order? GetOrderById(int orderId);
         List<OrderItem> GetOrderItemsByOrderId(int orderId);

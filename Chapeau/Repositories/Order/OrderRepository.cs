@@ -25,7 +25,6 @@ public class OrderRepository : IOrderRepository
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
             connection.Open();
-            // Samengevoegde query: gebruikt NOT IN van collega's (ruimer) + jouw EXISTS filter
             string query = $@"
             SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
             FROM Orders o
@@ -286,7 +285,8 @@ public class OrderRepository : IOrderRepository
                 command.Parameters.AddWithValue("@OrderID", orderId);
                 object? statusObj = command.ExecuteScalar();
 
-                if (statusObj == null || (OrderStatus)(int)statusObj != OrderStatus.Served)
+                var status = (OrderStatus)(int)statusObj;
+                if (statusObj == null || (status != OrderStatus.Served && status != OrderStatus.Paid))
                 {
                     throw new InvalidOperationException("Order is not served yet.");
                 }
