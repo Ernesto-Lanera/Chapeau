@@ -5,6 +5,7 @@ using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
+using Chapeau.Middleware;
 
 namespace Chapeau
 {
