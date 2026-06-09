@@ -21,7 +21,6 @@
         .Where(t => t.IsOccupied)
         .OrderBy(t => t.Orders.Count > 0 ? t.Orders.Min(o => o.OrderDate) : DateTime.MaxValue)
         .ThenBy(t => t.TableNumber)
-        .Take(3)
         .ToList();
 }
 
@@ -45,10 +44,6 @@
         return 556 + col * 439;
     }
 
-    int GetSidebarTop(int index)
-    {
-        return 228 + index * 178;
-    }
 }
 
 <!DOCTYPE html>
@@ -64,14 +59,12 @@
 <body>
 <main class="final-table-overview">
 <div class="frame">
-<aside class="menu" aria-label="Ordered and prepared tables"></aside>
-
+<aside class="menu" aria-label="Ordered and prepared tables">
 @for (int i = 0; i < sidebarTables.Count; i++)
 {
     var table = sidebarTables[i];
     var status = GetSidebarStatus(table);
-    var top = GetSidebarTop(i);
-    <section class="table-ordered" style="top: @(top)px;" aria-labelledby="sidebar-table-@table.TableId">
+    <section class="table-ordered" aria-labelledby="sidebar-table-@table.TableId">
         <div class="rectangle" aria-hidden="true"></div>
         <div class="ordered">
             <div class="title" id="sidebar-table-@table.TableId">@status</div>
@@ -99,7 +92,7 @@
         </form>
     </section>
 }
-
+</aside>
 <div class="rectangle-4" aria-hidden="true"></div>
 <div class="rectangle-5" aria-hidden="true"></div>
 <a class="proceed-to-payment" href="/Payment/Index" aria-label="Proceed to pay">

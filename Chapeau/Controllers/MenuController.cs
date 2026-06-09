@@ -30,6 +30,7 @@ namespace Chapeau.Controllers
                 var existingOrder = JsonSerializer.Deserialize<Order>(sessionData)!;
                 if (tableId.HasValue && existingOrder.TableId != tableId.Value)
                 {
+                    HttpContext.Session.Remove("ActiveOrder");
                     sessionData = null;
                 }
             }
@@ -55,6 +56,7 @@ namespace Chapeau.Controllers
             try
             {
                 var order = GetOrder(tableId, tableNumber, guestNames);
+                SaveOrdertoJson(order);
                 ViewBag.Order = order;
                 ViewBag.TableNumber = tableNumber ?? order.TableNumber;
                 ViewBag.AllCategories = _categoryService.GetCategories();

@@ -913,3 +913,18 @@ body {
 .final-table-overview .img {
   display: block;
 }
+
+.final-table-overview .menu {
+  overflow-y: auto;
+  height: auto;
+  max-height: 699px;
+  padding-bottom: 16px;
+}
+
+.final-table-overview .menu .table-ordered {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin: 12px 0 0 25px;
+  flex-shrink: 0;
+}

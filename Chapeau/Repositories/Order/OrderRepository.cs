@@ -362,7 +362,7 @@ public class OrderRepository : IOrderRepository
                 using SqlCommand command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@OrderID", orderId);
                 command.Parameters.AddWithValue("@MenuItemID", item.MenuItemId);
-                command.Parameters.AddWithValue("@AmountOrdered", item.Amount);
+                command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
                 command.Parameters.AddWithValue("@Comment", (object?)item.Comment ?? DBNull.Value);
                 command.Parameters.AddWithValue("@OrderItemStatus", (int)OrderStatus.Ordered);
                 command.ExecuteNonQuery();
@@ -479,7 +479,7 @@ public class OrderRepository : IOrderRepository
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@TableId", order.TableId);
         command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
-        command.Parameters.AddWithValue("@GuestName", order.GuestName);
+        command.Parameters.AddWithValue("@GuestName", (object?)order.GuestName ?? DBNull.Value);
         command.Parameters.AddWithValue("@OrderStatus", 0);
 
         int newOrderId = (int)command.ExecuteScalar();
