@@ -181,18 +181,25 @@ public class OrderRepository : IOrderRepository
                 {
                     while (reader.Read())
                     {
+                        var menuItem = new MenuItem
+                        {
+                            MenuItemID = (int)reader["MenuItemID"],
+                            Name = (string)reader["Name"]
+                        };
+
                         OrderItem orderItem = new OrderItem
                         {
                             OrderItemId = (int)reader["OrderItemID"],
                             OrderId = (int)reader["OrderID"],
-                            MenuItemId = (int)reader["MenuItemID"],
+                            MenuItemId = menuItem.MenuItemID,
                             AmountOrdered = (int)reader["AmountOrdered"],
                             Comment = reader["Comment"] as string,
                             OrderItemStatus = (OrderStatus)reader["OrderItemStatus"],
-                            MenuItemName = (string)reader["Name"],
+                            MenuItemName = menuItem.Name,
+                            MenuItem = menuItem,
                             Course = reader["Course"] == DBNull.Value ? null : (CourseType?)(int)reader["Course"]
                         };
-                        
+
                         items.Add(orderItem);
                     }
                 }
@@ -283,11 +290,18 @@ public class OrderRepository : IOrderRepository
 
     private static Order MapOrder(SqlDataReader reader)
     {
+        var table = new Table_
+        {
+            TableId = (int)reader["TableID"],
+            TableNumber = (int)reader["TableNumber"]
+        };
+
         return new Order
         {
             OrderId = (int)reader["OrderID"],
-            TableId = (int)reader["TableID"],
-            TableNumber = (int)reader["TableNumber"],
+            TableId = table.TableId,
+            TableNumber = table.TableNumber,
+            Table = table,
             GuestName = reader["GuestName"] == DBNull.Value ? null : reader["GuestName"].ToString(),
             OrderDate = (DateTime)reader["OrderDate"],
             OrderStatus = (OrderStatus)(int)reader["OrderStatus"]
@@ -314,9 +328,10 @@ public class OrderRepository : IOrderRepository
             OrderId = (int)reader["OrderID"],
             MenuItemId = (int)reader["MenuItemID"],
             AmountOrdered = (int)reader["AmountOrdered"],
-            MenuItemName = reader["Name"].ToString(), 
+            MenuItemName = reader["Name"].ToString(),
             Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
-            OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"]
+            OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"],
+            MenuItem = menuItem
         };
     }
 
@@ -480,7 +495,7 @@ public class OrderRepository : IOrderRepository
         command.Parameters.AddWithValue("@TableId", order.TableId);
         command.Parameters.AddWithValue("@OrderDate", order.OrderDate);
         command.Parameters.AddWithValue("@GuestName", (object?)order.GuestName ?? DBNull.Value);
-        command.Parameters.AddWithValue("@OrderStatus", 0);
+        command.Parameters.AddWithValue("@OrderStatus", (int)OrderStatus.Ordered);
 
         int newOrderId = (int)command.ExecuteScalar();
 
@@ -508,7 +523,7 @@ public class OrderRepository : IOrderRepository
         command.Parameters.AddWithValue("@OrderId", item.OrderId);
         command.Parameters.AddWithValue("@MenuItemId", item.MenuItemId);
         command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
-        command.Parameters.AddWithValue("@OrderItemStatus", 0);
+        command.Parameters.AddWithValue("@OrderItemStatus", (int)OrderStatus.Ordered);
         command.Parameters.AddWithValue("@Comment", (object)item.Comment ?? DBNull.Value);
 
         command.ExecuteNonQuery();

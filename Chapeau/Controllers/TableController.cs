@@ -10,9 +10,9 @@ namespace Chapeau.Controllers
     public class TableController : Controller
     {
         private readonly IOrderService _orderService;
-        private readonly TableRepository _tableRepository;
+        private readonly ITableRepository _tableRepository;
 
-        public TableController(IOrderService orderService, TableRepository tableRepository)
+        public TableController(IOrderService orderService, ITableRepository tableRepository)
         {
             _orderService = orderService;
             _tableRepository = tableRepository;

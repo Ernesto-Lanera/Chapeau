@@ -142,13 +142,13 @@ namespace Chapeau
             builder.Services.AddScoped<IFinancialService, FinancialService>();
 
             // Register Table repository
-            builder.Services.AddScoped<TableRepository>();
+            builder.Services.AddScoped<ITableRepository, TableRepository>();
 
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
             {
-                var tableRepo = scope.ServiceProvider.GetRequiredService<TableRepository>();
+                var tableRepo = scope.ServiceProvider.GetRequiredService<ITableRepository>();
                 tableRepo.EnsureColumnExists();
             }
 
