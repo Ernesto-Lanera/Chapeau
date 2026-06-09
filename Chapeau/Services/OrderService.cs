@@ -47,7 +47,7 @@ namespace Chapeau.Services
         {
             List<OrderItem> orderItems = [];
 
-            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems };
+            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems, GuestName = "bob"};
             return order;
         }
 
@@ -57,13 +57,13 @@ namespace Chapeau.Services
             {
                 if (!order.OrderItems.Any(i => i.MenuItemId == MenuItemId))
                 {
-                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, Amount = 1, MenuItemName = MenuItemName };
+                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, AmountOrdered = 1, MenuItemName = MenuItemName };
                     order.OrderItems.Add(orderitem);
                 }
                 else
                 {
                     var existingItem = order.OrderItems.First(i => i.MenuItemId == MenuItemId);
-                    existingItem.Amount++;
+                    existingItem.AmountOrdered++;
                 }
             }
              
@@ -72,7 +72,7 @@ namespace Chapeau.Services
         }
 
 
-        public Order RemoveItemFormOrder(int MenuItemId, Order order)
+        public Order RemoveItemFromOrder(int MenuItemId, Order order)
         {
             if (order.OrderItems != null)
             {
@@ -85,46 +85,124 @@ namespace Chapeau.Services
             return order;
         }
 
-        public Order UpdateItemFormOrder (int MenuItemId, Order order, int NewAmount)
+        public Order UpdateItemFromOrder (int MenuItemId, Order order, int NewAmount)
         {
             if (order.OrderItems != null)
             {
                 var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
                 if (itemToUpdate != null)
                 {
-                    itemToUpdate.Amount = NewAmount;
+                    itemToUpdate.AmountOrdered = NewAmount;
                 }
             }
             return order;
         }
 
-        public Order AddCommentoItem(int MenuItemId, Order order,String Comment)
+        public Order ChangeCommentinItem(int MenuItemId, Order order,String Comment)
         {
             if (order.OrderItems != null)
             {
                 var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToComment != null)
+                if (itemToComment != null && String.IsNullOrEmpty(Comment))
                 {
                     itemToComment.Comment = Comment;
                 }
+                else
+                {
+                    itemToComment?.Comment = null;
+                }
+ 
             }
             return order;
         }
 
-        public void SaveOrderToDb(Order order)
+        public void UpdateOrderStatus(int orderId, OrderStatus status)
         {
-            if (order.OrderItems == null || !order.OrderItems.Any())
-                throw new InvalidOperationException("Order heeft geen items.");
+            if (orderId <= 0)
+            {
+                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
+            }
 
             try
             {
-                int orderId = _orderRepository.InsertOrder(order);
-                _orderRepository.InsertOrderItems(orderId, order.OrderItems);
+                _orderRepository.UpdateOrderStatus(orderId, status);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Bestelling kon niet worden opgeslagen.", ex);
+                throw new InvalidOperationException("Failed to mark order as served.", ex);
             }
+        }
+
+        public void UpdateOrderItemStatus(int orderItemId, OrderStatus status)
+        {
+            if (orderItemId <= 0)
+            {
+                throw new ArgumentException("Ongeldig OrderItemId.", nameof(orderItemId));
+            }
+
+            try
+            {
+                _orderRepository.UpdateOrderItemStatus(orderItemId, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to mark order as served.", ex);
+            }
+        }
+
+        public void UpdateOrderIfServed(int orderId)
+        {
+            List<OrderItem> foodItems = _orderRepository.GetOrderItemsByOrderId(orderId, OrderType.Food);
+            List<OrderItem> drinkItems = _orderRepository.GetOrderItemsByOrderId(orderId, OrderType.Drink);
+
+            bool foodDone = !foodItems.Any() || foodItems.All(i => i.OrderItemStatus == OrderStatus.ReadyToBeServed);
+            bool drinkDone = !drinkItems.Any() || drinkItems.All(i => i.OrderItemStatus == OrderStatus.ReadyToBeServed);
+
+            if (foodDone && drinkDone)
+                UpdateOrderStatus(orderId, OrderStatus.ReadyToBeServed);
+            else
+                UpdateOrderStatus(orderId, OrderStatus.BeingPrepared);
+        }
+
+        public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status)
+        {
+            try
+            {
+                _orderRepository.UpdateAllOrderItemStatuses(orderId, type, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to update all order item statuses.", ex);
+            }
+        }
+
+        public void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status)
+        {
+            try
+            {
+                _orderRepository.UpdateCourseItemStatuses(orderId, course, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to update course item statuses.", ex);
+            }
+        }
+
+        public List<Order> GetFinishedOrdersToday(OrderType type)
+        {
+            try
+            {
+                return _orderRepository.GetFinishedOrdersToday(type);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve finished orders.", ex);
+            }
+        }
+
+        public void SaveOrderToDb(Order order)
+        {
+            _orderRepository.SaveOrder(order);
         }
 
         public Order GetActiveOrderByTableId(int tableId)
