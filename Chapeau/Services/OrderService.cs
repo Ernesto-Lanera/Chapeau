@@ -47,72 +47,32 @@ namespace Chapeau.Services
         {
             List<OrderItem> orderItems = [];
 
-            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems, GuestName = "bob"};
+            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems };
             return order;
         }
 
-        public Order AddOrderItemToOrder(int MenuItemId, Order order, string MenuItemName)
+        public Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName)
         {
-            if (order.OrderItems != null)
-            {
-                if (!order.OrderItems.Any(i => i.MenuItemId == MenuItemId))
-                {
-                    OrderItem orderitem = new OrderItem { MenuItemId = MenuItemId, AmountOrdered = 1, MenuItemName = MenuItemName };
-                    order.OrderItems.Add(orderitem);
-                }
-                else
-                {
-                    var existingItem = order.OrderItems.First(i => i.MenuItemId == MenuItemId);
-                    existingItem.AmountOrdered++;
-                }
-            }
-             
-            return order;
-
-        }
-
-
-        public Order RemoveItemFromOrder(int MenuItemId, Order order)
-        {
-            if (order.OrderItems != null)
-            {
-                var itemToRemove = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToRemove != null)
-                {
-                    order.OrderItems.Remove(itemToRemove);
-                }
-            }
+            var item = new OrderItem { MenuItemId = menuItemId, AmountOrdered = 1, MenuItemName = menuItemName };
+            order.AddItem(item);
             return order;
         }
 
-        public Order UpdateItemFromOrder (int MenuItemId, Order order, int NewAmount)
+        public Order RemoveItemFromOrder(int menuItemId, Order order)
         {
-            if (order.OrderItems != null)
-            {
-                var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToUpdate != null)
-                {
-                    itemToUpdate.AmountOrdered = NewAmount;
-                }
-            }
+            order.RemoveItem(menuItemId);
             return order;
         }
 
-        public Order ChangeCommentinItem(int MenuItemId, Order order,String Comment)
+        public Order UpdateItemFromOrder(int menuItemId, Order order, int newAmount)
         {
-            if (order.OrderItems != null)
-            {
-                var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == MenuItemId);
-                if (itemToComment != null && String.IsNullOrEmpty(Comment))
-                {
-                    itemToComment.Comment = Comment;
-                }
-                else
-                {
-                    itemToComment?.Comment = null;
-                }
- 
-            }
+            order.UpdateItemQuantity(menuItemId, newAmount);
+            return order;
+        }
+
+        public Order UpdateItemComment(int menuItemId, Order order, string comment)
+        {
+            order.UpdateItemComment(menuItemId, comment);
             return order;
         }
 
@@ -231,6 +191,23 @@ namespace Chapeau.Services
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Failed to retrieve table statuses.", ex);
+            }
+        }
+
+        public int MarkTableServed(int tableId)
+        {
+            if (tableId <= 0)
+            {
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
+            }
+
+            try
+            {
+                return _orderRepository.MarkReadyOrdersAsServed(tableId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to mark orders as served.", ex);
             }
         }
 

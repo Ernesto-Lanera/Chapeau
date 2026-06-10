@@ -26,6 +26,9 @@ namespace Chapeau
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
             }).AddSessionStateTempDataProvider();
 
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession();
+
             builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
             {
                 options.ViewLocationFormats.Add("Views/Login/{0}.cshtml");
@@ -139,13 +142,13 @@ namespace Chapeau
             builder.Services.AddScoped<IFinancialService, FinancialService>();
 
             // Register Table repository
-            builder.Services.AddScoped<TableRepository>();
+            builder.Services.AddScoped<ITableRepository, TableRepository>();
 
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
             {
-                var tableRepo = scope.ServiceProvider.GetRequiredService<TableRepository>();
+                var tableRepo = scope.ServiceProvider.GetRequiredService<ITableRepository>();
                 tableRepo.EnsureColumnExists();
             }
 
@@ -163,6 +166,7 @@ namespace Chapeau
             app.UseHttpsRedirection();
             app.UseRouting();
 
+            app.UseSession();
             app.UseAuthentication();
             app.UseAuthorization();
 

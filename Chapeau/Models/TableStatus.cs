@@ -17,5 +17,6 @@ namespace Chapeau.Models
         public OrderStatus OrderStatus { get; set; }
         public bool HasFood { get; set; }
         public bool HasDrink { get; set; }
+        public DateTime OrderDate { get; set; }
     }
 }
