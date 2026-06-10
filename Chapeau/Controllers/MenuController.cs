@@ -23,14 +23,26 @@ namespace Chapeau.Controllers
             _categoryService = categoryService;
         }
 
-        private Order GetOrder()
+        private Order GetOrder(int? tableId = null, int? tableNumber = null, string? guestNames = null)
         {
             var sessionData = HttpContext.Session.GetString("ActiveOrder");
-            if (string.IsNullOrEmpty(sessionData))
+            if (!string.IsNullOrEmpty(sessionData))
             {
-                return _orderService.MakeNewOrder(1);
+                var existingOrder = JsonSerializer.Deserialize<Order>(sessionData)!;
+                if (tableId.HasValue && existingOrder.TableId != tableId.Value)
+                {
+                    HttpContext.Session.Remove("ActiveOrder");
+                    sessionData = null;
+                }
             }
 
+            if (string.IsNullOrEmpty(sessionData))
+            {
+                var order = _orderService.MakeNewOrder(tableId ?? 1);
+                order.TableNumber = tableNumber ?? 0;
+                order.GuestName = guestNames;
+                return order;
+            }
 
             return JsonSerializer.Deserialize<Order>(sessionData)!;
         }
@@ -40,12 +52,14 @@ namespace Chapeau.Controllers
             HttpContext.Session.SetString("ActiveOrder", JsonSerializer.Serialize(order));
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int? tableId, int? tableNumber, string? guestNames = null)
         {
             try
             {
-                HttpContext.Session.SetString("ActiveOrder", "");
-                ViewBag.Order = GetOrder();
+                var order = GetOrder(tableId, tableNumber, guestNames);
+                SaveOrdertoJson(order);
+                ViewBag.Order = order;
+                ViewBag.TableNumber = tableNumber ?? order.TableNumber;
                 ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();
                 var menuItems = _menuService.GetMenuItems(null, null) ?? new List<MenuItem>();
@@ -97,7 +111,7 @@ namespace Chapeau.Controllers
         public IActionResult UpdateItemComment(int MenuItemId, string Comment)
         {
             Order order = GetOrder();
-            order = _orderService.ChangeCommentinItem(MenuItemId, order, Comment);
+            order = _orderService.UpdateItemComment(MenuItemId, order, Comment);
             SaveOrdertoJson(order);
             return Json(new { success = true, items = order.OrderItems });
         }

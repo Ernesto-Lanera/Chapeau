@@ -7,7 +7,7 @@ namespace Chapeau.Repositories
     /// <summary>
     /// Repository for table management including occupation status and order tracking.
     /// </summary>
-    public class TableRepository
+    public class TableRepository : ITableRepository
     {
         private readonly string _connectionString;
 

@@ -1,98 +1,288 @@
 @model List<TableStatus>
+@using System.Security.Claims
+@using Chapeau.Constants.Login
+@using Chapeau.Emums
 
 @{
-    ViewData["Title"] = "Table Overview";
+    ViewData["Title"] = "Tables Overview";
+    Layout = null;
+
+    var roleName = User.FindFirst(ClaimTypeConstants.RoleName)?.Value
+                   ?? User.FindFirst(ClaimTypes.Role)?.Value
+                   ?? "";
+    var employeeName = User.FindFirst(ClaimTypeConstants.EmployeeName)?.Value
+                       ?? User.FindFirst(ClaimTypes.GivenName)?.Value
+                       ?? User.Identity?.Name
+                       ?? "User";
+
+    var sortedTables = Model.OrderBy(t => t.TableNumber).ToList();
+
+    var sidebarTables = Model
+        .Where(t => t.IsOccupied)
+        .OrderBy(t => t.Orders.Count > 0 ? t.Orders.Min(o => o.OrderDate) : DateTime.MaxValue)
+        .ThenBy(t => t.TableNumber)
+        .ToList();
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">Table Overview</h1>
-        <a asp-action="Index" class="btn btn-outline-primary">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+@functions {
+    string GetSidebarStatus(TableStatus table)
+    {
+        if (table.Orders.Any(o => o.OrderStatus == OrderStatus.Ordered))
+            return "Ordered";
+        return "Prepared";
+    }
+
+    int GetGridTop(int tableNumber)
+    {
+        var row = (tableNumber - 1) / 2;
+        return 110 + row * 156;
+    }
+
+    int GetGridLeft(int tableNumber)
+    {
+        var col = (tableNumber - 1) % 2;
+        return 556 + col * 439;
+    }
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="utf-8" />
+<title>Tables Overview</title>
+<link rel="stylesheet" href="~/css/Table_Overview/globals.css">
+<link rel="stylesheet" href="~/css/Table_Overview/styleguide.css">
+<link rel="stylesheet" href="~/css/Table_Overview/style.css">
+</head>
+<body>
+<main class="final-table-overview">
+<div class="frame">
+<aside class="menu" aria-label="Ordered and prepared tables">
+@for (int i = 0; i < sidebarTables.Count; i++)
+{
+    var table = sidebarTables[i];
+    var status = GetSidebarStatus(table);
+    <section class="table-ordered" aria-labelledby="sidebar-table-@table.TableId">
+        <div class="rectangle" aria-hidden="true"></div>
+        <div class="ordered">
+            <div class="title" id="sidebar-table-@table.TableId">@status</div>
+        </div>
+        <h2 class="div">Table @table.TableNumber</h2>
+        <div class="rectangle-2" aria-hidden="true"></div>
+        <div class="text-wrapper-2">Occupied</div>
+        <a href="/Menu/Index?tableId=@table.TableId&tableNumber=@table.TableNumber" class="sidebar-btn sidebar-btn-edit" aria-label="Edit Table @table.TableNumber order">
+            <span class="sidebar-btn-text sidebar-btn-text-edit">Edit</span>
         </a>
-    </div>
+        <form method="post" asp-action="MarkTableServed" asp-controller="Table" class="sidebar-btn sidebar-btn-served" aria-label="Mark Table @table.TableNumber as served">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="tableId" value="@table.TableId" />
+            <button class="sidebar-btn-inner" type="submit">
+                <span class="sidebar-btn-text sidebar-btn-text-served">Served</span>
+            </button>
+        </form>
+        <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="sidebar-btn sidebar-btn-free" aria-label="Free Table @table.TableNumber">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="tableId" value="@table.TableId" />
+            <input type="hidden" name="occupied" value="false" />
+            <button class="sidebar-btn-inner" type="submit">
+                <span class="sidebar-btn-text sidebar-btn-text-free">Free</span>
+            </button>
+        </form>
+    </section>
+}
+</aside>
+<div class="rectangle-4" aria-hidden="true"></div>
+<div class="rectangle-5" aria-hidden="true"></div>
+<a class="proceed-to-payment" href="/Payment/Index" aria-label="Proceed to pay">
+    <span class="text-wrapper-4">Proceed To Pay</span>
+    <div class="rectangle-6" aria-hidden="true"></div>
+</a>
+<img class="afbeelding" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
+<div class="rectangle-7" aria-hidden="true"></div>
+<h1 class="text-wrapper-5">Tables</h1>
+<img class="line" src="~/img/line-7.svg" alt="" aria-hidden="true" />
+</div>
 
-    <div class="row g-4">
-        @foreach (var table in Model.OrderBy(t => t.TableNumber))
-        {
-            <div class="col-md-4 col-lg-3">
-                <div class="card shadow-sm h-100 @(table.IsOccupied ? "border-warning" : "border-success")">
-                    <div class="card-body text-center d-flex flex-column">
-                        <h2 class="card-title mb-3">Table @table.TableNumber</h2>
+@for (int i = 0; i < sortedTables.Count; i++)
+{
+    var table = sortedTables[i];
+    var top = GetGridTop(table.TableNumber);
+    var left = GetGridLeft(table.TableNumber);
 
-                        @if (table.IsOccupied)
-                        {
-                            <span class="badge bg-warning text-dark fs-6 mb-2">Occupied</span>
+    if (table.IsOccupied)
+    {
+        <form method="get" action="/Menu/Index" style="position: absolute; top: @(top)px; left: @(left)px; width: 150px; height: 150px; margin: 0; padding: 0;">
+            <input type="hidden" name="tableId" value="@table.TableId" />
+            <input type="hidden" name="tableNumber" value="@table.TableNumber" />
+            <button class="occupied-table" type="submit" aria-label="Occupied Table @table.TableNumber" style="top: 0; left: 0; width: 100%; height: 100%; position: absolute;">
+                <span class="table">Table @table.TableNumber</span>
+                <div class="rectangle-12" aria-hidden="true"></div>
+                <div class="rectangle-13" aria-hidden="true"></div>
+                <div class="rectangle-14" aria-hidden="true"></div>
+                <div class="rectangle-15" aria-hidden="true"></div>
+            </button>
+        </form>
+    }
+    else
+    {
+        <form method="post" asp-action="ToggleStatus" asp-controller="Table"
+              id="available-form-@table.TableId"
+              style="position: absolute; top: @(top)px; left: @(left)px; width: 150px; height: 150px; margin: 0; padding: 0;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="tableId" value="@table.TableId" />
+            <input type="hidden" name="occupied" value="true" />
+            <input type="hidden" name="returnUrl" value="/Menu/Index?tableId=@table.TableId&amp;tableNumber=@table.TableNumber" />
+            <input type="hidden" name="guestNames" id="guest-names-@table.TableId" value="" />
+            <button class="available-table" type="button" aria-label="Available Table @table.TableNumber"
+                    onclick="openGuestModal(@table.TableId, @table.TableNumber)"
+                    style="top: 0; left: 0; width: 100%; height: 100%; position: absolute;">
+                <div class="rectangle-8" aria-hidden="true"></div>
+                <div class="rectangle-9" aria-hidden="true"></div>
+                <div class="rectangle-10" aria-hidden="true"></div>
+                <div class="rectangle-11" aria-hidden="true"></div>
+                <div class="rectangle-6" aria-hidden="true"></div>
+                <span class="text-wrapper-6">Table @table.TableNumber</span>
+            </button>
+        </form>
+    }
+}
 
-                            @foreach (var order in table.Orders)
-                            {
-                                <div class="border rounded p-2 mb-2 bg-light">
-                                    <div class="mb-1">
-                                        @if (order.HasFood)
-                                        {
-                                            <span class="badge bg-danger me-1">Food</span>
-                                        }
-                                        @if (order.HasDrink)
-                                        {
-                                            <span class="badge bg-info text-dark me-1">Drink</span>
-                                        }
-                                    </div>
-                                    <p class="mb-1">
-                                        @switch (order.OrderStatus)
-                                        {
-                                            case Chapeau.Emums.OrderStatus.Ordered:
-                                                <span class="badge bg-primary">Ordered</span>
-                                                break;
-                                            case Chapeau.Emums.OrderStatus.BeingPrepared:
-                                                <span class="badge bg-info">Being Prepared</span>
-                                                break;
-                                            case Chapeau.Emums.OrderStatus.ReadyToBeServed:
-                                                <span class="badge bg-success">Ready to Serve</span>
-                                                break;
-                                            case Chapeau.Emums.OrderStatus.Served:
-                                                <span class="badge bg-secondary">Served</span>
-                                                break;
-                                        }
-                                    </p>
+<header class="table-overview">
+<div class="block">
+<img class="img" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
+</div>
+<div class="text-content-title"></div>
+<div class="container">
+<div class="div-wrapper">
+<div class="text-wrapper-7">@employeeName</div>
+</div>
+<div class="div-wrapper">
+<div class="keukenmedewerker">@roleName</div>
+</div>
+</div>
+<form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="margin: 0; padding: 0;">
+    @Html.AntiForgeryToken()
+    <button class="button" type="submit" aria-label="Log out">
+        <div class="text">
+            <div class="text-wrapper-8">Log Out</div>
+        </div>
+        <div class="icon" aria-hidden="true">
+            <img class="vector" src="~/img/image.svg" alt="" />
+            <img class="vector-2" src="~/img/vector.svg" alt="" />
+            <img class="vector-3" src="~/img/vector-2.svg" alt="" />
+        </div>
+    </button>
+</form>
+<div class="text-content-title-2" aria-label="Current time">
+<div class="container-2"></div>
+<div class="title-3" id="clock-display">18:42:07</div>
+</div>
+</header>
+</main>
 
-                                    @if (order.OrderStatus == Chapeau.Emums.OrderStatus.ReadyToBeServed)
-                                    {
-                                        <form method="post" asp-action="MarkAsServed" asp-controller="Table">
-                                            <input type="hidden" name="orderId" value="@order.OrderId" />
-                                            <button type="submit" class="btn btn-success btn-sm w-100">
-                                                <i class="bi bi-check2-circle me-1"></i>Mark as Served
-                                            </button>
-                                        </form>
-                                    }
-                                </div>
-                            }
-
-                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="tableId" value="@table.TableId" />
-                                <input type="hidden" name="occupied" value="false" />
-                                <button type="submit" class="btn btn-outline-warning btn-sm w-100 mt-2">
-                                    <i class="bi bi-x-circle me-1"></i>Mark as Free
-                                </button>
-                            </form>
-                        }
-                        else
-                        {
-                            <span class="badge bg-success fs-6 mb-2">Free</span>
-                            <p class="card-text text-muted mt-auto">No active order</p>
-
-                            <form method="post" asp-action="ToggleStatus" asp-controller="Table" class="mt-auto">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="tableId" value="@table.TableId" />
-                                <input type="hidden" name="occupied" value="true" />
-                                <button type="submit" class="btn btn-outline-success btn-sm w-100 mt-2">
-                                    <i class="bi bi-check-circle me-1"></i>Mark as Occupied
-                                </button>
-                            </form>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
+<div id="guest-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#25272c; padding:32px; border-radius:12px; width:360px; text-align:center;">
+        <h3 style="font-family:'Inter-Bold',Helvetica; color:#fff; font-size:20px; margin-bottom:8px;">Aantal gasten</h3>
+        <p style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:14px; margin-bottom:24px;">Wat is het aantal gasten voor deze tafel?</p>
+        <div style="display:flex; gap:12px; justify-content:center; margin-bottom:24px;">
+            <button type="button" onclick="setGuestCount(1)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">1</button>
+            <button type="button" onclick="setGuestCount(2)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #16a34a; background:#3e9b4b40; color:#16a34a; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">2</button>
+            <button type="button" onclick="setGuestCount(3)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">3</button>
+            <button type="button" onclick="setGuestCount(4)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">4</button>
+        </div>
+        <input type="hidden" id="selected-guests" value="2" />
+        <div id="guest-name-fields" style="margin-bottom:24px;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button type="button" onclick="closeGuestModal()" style="padding:8px 24px; border-radius:8px; border:1px solid #555; background:transparent; color:#9f9fa9; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Annuleren</button>
+            <button type="button" onclick="confirmGuest()" style="padding:8px 24px; border-radius:8px; border:1px solid #16a34a; background:#3e9b4b40; color:#16a34a; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Opslaan</button>
+        </div>
     </div>
 </div>
+
+<script>
+var currentTableId = 0;
+
+(function() {
+    function updateClock() {
+        var now = new Date();
+        var hours = String(now.getHours()).padStart(2, '0');
+        var minutes = String(now.getMinutes()).padStart(2, '0');
+        var seconds = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('clock-display').textContent = hours + ':' + minutes + ':' + seconds;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+})();
+
+function openGuestModal(tableId, tableNumber) {
+    currentTableId = tableId;
+    document.getElementById('selected-guests').value = 2;
+    var options = document.querySelectorAll('.guest-option');
+    options.forEach(function(btn) {
+        btn.style.borderColor = '#555';
+        btn.style.background = '#16181c';
+        btn.style.color = '#fff';
+    });
+    options[1].style.borderColor = '#16a34a';
+    options[1].style.background = '#3e9b4b40';
+    options[1].style.color = '#16a34a';
+    document.getElementById('guest-modal').style.display = 'flex';
+    renderGuestNameFields(2);
+}
+
+function closeGuestModal() {
+    document.getElementById('guest-modal').style.display = 'none';
+}
+
+function setGuestCount(count) {
+    document.getElementById('selected-guests').value = count;
+    var options = document.querySelectorAll('.guest-option');
+    options.forEach(function(btn, index) {
+        if (index + 1 === count) {
+            btn.style.borderColor = '#16a34a';
+            btn.style.background = '#3e9b4b40';
+            btn.style.color = '#16a34a';
+        } else {
+            btn.style.borderColor = '#555';
+            btn.style.background = '#16181c';
+            btn.style.color = '#fff';
+        }
+    });
+    renderGuestNameFields(count);
+}
+
+function renderGuestNameFields(count) {
+    var container = document.getElementById('guest-name-fields');
+    var html = '';
+    for (var i = 1; i <= count; i++) {
+        html += '<div style="margin-bottom:8px; text-align:left;">' +
+            '<label style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:12px; display:block; margin-bottom:4px;">Gast ' + i + '</label>' +
+            '<input type="text" id="guest-name-' + i + '" placeholder="Naam gast ' + i + '" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-family:Inter,Helvetica; font-size:14px; box-sizing:border-box;" />' +
+            '</div>';
+    }
+    container.innerHTML = html;
+    var firstInput = document.getElementById('guest-name-1');
+    if (firstInput) firstInput.focus();
+}
+
+function confirmGuest() {
+    if (currentTableId === 0) return;
+    var count = parseInt(document.getElementById('selected-guests').value);
+    var names = [];
+    for (var i = 1; i <= count; i++) {
+        var input = document.getElementById('guest-name-' + i);
+        var name = input ? input.value.trim() : '';
+        names.push(name || 'Gast ' + i);
+    }
+    document.getElementById('guest-names-' + currentTableId).value = names.join(', ');
+    closeGuestModal();
+    var form = document.getElementById('available-form-' + currentTableId);
+    if (form) {
+        form.submit();
+    }
+}
+</script>
+</body>
+</html>
