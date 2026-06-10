@@ -66,9 +66,6 @@ namespace Chapeau
             builder.Services.AddAuthorization(options =>
             {
                 // Permission-based policies
-                options.AddPolicy("CanViewMenu", policy =>
-                    policy.RequireClaim("Permission", "ViewMenu"));
-
                 options.AddPolicy("CanTakeOrders", policy =>
                     policy.RequireClaim("Permission", "TakeOrders"));
 

@@ -2,7 +2,6 @@ namespace Chapeau.Constants.Login
 {
     public static class PermissionConstants
     {
-        public const string ViewMenu = "ViewMenu";
         public const string TakeOrders = "TakeOrders";
         public const string PrepareFood = "PrepareFood";
         public const string PrepareDrinks = "PrepareDrinks";
