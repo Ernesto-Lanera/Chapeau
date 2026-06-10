@@ -8,6 +8,32 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => { if (data.success) updateCartUI(data.items); });
 });
 
+function showNotification(message, type = "warning") {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1050; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+
+    setTimeout(() => {
+        if (alertDiv.parentElement) {
+            if (typeof bootstrap !== 'undefined') {
+                const bsAlert = new bootstrap.Alert(alertDiv);
+                bsAlert.close();
+            } else {
+                alertDiv.remove();
+            }
+        }
+    }, 2000);
+}
+
 function updateCartUI(items) {
     currentCartItems = items;
     const cart = document.getElementById('cart-container');
@@ -118,7 +144,7 @@ function addToOrder(menuItemId, menuItemName) {
     if (existingQtySpan) {
         let currentQty = parseInt(existingQtySpan.innerText);
         if (currentQty >= maxStock) {
-            alert(`Maximum stock reached. Only ${maxStock} available.`);
+            showNotification(`Maximum stock reached. Only ${maxStock} available.`);
             return;
         }
         updateQuantity(menuItemId, currentQty + 1);
@@ -155,7 +181,7 @@ function updateQuantity(menuItemId, newQuantity) {
 
     let maxStock = window.stockLevels[menuItemId] || 0;
     if (newQuantity > maxStock) {
-        alert(`Maximum stock reached. Only ${maxStock} available.`);
+        showNotification(`Maximum stock reached. Only ${maxStock} available.`);
         return;
     }
 

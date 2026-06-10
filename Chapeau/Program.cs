@@ -164,9 +164,10 @@ namespace Chapeau
             app.UseRouting();
 
             app.UseAuthentication();
+            app.UseSession();
             app.UseAuthorization();
 
-            app.UseSession();
+            
             app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
 
 

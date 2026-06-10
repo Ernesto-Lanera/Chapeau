@@ -1,4 +1,5 @@
 using Chapeau.Constants;
+using Chapeau.Extensions;
 using Chapeau.Models;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -106,9 +107,9 @@ namespace Chapeau.Controllers
         {
             Order order = GetOrder();
             _orderService.SaveOrderToDb(order);
-            TempData["SuccessMessage"] = "Your order was saved successfully!";
+             this.ShowNotification("Your Order was saved successfully!", "success");
             return RedirectToAction("Index", "Table");
-
+           
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()
