@@ -126,6 +126,12 @@ namespace Chapeau.Controllers
            
         }
 
+        [HttpPost]
+        public IActionResult CancelOrder()
+        {
+            return RedirectToAction("Index", "Table");
+        }
+
         private static List<SelectListItem> GetMenuCardSelectList()
         {
             return new List<SelectListItem>
