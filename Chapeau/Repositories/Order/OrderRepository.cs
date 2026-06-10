@@ -98,6 +98,67 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    public Order? GetServedOrderByTableId(int tableId)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+            FROM Orders o
+            JOIN Table_ t ON o.TableID = t.TableID
+            WHERE o.TableID = @TableID
+            AND o.OrderStatus = @Served";
+
+        using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@TableID", tableId);
+        command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+
+        using SqlDataReader reader = command.ExecuteReader();
+        return reader.Read() ? MapOrder(reader) : null;
+    }
+
+    public Order? GetOrderById(int orderId)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+            FROM Orders o
+            JOIN Table_ t ON o.TableID = t.TableID
+            WHERE o.OrderID = @OrderID";
+
+        using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@OrderID", orderId);
+
+        using SqlDataReader reader = command.ExecuteReader();
+        return reader.Read() ? MapOrder(reader) : null;
+    }
+
+    public List<Order> GetOrdersByStatus(OrderStatus status)
+    {
+        List<Order> orders = new List<Order>();
+
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+            FROM Orders o
+            JOIN Table_ t ON o.TableID = t.TableID
+            WHERE o.OrderStatus = @Status
+            ORDER BY o.OrderDate ASC";
+
+        using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Status", (int)status);
+
+        using SqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            orders.Add(MapOrder(reader));
+        }
+
+        return orders;
+    }
+
     public List<TableStatus> GetAllTableStatuses()
     {
         Dictionary<int, TableStatus> tableDict = new Dictionary<int, TableStatus>();
@@ -215,7 +276,7 @@ public class OrderRepository : IOrderRepository
 
         string query = @"
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
-               oi.Comment, oi.OrderItemStatus, m.Name, m.Price, m.Stock, m.IsActive, m.CategoryID, m.ImagePath, m.IsAlcoholic
+               oi.Comment, oi.OrderItemStatus, m.Name, ISNULL(m.Price, 0) AS Price, m.Stock, m.IsActive, m.CategoryID, m.ImagePath, ISNULL(m.IsAlcoholic, 0) AS IsAlcoholic
         FROM OrderItem oi
         JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
         WHERE oi.OrderID = @OrderID";
@@ -331,8 +392,14 @@ public class OrderRepository : IOrderRepository
             MenuItemName = reader["Name"].ToString(),
             Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
             OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"],
-            MenuItem = menuItem
+            MenuItem = menuItem,
+            VATRate = GetVatRate(menuItem.IsAlcoholic)
         };
+    }
+
+    private static decimal GetVatRate(bool isAlcoholic)
+    {
+        return isAlcoholic ? 0.21m : 0.06m;
     }
 
         public int MarkReadyOrdersAsServed(int tableId)
@@ -397,6 +464,87 @@ public class OrderRepository : IOrderRepository
                 command.Parameters.AddWithValue("@OrderItemID", orderItemId);
                 command.ExecuteNonQuery();
             }
+        }
+    }
+
+    public void UpdateItemComment(int orderItemId, string? comment)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        string query = "UPDATE OrderItem SET Comment = @Comment WHERE OrderItemID = @OrderItemID";
+
+        using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Comment", (object?)comment ?? DBNull.Value);
+        command.Parameters.AddWithValue("@OrderItemID", orderItemId);
+        command.ExecuteNonQuery();
+    }
+
+    public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
+    {
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        using SqlTransaction transaction = connection.BeginTransaction();
+
+        try
+        {
+            int tableId;
+
+            string orderInfoQuery = "SELECT TableID, OrderStatus FROM Orders WHERE OrderID = @OrderID";
+            using (SqlCommand command = new SqlCommand(orderInfoQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@OrderID", orderId);
+
+                using SqlDataReader reader = command.ExecuteReader();
+                if (!reader.Read())
+                {
+                    throw new InvalidOperationException("Order not found.");
+                }
+
+                tableId = (int)reader["TableID"];
+                var status = (OrderStatus)(int)reader["OrderStatus"];
+
+                if (status != OrderStatus.Served && status != OrderStatus.Paid)
+                {
+                    throw new InvalidOperationException("Order is not served yet.");
+                }
+            }
+
+            string insertPaymentQuery = @"
+                INSERT INTO Payment (OrderID, TableID, TotalTipAmount, Feedback)
+                VALUES (@OrderID, @TableID, @TipAmount, @Feedback)";
+
+            using (SqlCommand command = new SqlCommand(insertPaymentQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.Parameters.AddWithValue("@TableID", tableId);
+                command.Parameters.AddWithValue("@TipAmount", tipAmount);
+                command.Parameters.AddWithValue("@Feedback", (object?)feedback ?? DBNull.Value);
+                command.ExecuteNonQuery();
+            }
+
+            string updateOrderQuery = "UPDATE Orders SET OrderStatus = @Paid WHERE OrderID = @OrderID";
+            using (SqlCommand command = new SqlCommand(updateOrderQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
+                command.Parameters.AddWithValue("@OrderID", orderId);
+                command.ExecuteNonQuery();
+            }
+
+            string updateTableQuery = "UPDATE Table_ SET IsManuallyOccupied = 0 WHERE TableID = @TableID";
+            using (SqlCommand command = new SqlCommand(updateTableQuery, connection, transaction))
+            {
+                command.Parameters.AddWithValue("@TableID", tableId);
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
         }
     }
 
