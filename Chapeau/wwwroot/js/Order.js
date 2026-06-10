@@ -3,6 +3,7 @@ let editingCommentId = null;
 let quantityTimers = {};
 let activeNetworkRequests = 0;
 let pendingAdds = new Set();
+let pendingDeletes = new Set();
 
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/Menu/GetActiveOrderItems')
@@ -176,6 +177,9 @@ function addToOrder(menuItemId, menuItemName) {
 }
 
 function removeFromOrder(menuItemId) {
+    if (pendingDeletes.has(menuItemId)) return;
+    pendingDeletes.add(menuItemId);
+
     if (quantityTimers[menuItemId]) {
         clearTimeout(quantityTimers[menuItemId]);
         delete quantityTimers[menuItemId];
@@ -187,7 +191,9 @@ function removeFromOrder(menuItemId) {
         if (cartItemBox) cartItemBox.style.display = 'none';
     }
 
-    sendApiRequest('/Menu/RemoveMenuItemFromOrder', { 'MenuItemId': menuItemId });
+    sendApiRequest('/Menu/RemoveMenuItemFromOrder', { 'MenuItemId': menuItemId }, () => {
+        pendingDeletes.delete(menuItemId);
+    });
 }
 
 function updateQuantity(menuItemId, newQuantity) {
