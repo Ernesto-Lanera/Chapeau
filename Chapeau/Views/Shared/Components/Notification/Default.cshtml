@@ -1,0 +1,19 @@
+﻿@model Chapeau.ViewModels.Notification
+
+@if (Model != null)
+{
+    <div class="alert alert-@Model.Type alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 1050; min-width: 300px;">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <script>
+        setTimeout(function () {
+            var alertElement = document.querySelector('.alert');
+            if (alertElement) {
+                var alert = new bootstrap.Alert(alertElement);
+                alert.close();
+            }
+        }, 5000);
+    </script>
+}

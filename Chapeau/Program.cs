@@ -26,9 +26,7 @@ namespace Chapeau
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
             }).AddSessionStateTempDataProvider();
 
-            builder.Services.AddDistributedMemoryCache();
-            builder.Services.AddSession();
-
+       
             builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
             {
                 options.ViewLocationFormats.Add("Views/Login/{0}.cshtml");
@@ -166,11 +164,11 @@ namespace Chapeau
             app.UseHttpsRedirection();
             app.UseRouting();
 
-            app.UseSession();
             app.UseAuthentication();
+            app.UseSession();
             app.UseAuthorization();
 
-            app.UseSession();
+            
             app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
 
 
