@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Chapeau.Emums;
+﻿using Chapeau.Emums;
 using Chapeau.Models;
 using Chapeau.Repositories;
 using Chapeau.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Chapeau.Services
 {
@@ -218,6 +219,28 @@ namespace Chapeau.Services
             }
         }
 
-    
+        public List<Order> GetFinishedOrdersToday(OrderType type)
+        {
+            try
+            {
+                return _orderRepository.GetFinishedOrdersToday(type);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve finished orders.", ex);
+            }
+        }
+        public void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status)
+        {
+            try
+            {
+                _orderRepository.UpdateCourseItemStatuses(orderId, course, status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to update course item statuses.", ex);
+            }
+        }
+
     }
 }

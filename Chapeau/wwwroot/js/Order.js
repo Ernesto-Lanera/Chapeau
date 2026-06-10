@@ -1,6 +1,8 @@
-﻿let isUpdating = false;
-let currentCartItems = [];
+﻿let currentCartItems = [];
 let editingCommentId = null;
+let quantityTimers = {};
+let activeNetworkRequests = 0;
+let pendingAdds = new Set();
 
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/Menu/GetActiveOrderItems')
@@ -21,7 +23,6 @@ function showNotification(message, type = "warning") {
 
     document.body.appendChild(alertDiv);
 
-
     setTimeout(() => {
         if (alertDiv.parentElement) {
             if (typeof bootstrap !== 'undefined') {
@@ -39,14 +40,22 @@ function updateCartUI(items) {
     const cart = document.getElementById('cart-container');
     let htmlContent = '';
 
+    // BUG FIX: Save what the user is currently typing so it doesn't get wiped
+    let activeCommentValue = '';
+    if (editingCommentId !== null) {
+        let existingInput = document.getElementById(`comment-input-${editingCommentId}`);
+        if (existingInput) activeCommentValue = existingInput.value;
+    }
+
     items.forEach(item => {
         let commentSectionHtml = '';
         let isEditing = (editingCommentId === item.menuItemId);
 
         if (isEditing) {
+            let displayValue = activeCommentValue || item.comment || '';
             commentSectionHtml = `
                 <div class="d-flex mt-2 w-100 gap-2 align-items-center">
-                    <input type="text" id="comment-input-${item.menuItemId}" class="form-control form-control-sm rounded-pill px-3" placeholder="Type a note..." value="${item.comment || ''}">
+                    <input type="text" id="comment-input-${item.menuItemId}" class="form-control form-control-sm rounded-pill px-3" placeholder="Type a note..." value="${displayValue}">
                     <button class="btn btn-sm btn-success rounded-pill fw-bold px-3" onclick="saveComment(${item.menuItemId})">Add</button>
                 </div>
             `;
@@ -66,9 +75,9 @@ function updateCartUI(items) {
                     <span class="fw-bold text-truncate me-2" style="font-size: 0.9rem;">${item.menuItemName}</span>
                     
                     <div class="d-flex align-items-center gap-1">
-                        <button class="btn btn-sm btn-outline-light rounded-pill px-2 py-0 d-flex align-items-center border-secondary" onclick="updateQuantity(${item.menuItemId}, ${item.amountOrdered - 1})">-</button>
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-2 py-0 d-flex align-items-center border-secondary" onclick="adjustQuantity(${item.menuItemId}, -1)">-</button>
                         <span id="qty-${item.menuItemId}" class="fw-bold mx-1" style="min-width: 15px; text-align: center; font-size: 0.9rem;">${item.amountOrdered}</span>
-                        <button class="btn btn-sm btn-outline-light rounded-pill px-2 py-0 d-flex align-items-center border-secondary" onclick="updateQuantity(${item.menuItemId}, ${item.amountOrdered + 1})">+</button>
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-2 py-0 d-flex align-items-center border-secondary" onclick="adjustQuantity(${item.menuItemId}, 1)">+</button>
                         
                         <button class="btn btn-sm btn-outline-primary ms-1 rounded-pill px-2 py-0 d-flex align-items-center" onclick="toggleCommentInput(${item.menuItemId})">
                             <i class="bi bi-pencil-square" style="font-size: 0.8rem;"></i>
@@ -85,6 +94,24 @@ function updateCartUI(items) {
     });
 
     cart.innerHTML = htmlContent;
+
+    if (editingCommentId !== null) {
+        let inputToFocus = document.getElementById(`comment-input-${editingCommentId}`);
+        if (inputToFocus) {
+            inputToFocus.focus();
+            let val = inputToFocus.value;
+            inputToFocus.value = '';
+            inputToFocus.value = val;
+        }
+    }
+}
+
+function adjustQuantity(menuItemId, delta) {
+    let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
+    if (existingQtySpan) {
+        let currentQty = parseInt(existingQtySpan.innerText);
+        updateQuantity(menuItemId, currentQty + delta);
+    }
 }
 
 function toggleCommentInput(menuItemId) {
@@ -97,12 +124,10 @@ function toggleCommentInput(menuItemId) {
 }
 
 function saveComment(menuItemId) {
-    if (isUpdating) return;
-
     const inputField = document.getElementById(`comment-input-${menuItemId}`);
     const commentText = inputField ? inputField.value : '';
 
-    isUpdating = true;
+    activeNetworkRequests++;
     fetch('/Menu/UpdateItemComment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -110,18 +135,20 @@ function saveComment(menuItemId) {
     })
         .then(res => res.json())
         .then(data => {
+            activeNetworkRequests--;
             if (data.success) {
                 editingCommentId = null;
-                updateCartUI(data.items);
+                currentCartItems = data.items;
+                if (activeNetworkRequests === 0 && Object.keys(quantityTimers).length === 0) {
+                    updateCartUI(data.items);
+                }
             }
         })
-        .finally(() => { isUpdating = false; });
+        .catch(() => { activeNetworkRequests--; });
 }
 
 function deleteComment(menuItemId) {
-    if (isUpdating) return;
-
-    isUpdating = true;
+    activeNetworkRequests++;
     fetch('/Menu/UpdateItemComment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -129,16 +156,23 @@ function deleteComment(menuItemId) {
     })
         .then(res => res.json())
         .then(data => {
-            if (data.success) updateCartUI(data.items);
+            activeNetworkRequests--;
+            if (data.success) {
+                currentCartItems = data.items;
+                if (activeNetworkRequests === 0 && Object.keys(quantityTimers).length === 0) {
+                    updateCartUI(data.items);
+                }
+            }
         })
-        .finally(() => { isUpdating = false; });
+        .catch(() => { activeNetworkRequests--; });
 }
 
 function addToOrder(menuItemId, menuItemName) {
-    if (isUpdating) return;
-
     let maxStock = window.stockLevels[menuItemId] || 0;
-    if (maxStock <= 0) return;
+    if (maxStock <= 0) {
+        showNotification("Item out of stock.", "danger");
+        return;
+    }
 
     let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
     if (existingQtySpan) {
@@ -147,74 +181,122 @@ function addToOrder(menuItemId, menuItemName) {
             showNotification(`Maximum stock reached. Only ${maxStock} available.`);
             return;
         }
-        updateQuantity(menuItemId, currentQty + 1);
+        adjustQuantity(menuItemId, 1);
         return;
     }
 
-    isUpdating = true;
+    if (pendingAdds.has(menuItemId)) return;
+    pendingAdds.add(menuItemId);
+
+    activeNetworkRequests++;
     fetch('/Menu/AddMenuItemToOrder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ 'MenuItemId': menuItemId, 'MenuItemName': menuItemName })
     })
         .then(res => res.json())
-        .then(data => { if (data.success) updateCartUI(data.items); })
-        .finally(() => { isUpdating = false; });
+        .then(data => {
+            pendingAdds.delete(menuItemId);
+            activeNetworkRequests--;
+            if (data.success) {
+                currentCartItems = data.items;
+                if (activeNetworkRequests === 0 && Object.keys(quantityTimers).length === 0) {
+                    updateCartUI(data.items);
+                }
+            }
+        })
+        .catch(() => { pendingAdds.delete(menuItemId); activeNetworkRequests--; });
 }
 
 function removeFromOrder(menuItemId) {
-    if (isUpdating) return;
+    if (quantityTimers[menuItemId]) {
+        clearTimeout(quantityTimers[menuItemId]);
+        delete quantityTimers[menuItemId];
+    }
 
-    isUpdating = true;
+    let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
+    if (existingQtySpan) {
+        let cartItemBox = existingQtySpan.closest('.border.rounded');
+        if (cartItemBox) cartItemBox.style.display = 'none';
+    }
+
+    activeNetworkRequests++;
     fetch('/Menu/RemoveMenuItemFromOrder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ 'MenuItemId': menuItemId })
     })
         .then(res => res.json())
-        .then(data => { if (data.success) updateCartUI(data.items); })
-        .finally(() => { isUpdating = false; });
+        .then(data => {
+            activeNetworkRequests--;
+            if (data.success) {
+                currentCartItems = data.items;
+                if (activeNetworkRequests === 0 && Object.keys(quantityTimers).length === 0) {
+                    updateCartUI(data.items);
+                }
+            }
+        })
+        .catch(() => { activeNetworkRequests--; });
 }
 
 function updateQuantity(menuItemId, newQuantity) {
-    if (isUpdating) return;
+    const isValid = updateLocalQuantity(menuItemId, newQuantity);
+    if (isValid) {
+        syncQuantityWithServer(menuItemId, newQuantity);
+    }
+}
 
+function updateLocalQuantity(menuItemId, newQuantity) {
     let maxStock = window.stockLevels[menuItemId] || 0;
+
     if (newQuantity > maxStock) {
         showNotification(`Maximum stock reached. Only ${maxStock} available.`);
-        return;
+        return false;
     }
 
     if (newQuantity <= 0) {
         removeFromOrder(menuItemId);
-        return;
+        return false;
     }
 
-    isUpdating = true;
-    fetch('/Menu/UpdateMenuItemQuantity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ 'MenuItemId': menuItemId, 'NewQuantity': newQuantity })
-    })
-        .then(res => res.json())
-        .then(data => { if (data.success) updateCartUI(data.items); })
-        .finally(() => { isUpdating = false; });
+    let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
+    if (existingQtySpan) {
+        existingQtySpan.innerText = newQuantity;
+    }
+
+    let itemToUpdate = currentCartItems.find(i => i.menuItemId === menuItemId);
+    if (itemToUpdate) {
+        itemToUpdate.amountOrdered = newQuantity;
+    }
+
+    return true;
 }
 
-function sendOrder() {
-    if (isUpdating) return;
-    isUpdating = true;
-    fetch('/Menu/PlaceOrder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = '/Table/Index';
-            } else {
-                alert(data.message || 'Er is een fout opgetreden.');
-            }
+function syncQuantityWithServer(menuItemId, newQuantity) {
+    if (quantityTimers[menuItemId]) {
+        clearTimeout(quantityTimers[menuItemId]);
+    }
+
+    quantityTimers[menuItemId] = setTimeout(() => {
+        delete quantityTimers[menuItemId];
+        activeNetworkRequests++;
+
+        fetch('/Menu/UpdateMenuItemQuantity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ 'MenuItemId': menuItemId, 'NewQuantity': newQuantity })
         })
-        .finally(() => { isUpdating = false; });
+            .then(res => res.json())
+            .then(data => {
+                activeNetworkRequests--;
+                if (data.success) {
+                    currentCartItems = data.items;
+
+                    if (activeNetworkRequests === 0 && Object.keys(quantityTimers).length === 0) {
+                        updateCartUI(data.items);
+                    }
+                }
+            })
+            .catch(() => { activeNetworkRequests--; });
+    }, 300);
 }
