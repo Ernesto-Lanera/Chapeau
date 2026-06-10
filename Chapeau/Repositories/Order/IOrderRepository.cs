@@ -18,6 +18,7 @@ namespace Chapeau.Repositories
 
         List<Order> GetFinishedOrdersToday(OrderType type);
 
+        int MarkReadyOrdersAsServed(int tableId);
         void SaveOrder(Order order);
     }
 }

@@ -92,10 +92,18 @@ namespace Chapeau.Controllers
                 && Uri.TryCreate(returnUrl, UriKind.Relative, out _);
         }
 
+        [HttpGet]
+        [Authorize]
+        public IActionResult Logout()
+        {
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> Logout()
+        [ActionName("Logout")]
+        public async Task<IActionResult> LogoutConfirmed()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");

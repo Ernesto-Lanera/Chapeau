@@ -10,9 +10,9 @@ namespace Chapeau.Controllers
     public class TableController : Controller
     {
         private readonly IOrderService _orderService;
-        private readonly TableRepository _tableRepository;
+        private readonly ITableRepository _tableRepository;
 
-        public TableController(IOrderService orderService, TableRepository tableRepository)
+        public TableController(IOrderService orderService, ITableRepository tableRepository)
         {
             _orderService = orderService;
             _tableRepository = tableRepository;
@@ -49,7 +49,31 @@ namespace Chapeau.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ToggleStatus(int tableId, bool occupied)
+        public IActionResult MarkTableServed(int tableId)
+        {
+            try
+            {
+                int updated = _orderService.MarkTableServed(tableId);
+                if (updated > 0)
+                {
+                    TempData["FlashSuccess"] = $"Bestellingen voor tafel {tableId} zijn gemarkeerd als geserveerd.";
+                }
+                else
+                {
+                    TempData["FlashError"] = "Er zijn geen bestellingen gevonden die geserveerd kunnen worden.";
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["FlashError"] = ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleStatus(int tableId, bool occupied, string? returnUrl = null, string? guestNames = null)
         {
             if (!occupied && _tableRepository.HasActiveOrders(tableId))
             {
@@ -59,6 +83,17 @@ namespace Chapeau.Controllers
 
             _tableRepository.SetOccupied(tableId, occupied);
             TempData["FlashSuccess"] = occupied ? "Tafel is gemarkeerd als bezet." : "Tafel is vrijgemaakt.";
+
+            if (!string.IsNullOrEmpty(returnUrl))
+            {
+                if (!string.IsNullOrEmpty(guestNames))
+                {
+                    var separator = returnUrl.Contains('?') ? '&' : '?';
+                    return Redirect(returnUrl + separator + "guestNames=" + Uri.EscapeDataString(guestNames));
+                }
+                return Redirect(returnUrl);
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }

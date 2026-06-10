@@ -92,3 +92,21 @@ function updateQuantity(menuItemId, newQuantity) {
         .then(data => { if (data.success) updateCartUI(data.items); })
         .finally(() => { isUpdating = false; });
 }
+
+function sendOrder() {
+    if (isUpdating) return;
+    isUpdating = true;
+    fetch('/Menu/PlaceOrder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/Table/Index';
+            } else {
+                alert(data.message || 'Er is een fout opgetreden.');
+            }
+        })
+        .finally(() => { isUpdating = false; });
+}

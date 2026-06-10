@@ -13,6 +13,7 @@ namespace Chapeau.Services
         List<TableStatus> GetAllTableStatuses();
         void UpdateOrderStatus(int orderId, OrderStatus status);
         void UpdateOrderItemStatus(int orderItemId, OrderStatus status);
+        int MarkTableServed(int tableId);
         void MarkOrderAsServed(int orderId);
         void UpdateOrderIfServed(int orderId);
         void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status);
