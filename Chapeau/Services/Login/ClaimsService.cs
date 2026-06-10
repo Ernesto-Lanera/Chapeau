@@ -145,7 +145,6 @@ namespace Chapeau.Services.Login
             {
                 RoleConstants.ManagerId => new List<string>
                 {
-                    PermissionConstants.ViewMenu,
                     PermissionConstants.TakeOrders,
                     PermissionConstants.PrepareFood,
                     PermissionConstants.PrepareDrinks,
@@ -158,26 +157,20 @@ namespace Chapeau.Services.Login
 
                 RoleConstants.BedieningId => new List<string>
                 {
-                    PermissionConstants.ViewMenu,
                     PermissionConstants.TakeOrders
                 },
 
                 RoleConstants.KeukenId => new List<string>
                 {
-                    PermissionConstants.ViewMenu,
                     PermissionConstants.PrepareFood
                 },
 
                 RoleConstants.BarmanId => new List<string>
                 {
-                    PermissionConstants.ViewMenu,
                     PermissionConstants.PrepareDrinks
                 },
 
-                _ => new List<string>
-                {
-                    PermissionConstants.ViewMenu
-                }
+                _ => new List<string>()
             };
         }
     }

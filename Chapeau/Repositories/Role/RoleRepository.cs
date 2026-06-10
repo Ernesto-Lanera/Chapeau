@@ -14,7 +14,6 @@ namespace Chapeau.Repositories
         private static readonly IReadOnlyDictionary<string, string> KnownPermissions =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                [PermissionConstants.ViewMenu] = "Menu bekijken.",
                 [PermissionConstants.TakeOrders] = "Bestellingen opnemen.",
                 [PermissionConstants.PrepareFood] = "Keukenbestellingen verwerken.",
                 [PermissionConstants.PrepareDrinks] = "Barbestellingen verwerken.",

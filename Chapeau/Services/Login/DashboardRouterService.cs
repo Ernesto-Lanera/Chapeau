@@ -24,23 +24,18 @@ namespace Chapeau.Services.Login
                     (PermissionConstants.ManageRoles, "RolePermissions"),
                     (PermissionConstants.TakeOrders, "Table"),
                     (PermissionConstants.PrepareFood, "Kitchen"),
-                    (PermissionConstants.PrepareDrinks, "Bar"),
-                    (PermissionConstants.ViewMenu, "Menu")),
+                    (PermissionConstants.PrepareDrinks, "Bar")),
 
                 RoleConstants.BedieningId => FirstAllowedController(principal,
-                    (PermissionConstants.TakeOrders, "Table"),
-                    (PermissionConstants.ViewMenu, "Menu")),
+                    (PermissionConstants.TakeOrders, "Table")),
 
                 RoleConstants.KeukenId => FirstAllowedController(principal,
-                    (PermissionConstants.PrepareFood, "Kitchen"),
-                    (PermissionConstants.ViewMenu, "Menu")),
+                    (PermissionConstants.PrepareFood, "Kitchen")),
 
                 RoleConstants.BarmanId => FirstAllowedController(principal,
-                    (PermissionConstants.PrepareDrinks, "Bar"),
-                    (PermissionConstants.ViewMenu, "Menu")),
+                    (PermissionConstants.PrepareDrinks, "Bar")),
 
                 _ => FirstAllowedController(principal,
-                    (PermissionConstants.ViewMenu, "Menu"),
                     (PermissionConstants.TakeOrders, "Table"),
                     (PermissionConstants.PrepareFood, "Kitchen"),
                     (PermissionConstants.PrepareDrinks, "Bar"),
@@ -64,7 +59,7 @@ namespace Chapeau.Services.Login
                 }
             }
 
-            return "Home";
+            return "Menu";
         }
     }
 }

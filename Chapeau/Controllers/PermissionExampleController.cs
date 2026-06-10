@@ -210,11 +210,6 @@ namespace Chapeau.Controllers
             var user = User;
 
             // These shortcut methods make code more readable
-            if (user.CanViewMenu())
-            {
-                // Show menu
-            }
-
             if (user.CanTakeOrders())
             {
                 // Show order form

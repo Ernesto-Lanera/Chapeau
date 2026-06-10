@@ -82,14 +82,11 @@
                             </a>
                         </li>
                     }
-                    @if (User.HasPermission(PermissionConstants.ViewMenu))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link @(currentController == "Menu" ? "active" : string.Empty)" asp-controller="Menu" asp-action="Index">
-                                Menu
-                            </a>
-                        </li>
-                    }
+                    <li class="nav-item">
+                        <a class="nav-link @(currentController == "Menu" ? "active" : string.Empty)" asp-controller="Menu" asp-action="Index">
+                            Menu
+                        </a>
+                    </li>
                     @if (User.HasPermission(PermissionConstants.PrepareFood))
                     {
                         <li class="nav-item">

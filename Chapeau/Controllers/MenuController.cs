@@ -8,7 +8,6 @@ using System.Text.Json;
 
 namespace Chapeau.Controllers
 {
-    [Authorize(Policy = "CanViewMenu")]
     public class MenuController : Controller
     {
         private readonly MenuService _menuService;
