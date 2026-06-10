@@ -1,12 +1,10 @@
 using Chapeau.Constants;
 using Chapeau.Services;
 using Chapeau.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    [Authorize(Policy = "CanManageMenuItems")]
     public class ManageMenuController(IMenuService menuService, ILogger<ManageMenuController> logger) : Controller
     {
         private readonly IMenuService _menuService = menuService;
