@@ -15,7 +15,6 @@ namespace Chapeau.Models
         public string? Comment { get; set; }
         public MenuItem? MenuItem { get; set; }
 
-        public string? Comment { get; set; }
         public decimal Subtotal => MenuItem is not null ? AmountOrdered * MenuItem.RetailPrice : 0m;
 
         public OrderItem(int orderItemId, int menuItemId, int amount, int orderId)

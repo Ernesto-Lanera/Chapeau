@@ -146,9 +146,8 @@ namespace Chapeau.Services
                 {
                     itemToComment.Comment = Comment;
                 }
-               
- 
             }
+            return order;
         }
 
         public void SaveOrderToDb(Order order)
