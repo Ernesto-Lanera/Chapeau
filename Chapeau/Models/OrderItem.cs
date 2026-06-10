@@ -4,7 +4,8 @@ namespace Chapeau.Models
 {
     public class OrderItem
     {
-        public int OrderItemId { get; set; }
+       public int OrderItemId { get; set; }
+  
         public OrderStatus OrderItemStatus { get; set; }
         public CourseType? Course { get; set; }
         public int AmountOrdered { get; set; }

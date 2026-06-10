@@ -11,7 +11,7 @@ html {
 }
 
 body {
-    background: #f6f8fb;
+    background: #0E0F11;
 }
 
 .btn:focus,
@@ -36,6 +36,7 @@ body {
 .app-container {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
+    background: #0E0F11;
 }
 
 .app-tabs {
