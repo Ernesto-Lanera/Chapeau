@@ -7,63 +7,54 @@ namespace Chapeau.Models
         public int OrderId { get; set; }
         public int TableId { get; set; }
         public int TableNumber { get; set; }
+        public Table_? Table { get; set; }
         public string? GuestName { get; set; }
         public DateTime OrderDate { get; set; }
-        public List<OrderItem>? OrderItems { get; set; }
+
         public OrderStatus OrderStatus { get; set; }
         public OrderType OrderType { get; set; }
-        public Table_? Table { get; set; }
-        public Employee? Employee { get; set; }
 
-        public decimal Total => OrderItems?.Sum(i => i.Subtotal) ?? 0m;
+        public List<OrderItem> Items { get; set; } = new();
+
+        public List<OrderItem>? OrderItems
+        {
+            get => Items;
+            set => Items = value ?? new List<OrderItem>();
+        }
+
+        public List<OrderItem>? OrderParts
+        {
+            get => Items;
+            set => Items = value ?? new List<OrderItem>();
+        }
 
         public Order() { }
 
-        public Order(int orderId, List<OrderItem> orderitems, int tableId, DateTime date)
+        public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
         {
             OrderId = orderId;
-            OrderItems = orderitems;
+            Items = order ?? new List<OrderItem>();
             TableId = tableId;
             OrderDate = date;
         }
 
         public void AddItem(OrderItem item)
         {
-            OrderItems ??= new List<OrderItem>();
-
-            var existing = OrderItems.FirstOrDefault(i => i.MenuItemId == item.MenuItemId);
-            if (existing is not null)
-            {
-                existing.AmountOrdered += item.AmountOrdered;
-            }
-            else
-            {
-                OrderItems.Add(item);
-            }
+            ArgumentNullException.ThrowIfNull(item);
+            Items.Add(item);
         }
 
-        public void RemoveItem(int menuItemId)
+        public void RemoveItem(OrderItem item)
         {
-            if (OrderItems is null) return;
-            OrderItems.RemoveAll(i => i.MenuItemId == menuItemId);
+            ArgumentNullException.ThrowIfNull(item);
+            Items.Remove(item);
         }
 
-        public void UpdateItemQuantity(int menuItemId, int quantity)
-        {
-            var item = OrderItems?.FirstOrDefault(i => i.MenuItemId == menuItemId);
-            if (item is not null)
-            {
-                item.AmountOrdered = quantity;
-            }
-        }
-
-        public void UpdateItemComment(int menuItemId, string? comment)
-        {
-            var item = OrderItems?.FirstOrDefault(i => i.MenuItemId == menuItemId);
-            if (item is not null)
-            {
-                item.Comment = string.IsNullOrEmpty(comment) ? null : comment;
-            }
-        }
+        public int TotalItemsCount => Items.Sum(i => i.AmountOrdered);
+        public decimal GrossTotal => Items.Sum(i => i.GrossPrice);
+        public decimal LowVATTotal => Items.Where(i => i.VATRate == 0.06m).Sum(i => i.VATAmount);
+        public decimal HighVATTotal => Items.Where(i => i.VATRate == 0.21m).Sum(i => i.VATAmount);
+        public decimal TotalVAT => Items.Sum(i => i.VATAmount);
+        public decimal GrandTotal => Items.Sum(i => i.TotalPrice);
     }
 }

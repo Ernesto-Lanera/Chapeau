@@ -115,7 +115,6 @@ namespace Chapeau.Extensions
 
         // ===== COMMON PERMISSION SHORTCUTS =====
 
-        public static bool CanViewMenu(this ClaimsPrincipal principal) => principal.HasPermission("ViewMenu");
         public static bool CanTakeOrders(this ClaimsPrincipal principal) => principal.HasPermission("TakeOrders");
         public static bool CanPrepareFood(this ClaimsPrincipal principal) => principal.HasPermission("PrepareFood");
         public static bool CanPrepareDrinks(this ClaimsPrincipal principal) => principal.HasPermission("PrepareDrinks");

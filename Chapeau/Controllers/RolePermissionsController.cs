@@ -89,7 +89,6 @@ namespace Chapeau.Controllers
             var dbPermissions = _roleRepository.GetAllPermissionNames();
             var defaultPermissions = new List<string>
             {
-                PermissionConstants.ViewMenu,
                 PermissionConstants.TakeOrders,
                 PermissionConstants.PrepareFood,
                 PermissionConstants.PrepareDrinks,

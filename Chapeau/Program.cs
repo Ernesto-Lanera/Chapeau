@@ -1,10 +1,11 @@
 using Chapeau.Repositories;
 using Chapeau.Constants.Login;
-using Chapeau.Middleware;
 using Chapeau.Repositories.Financial;
 using Chapeau.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
+using Chapeau.Middleware;
 
 namespace Chapeau
 {
@@ -22,6 +23,7 @@ namespace Chapeau
             {
                 var policy = new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
+                    .RequireClaim(ClaimTypeConstants.IsActive, bool.TrueString)
                     .Build();
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
             }).AddSessionStateTempDataProvider();
@@ -33,6 +35,17 @@ namespace Chapeau
                 options.ViewLocationFormats.Add("Views/Overview/{0}.cshtml");
             });
             builder.Services.AddLogging();
+            builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddScoped<IClaimsTransformation, Services.Login.PermissionClaimsTransformation>();
+
+            // Add Session
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(20);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
 
             // Add Response Compression
             builder.Services.AddResponseCompression(options =>
@@ -53,9 +66,6 @@ namespace Chapeau
             builder.Services.AddAuthorization(options =>
             {
                 // Permission-based policies
-                options.AddPolicy("CanViewMenu", policy =>
-                    policy.RequireClaim("Permission", "ViewMenu"));
-
                 options.AddPolicy("CanTakeOrders", policy =>
                     policy.RequireClaim("Permission", "TakeOrders"));
 

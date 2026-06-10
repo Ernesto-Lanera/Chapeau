@@ -4,24 +4,53 @@ namespace Chapeau.Models
 {
     public class OrderItem
     {
-       public int OrderItemId { get; set; }
-  
+        public int OrderItemId { get; set; }
         public OrderStatus OrderItemStatus { get; set; }
         public CourseType? Course { get; set; }
-        public int AmountOrdered { get; set; }
-        public string MenuItemName { get; set; }
+        public int Amount { get; set; }
+
         public int MenuItemId { get; set; }
+        public MenuItem MenuItem { get; set; } = new();
+
         public int OrderId { get; set; }
         public string? Comment { get; set; }
-        public MenuItem? MenuItem { get; set; }
 
-        public decimal Subtotal => MenuItem is not null ? AmountOrdered * MenuItem.RetailPrice : 0m;
+        // Uit kapotte versie — extra veld van collega's
+        public string MenuItemName { get; set; } = string.Empty;
+        public int MenuCardID { get; set; }
+
+        public string Name
+        {
+            get => MenuItem.Name;
+            set => MenuItem.Name = value;
+        }
+
+        public decimal Price
+        {
+            get => MenuItem.RetailPrice;
+            set => MenuItem.RetailPrice = value;
+        }
+
+        public decimal VATRate { get; set; }
+
+        public int AmountOrdered
+        {
+            get => Amount;
+            set => Amount = value;
+        }
+
+        public decimal GrossPrice => Price * AmountOrdered;
+        public decimal VATAmount => Price * AmountOrdered * VATRate;
+        public decimal TotalPrice => Price * AmountOrdered * (1 + VATRate);
+
+        public decimal Subtotal => GrossPrice;
+        public decimal TotalWithVat => Subtotal + VATAmount;
 
         public OrderItem(int orderItemId, int menuItemId, int amount, int orderId)
         {
             OrderItemId = orderItemId;
             MenuItemId = menuItemId;
-            AmountOrdered = amount;
+            Amount = amount;
             OrderId = orderId;
         }
 
