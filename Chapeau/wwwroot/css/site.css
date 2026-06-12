@@ -247,4 +247,115 @@ body {
 }
 
 .text-purple {
-    color: #a7
+    color: #a78bfa !important;
+}
+
+.finance-table-wrap {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.finance-chart {
+    padding: 0.5rem 0.25rem 0;
+}
+
+.finance-chart-grid {
+    height: 220px;
+    border-left: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--bs-border-color);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.5rem;
+    padding: 0 1rem 0.5rem;
+    align-items: end;
+    background-image: linear-gradient( to top, transparent 24%, var(--bs-tertiary-bg) 25%, transparent 26%, transparent 49%, var(--bs-tertiary-bg) 50%, transparent 51%, transparent 74%, var(--bs-tertiary-bg) 75%, transparent 76% );
+}
+
+.finance-chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: end;
+    gap: 0.4rem;
+    height: 100%;
+}
+
+.finance-chart-bar {
+    width: 64px;
+    min-height: 8px;
+    border-radius: 2px 2px 0 0;
+    background: #a855f7;
+}
+
+.finance-chart-label {
+    color: var(--bs-secondary-color);
+    font-size: 0.8rem;
+}
+
+.finance-chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
+}
+
+    .finance-chart-legend i {
+        font-size: 0.6rem;
+        margin-right: 0.25rem;
+    }
+
+/* Orders */
+
+.table-label {
+    font-size: 12px;
+    color: var(--bs-secondary-color);
+    display: block;
+}
+
+.table-number {
+    font-size: 36px;
+    font-weight: bold;
+    display: block;
+}
+
+.order-time {
+    font-size: 14px;
+    color: var(--bs-secondary-color);
+    display: block;
+}
+
+.waiting-time {
+    font-size: 32px;
+    font-weight: bold;
+    display: block;
+}
+
+.order-card {
+    min-width: 350px;
+    width: 350px;
+    flex-shrink: 0;
+    background: var(--bs-tertiary-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.order-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 0 12px 20px 12px;
+    height: calc(100vh - 200px);
+    align-items: flex-start;
+}
+
+.order-list-wrapper {
+    margin: 0 -12px;
+    overflow: hidden;
+}
