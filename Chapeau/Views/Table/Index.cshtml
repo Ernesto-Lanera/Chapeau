@@ -8,10 +8,10 @@
     Layout = null;
 
     var roleName = User.FindFirst(ClaimTypeConstants.RoleName)?.Value
-                   ?? User.FindFirst(ClaimTypes.Role)?.Value
+                   ?? User.FindFirst(ClaimsIdentity.DefaultRoleClaimType)?.Value
                    ?? "";
     var employeeName = User.FindFirst(ClaimTypeConstants.EmployeeName)?.Value
-                       ?? User.FindFirst(ClaimTypes.GivenName)?.Value
+                       ?? User.FindFirst(ClaimsIdentity.DefaultNameClaimType)?.Value
                        ?? User.Identity?.Name
                        ?? "User";
 
@@ -31,19 +31,6 @@
             return "Ordered";
         return "Prepared";
     }
-
-    int GetGridTop(int tableNumber)
-    {
-        var row = (tableNumber - 1) / 2;
-        return 110 + row * 156;
-    }
-
-    int GetGridLeft(int tableNumber)
-    {
-        var col = (tableNumber - 1) % 2;
-        return 556 + col * 439;
-    }
-
 }
 
 <!DOCTYPE html>
@@ -58,8 +45,42 @@
 </head>
 <body>
 <main class="final-table-overview">
+
+<header class="table-overview">
+<div class="block">
+<img class="img" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
+</div>
+<div class="text-content-title"></div>
+<div class="container">
+<div class="div-wrapper">
+<div class="text-wrapper-7">@employeeName</div>
+</div>
+<div class="div-wrapper">
+<div class="keukenmedewerker">@roleName</div>
+</div>
+</div>
+<form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+    @Html.AntiForgeryToken()
+    <button class="button" type="submit" aria-label="Log out">
+        <div class="text">
+            <div class="text-wrapper-8">Log Out</div>
+        </div>
+        <div class="icon" aria-hidden="true">
+            <img class="vector" src="~/img/image.svg" alt="" />
+            <img class="vector-2" src="~/img/vector.svg" alt="" />
+            <img class="vector-3" src="~/img/vector-2.svg" alt="" />
+        </div>
+    </button>
+</form>
+<div class="text-content-title-2" aria-label="Current time">
+<div class="container-2"></div>
+<div class="title-3" id="clock-display">18:42:07</div>
+</div>
+</header>
+
 <div class="frame">
 <aside class="menu" aria-label="Ordered and prepared tables">
+<div class="table-sidebar-header">Orders</div>
 @for (int i = 0; i < sidebarTables.Count; i++)
 {
     var table = sidebarTables[i];
@@ -93,30 +114,20 @@
     </section>
 }
 </aside>
-<div class="rectangle-4" aria-hidden="true"></div>
-<div class="rectangle-5" aria-hidden="true"></div>
-<a class="proceed-to-payment" href="/Payment/Index" aria-label="Proceed to pay">
-    <span class="text-wrapper-4">Proceed To Pay</span>
-    <div class="rectangle-6" aria-hidden="true"></div>
-</a>
-<img class="afbeelding" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
-<div class="rectangle-7" aria-hidden="true"></div>
-<h1 class="text-wrapper-5">Tables</h1>
-<img class="line" src="~/img/line-7.svg" alt="" aria-hidden="true" />
-</div>
 
+<div class="main-area">
+<div class="table-grid">
 @for (int i = 0; i < sortedTables.Count; i++)
 {
     var table = sortedTables[i];
-    var top = GetGridTop(table.TableNumber);
-    var left = GetGridLeft(table.TableNumber);
 
     if (table.IsOccupied)
     {
-        <form method="get" action="/Menu/Index" style="position: absolute; top: @(top)px; left: @(left)px; width: 150px; height: 150px; margin: 0; padding: 0;">
+        <div class="table-cell">
+        <form method="get" action="/Menu/Index">
             <input type="hidden" name="tableId" value="@table.TableId" />
             <input type="hidden" name="tableNumber" value="@table.TableNumber" />
-            <button class="occupied-table" type="submit" aria-label="Occupied Table @table.TableNumber" style="top: 0; left: 0; width: 100%; height: 100%; position: absolute;">
+            <button class="occupied-table" type="submit" aria-label="Occupied Table @table.TableNumber">
                 <span class="table">Table @table.TableNumber</span>
                 <div class="rectangle-12" aria-hidden="true"></div>
                 <div class="rectangle-13" aria-hidden="true"></div>
@@ -124,20 +135,20 @@
                 <div class="rectangle-15" aria-hidden="true"></div>
             </button>
         </form>
+        </div>
     }
     else
     {
+        <div class="table-cell">
         <form method="post" asp-action="ToggleStatus" asp-controller="Table"
-              id="available-form-@table.TableId"
-              style="position: absolute; top: @(top)px; left: @(left)px; width: 150px; height: 150px; margin: 0; padding: 0;">
+              id="available-form-@table.TableId">
             @Html.AntiForgeryToken()
             <input type="hidden" name="tableId" value="@table.TableId" />
             <input type="hidden" name="occupied" value="true" />
             <input type="hidden" name="returnUrl" value="/Menu/Index?tableId=@table.TableId&amp;tableNumber=@table.TableNumber" />
             <input type="hidden" name="guestNames" id="guest-names-@table.TableId" value="" />
             <button class="available-table" type="button" aria-label="Available Table @table.TableNumber"
-                    onclick="openGuestModal(@table.TableId, @table.TableNumber)"
-                    style="top: 0; left: 0; width: 100%; height: 100%; position: absolute;">
+                    onclick="openGuestModal(@table.TableId, @table.TableNumber)">
                 <div class="rectangle-8" aria-hidden="true"></div>
                 <div class="rectangle-9" aria-hidden="true"></div>
                 <div class="rectangle-10" aria-hidden="true"></div>
@@ -146,40 +157,12 @@
                 <span class="text-wrapper-6">Table @table.TableNumber</span>
             </button>
         </form>
+        </div>
     }
 }
-
-<header class="table-overview">
-<div class="block">
-<img class="img" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
-</div>
-<div class="text-content-title"></div>
-<div class="container">
-<div class="div-wrapper">
-<div class="text-wrapper-7">@employeeName</div>
-</div>
-<div class="div-wrapper">
-<div class="keukenmedewerker">@roleName</div>
 </div>
 </div>
-<form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="margin: 0; padding: 0;">
-    @Html.AntiForgeryToken()
-    <button class="button" type="submit" aria-label="Log out">
-        <div class="text">
-            <div class="text-wrapper-8">Log Out</div>
-        </div>
-        <div class="icon" aria-hidden="true">
-            <img class="vector" src="~/img/image.svg" alt="" />
-            <img class="vector-2" src="~/img/vector.svg" alt="" />
-            <img class="vector-3" src="~/img/vector-2.svg" alt="" />
-        </div>
-    </button>
-</form>
-<div class="text-content-title-2" aria-label="Current time">
-<div class="container-2"></div>
-<div class="title-3" id="clock-display">18:42:07</div>
 </div>
-</header>
 </main>
 
 <div id="guest-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
