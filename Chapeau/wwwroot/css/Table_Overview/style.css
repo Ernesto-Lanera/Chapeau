@@ -634,3 +634,122 @@
     font-size: 11px;
   }
 }
+
+.guest-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+
+.guest-modal-overlay.show {
+  display: flex;
+}
+
+.guest-modal-content {
+  background: #25272c;
+  padding: 32px;
+  border-radius: 12px;
+  width: 360px;
+  text-align: center;
+}
+
+.guest-modal-title {
+  font-family: 'Inter-Bold', Helvetica;
+  color: #fff;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.guest-modal-text {
+  font-family: Inter, Helvetica;
+  color: #9f9fa9;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.guest-options-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.guest-option-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #16181c;
+  color: #fff;
+  font-size: 20px;
+  font-family: 'Inter-Bold', Helvetica;
+  cursor: pointer;
+}
+
+.guest-option-btn.selected {
+  border-color: #16a34a;
+  background: #3e9b4b40;
+  color: #16a34a;
+}
+
+.guest-name-fields {
+  margin-bottom: 24px;
+}
+
+.guest-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.guest-modal-btn {
+  padding: 8px 24px;
+  border-radius: 8px;
+  font-family: Inter, Helvetica;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.guest-modal-btn-cancel {
+  border: 1px solid #555;
+  background: transparent;
+  color: #9f9fa9;
+}
+
+.guest-modal-btn-save {
+  border: 1px solid #16a34a;
+  background: #3e9b4b40;
+  color: #16a34a;
+}
+
+.guest-field-container {
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.guest-field-label {
+  font-family: Inter, Helvetica;
+  color: #9f9fa9;
+  font-size: 12px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.guest-field-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #16181c;
+  color: #fff;
+  font-family: Inter, Helvetica;
+  font-size: 14px;
+  box-sizing: border-box;
+}

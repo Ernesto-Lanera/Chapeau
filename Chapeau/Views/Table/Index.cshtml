@@ -128,21 +128,21 @@
 </div>
 </div>
 
-<div id="guest-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#25272c; padding:32px; border-radius:12px; width:360px; text-align:center;">
-        <h3 style="font-family:'Inter-Bold',Helvetica; color:#fff; font-size:20px; margin-bottom:8px;">Aantal gasten</h3>
-        <p style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:14px; margin-bottom:24px;">Wat is het aantal gasten voor deze tafel?</p>
-        <div style="display:flex; gap:12px; justify-content:center; margin-bottom:24px;">
-            <button type="button" onclick="setGuestCount(1)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">1</button>
-            <button type="button" onclick="setGuestCount(2)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #16a34a; background:#3e9b4b40; color:#16a34a; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">2</button>
-            <button type="button" onclick="setGuestCount(3)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">3</button>
-            <button type="button" onclick="setGuestCount(4)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">4</button>
+<div id="guest-modal" class="guest-modal-overlay">
+    <div class="guest-modal-content">
+        <h3 class="guest-modal-title">Aantal gasten</h3>
+        <p class="guest-modal-text">Wat is het aantal gasten voor deze tafel?</p>
+        <div class="guest-options-row">
+            <button type="button" onclick="setGuestCount(1)" class="guest-option-btn guest-option">1</button>
+            <button type="button" onclick="setGuestCount(2)" class="guest-option-btn guest-option selected">2</button>
+            <button type="button" onclick="setGuestCount(3)" class="guest-option-btn guest-option">3</button>
+            <button type="button" onclick="setGuestCount(4)" class="guest-option-btn guest-option">4</button>
         </div>
         <input type="hidden" id="selected-guests" value="2" />
-        <div id="guest-name-fields" style="margin-bottom:24px;"></div>
-        <div style="display:flex; gap:8px; justify-content:flex-end;">
-            <button type="button" onclick="closeGuestModal()" style="padding:8px 24px; border-radius:8px; border:1px solid #555; background:transparent; color:#9f9fa9; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Annuleren</button>
-            <button type="button" onclick="confirmGuest()" style="padding:8px 24px; border-radius:8px; border:1px solid #16a34a; background:#3e9b4b40; color:#16a34a; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Opslaan</button>
+        <div id="guest-name-fields" class="guest-name-fields"></div>
+        <div class="guest-modal-actions">
+            <button type="button" onclick="closeGuestModal()" class="guest-modal-btn guest-modal-btn-cancel">Annuleren</button>
+            <button type="button" onclick="confirmGuest()" class="guest-modal-btn guest-modal-btn-save">Opslaan</button>
         </div>
     </div>
 </div>
@@ -156,19 +156,15 @@ function openGuestModal(tableId, tableNumber) {
     document.getElementById('selected-guests').value = 2;
     var options = document.querySelectorAll('.guest-option');
     options.forEach(function(btn) {
-        btn.style.borderColor = '#555';
-        btn.style.background = '#16181c';
-        btn.style.color = '#fff';
+        btn.classList.remove('selected');
     });
-    options[1].style.borderColor = '#16a34a';
-    options[1].style.background = '#3e9b4b40';
-    options[1].style.color = '#16a34a';
-    document.getElementById('guest-modal').style.display = 'flex';
+    options[1].classList.add('selected');
+    document.getElementById('guest-modal').classList.add('show');
     renderGuestNameFields(2);
 }
 
 function closeGuestModal() {
-    document.getElementById('guest-modal').style.display = 'none';
+    document.getElementById('guest-modal').classList.remove('show');
 }
 
 function setGuestCount(count) {
@@ -176,13 +172,9 @@ function setGuestCount(count) {
     var options = document.querySelectorAll('.guest-option');
     options.forEach(function(btn, index) {
         if (index + 1 === count) {
-            btn.style.borderColor = '#16a34a';
-            btn.style.background = '#3e9b4b40';
-            btn.style.color = '#16a34a';
+            btn.classList.add('selected');
         } else {
-            btn.style.borderColor = '#555';
-            btn.style.background = '#16181c';
-            btn.style.color = '#fff';
+            btn.classList.remove('selected');
         }
     });
     renderGuestNameFields(count);
@@ -192,9 +184,9 @@ function renderGuestNameFields(count) {
     var container = document.getElementById('guest-name-fields');
     var html = '';
     for (var i = 1; i <= count; i++) {
-        html += '<div style="margin-bottom:8px; text-align:left;">' +
-            '<label style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:12px; display:block; margin-bottom:4px;">Gast ' + i + '</label>' +
-            '<input type="text" id="guest-name-' + i + '" placeholder="Naam gast ' + i + '" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-family:Inter,Helvetica; font-size:14px; box-sizing:border-box;" />' +
+        html += '<div class="guest-field-container">' +
+            '<label class="guest-field-label" for="guest-name-' + i + '">Gast ' + i + '</label>' +
+            '<input type="text" id="guest-name-' + i + '" class="guest-field-input" placeholder="Naam gast ' + i + '" />' +
             '</div>';
     }
     container.innerHTML = html;
