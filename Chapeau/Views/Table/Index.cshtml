@@ -5,7 +5,7 @@
 
 @{
     ViewData["Title"] = "Tables Overview";
-    Layout = null;
+    Layout = "_Layout";
 
     var roleName = User.FindFirst(ClaimTypeConstants.RoleName)?.Value
                    ?? User.FindFirst(ClaimsIdentity.DefaultRoleClaimType)?.Value
@@ -33,50 +33,13 @@
     }
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta charset="utf-8" />
-<title>Tables Overview</title>
-<link rel="stylesheet" href="~/css/Table_Overview/globals.css">
-<link rel="stylesheet" href="~/css/Table_Overview/styleguide.css">
-<link rel="stylesheet" href="~/css/Table_Overview/style.css">
-</head>
-<body>
-<main class="final-table-overview">
+@section Styles {
+    <link rel="stylesheet" href="~/css/Table_Overview/globals.css">
+    <link rel="stylesheet" href="~/css/Table_Overview/styleguide.css">
+    <link rel="stylesheet" href="~/css/Table_Overview/style.css">
+}
 
-<header class="table-overview">
-<div class="block">
-<img class="img" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
-</div>
-<div class="text-content-title"></div>
-<div class="container">
-<div class="div-wrapper">
-<div class="text-wrapper-7">@employeeName</div>
-</div>
-<div class="div-wrapper">
-<div class="keukenmedewerker">@roleName</div>
-</div>
-</div>
-<form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-    @Html.AntiForgeryToken()
-    <button class="button" type="submit" aria-label="Log out">
-        <div class="text">
-            <div class="text-wrapper-8">Log Out</div>
-        </div>
-        <div class="icon" aria-hidden="true">
-            <img class="vector" src="~/img/image.svg" alt="" />
-            <img class="vector-2" src="~/img/vector.svg" alt="" />
-            <img class="vector-3" src="~/img/vector-2.svg" alt="" />
-        </div>
-    </button>
-</form>
-<div class="text-content-title-2" aria-label="Current time">
-<div class="container-2"></div>
-<div class="title-3" id="clock-display">18:42:07</div>
-</div>
-</header>
+<div class="final-table-overview">
 
 <div class="frame">
 <aside class="menu" aria-label="Ordered and prepared tables">
@@ -163,7 +126,7 @@
 </div>
 </div>
 </div>
-</main>
+</div>
 
 <div id="guest-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#25272c; padding:32px; border-radius:12px; width:360px; text-align:center;">
@@ -184,20 +147,9 @@
     </div>
 </div>
 
+@section Scripts {
 <script>
 var currentTableId = 0;
-
-(function() {
-    function updateClock() {
-        var now = new Date();
-        var hours = String(now.getHours()).padStart(2, '0');
-        var minutes = String(now.getMinutes()).padStart(2, '0');
-        var seconds = String(now.getSeconds()).padStart(2, '0');
-        document.getElementById('clock-display').textContent = hours + ':' + minutes + ':' + seconds;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
-})();
 
 function openGuestModal(tableId, tableNumber) {
     currentTableId = tableId;
@@ -267,5 +219,4 @@ function confirmGuest() {
     }
 }
 </script>
-</body>
-</html>
+}
