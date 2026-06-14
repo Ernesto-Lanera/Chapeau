@@ -16,7 +16,6 @@ namespace Chapeau.Models
         public string? Comment { get; set; }
 
         public string MenuItemName { get; set; } = string.Empty;
-        public int MenuCardID { get; set; }
 
         public string Name
         {

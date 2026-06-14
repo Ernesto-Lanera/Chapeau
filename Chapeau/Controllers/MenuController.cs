@@ -1,4 +1,5 @@
 using Chapeau.Constants;
+using Chapeau.Emums;
 using Chapeau.Extensions;
 using Chapeau.Models;
 using Chapeau.Services;
@@ -23,113 +24,73 @@ namespace Chapeau.Controllers
             _categoryService = categoryService;
         }
 
-        private Order GetOrder(int? tableId = null, int? tableNumber = null, string? guestNames = null)
-        {
-            var sessionData = HttpContext.Session.GetString("ActiveOrder");
-            if (!string.IsNullOrEmpty(sessionData))
-            {
-                var existingOrder = JsonSerializer.Deserialize<Order>(sessionData)!;
-                if (tableId.HasValue && existingOrder.TableId != tableId.Value)
-                {
-                    HttpContext.Session.Remove("ActiveOrder");
-                    sessionData = null;
-                }
-            }
-
-            if (string.IsNullOrEmpty(sessionData))
-            {
-                var order = _orderService.MakeNewOrder(tableId ?? 1);
-                order.TableNumber = tableNumber ?? 0;
-                order.GuestName = guestNames;
-                return order;
-            }
-
-            return JsonSerializer.Deserialize<Order>(sessionData)!;
-        }
-
-        private void SaveOrdertoJson(Order order)
-        {
-            HttpContext.Session.SetString("ActiveOrder", JsonSerializer.Serialize(order));
-        }
+        
 
         public IActionResult Index(int? tableId, int? tableNumber, string? guestNames = null)
         {
             try
             {
-                var order = GetOrder(tableId, tableNumber, guestNames);
-                SaveOrdertoJson(order);
-                ViewBag.Order = order;
-                ViewBag.TableNumber = tableNumber ?? order.TableNumber;
+                ViewBag.TableNumber = tableNumber;
                 ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();
                 var menuItems = _menuService.GetMenuItems(null, null) ?? new List<MenuItem>();
 
                 return View(menuItems);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception)
             {
-                ViewBag.ErrorMessage = ex.Message;
+                ViewBag.ErrorMessage = "Could not load the menu. Please try again.";
                 return View("Error");
             }
         }
 
-        [HttpGet]
-        public IActionResult GetActiveOrderItems()
-        {
-            Order order = GetOrder();
-            return Json(new { success = true, items = order.OrderItems});
-        }
-
         [HttpPost]
-        public IActionResult AddMenuItemToOrder(int MenuItemId, string MenuItemName)
+        public IActionResult SaveOrderToDb([FromBody] FinalOrderPayload payload)
         {
-            Order order = GetOrder();
-            order = _orderService.AddOrderItemToOrder(MenuItemId, order, MenuItemName);
-            SaveOrdertoJson(order);
-            return Json(new { success = true, items = order.OrderItems });
-        }
+            try
+            {
+                if (payload == null || payload.Items == null || !payload.Items.Any())
+                {
+                    return Json(new { success = false, message = "Cannot submit an empty order." });
+                }
 
-        [HttpPost]
-        public IActionResult RemoveMenuItemFromOrder(int MenuItemId)
-        {
-            Order order = GetOrder();
-            order = _orderService.RemoveItemFromOrder(MenuItemId, order);
-            SaveOrdertoJson(order);
-            return Json(new { success = true, items = order.OrderItems});
-        }
 
-        [HttpPost]
-        public IActionResult UpdateMenuItemQuantity(int MenuItemId, int NewQuantity)
-        {
-            Order order = GetOrder();
-            order = _orderService.UpdateItemFromOrder(MenuItemId, order, NewQuantity);
-            SaveOrdertoJson(order);
-            return Json(new { success = true, items = order.OrderItems });
-        }
+                if (payload.TableId <= 0)
+                {
+                    return Json(new { success = false, message = "Invalid Table selected. Please go back to the table overview and try again." });
+                }
 
-        [HttpPost]
-        public IActionResult UpdateItemComment(int MenuItemId, string Comment)
-        {
-            Order order = GetOrder();
-            order = _orderService.UpdateItemComment(MenuItemId, order, Comment);
-            SaveOrdertoJson(order);
-            return Json(new { success = true, items = order.OrderItems });
-        }
+                Order order = new Order
+                {
+                    TableId = payload.TableId,
+                    OrderDate = DateTime.Now,
+                    Items = new List<OrderItem>()
+                };
 
-        [HttpPost]
-        public IActionResult SaveOrderToDb()
-        {
-            Order order = GetOrder();
-            _orderService.SaveOrderToDb(order);
-             this.ShowNotification("Your Order was saved successfully!", "success");
-            return RedirectToAction("Index", "Table");
-           
-        }
+                foreach (var jsItem in payload.Items)
+                {
+                    if (jsItem.Amount <= 0) continue;
 
-        [HttpPost]
-        public IActionResult CancelOrder()
-        {
-            return RedirectToAction("Index", "Table");
+                    var newOrderItem = new OrderItem
+                    {
+                        MenuItemId = jsItem.MenuItemId,
+                        Amount = jsItem.Amount,
+                        Comment = jsItem.Comment,
+                        OrderItemStatus = 0
+                    };
+                    order.Items.Add(newOrderItem);
+                }
+
+                _orderService.SaveOrderToDb(order);
+
+                this.ShowNotification("Your Order was saved successfully!", "success");
+
+                return Json(new { success = true, redirectUrl = Url.Action("Index", "Table") });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "A database error occurred while saving. Please try submitting again., Db Erros :" + ex.Message  });
+            }
         }
 
         private static List<SelectListItem> GetMenuCardSelectList()
