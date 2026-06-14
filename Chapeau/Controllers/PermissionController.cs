@@ -8,7 +8,7 @@ namespace Chapeau.Controllers
     /// Example controller demonstrating permission-based and role-based authorization.
     /// This shows all the different ways to use claims for access control.
     /// </summary>
-    public class PermissionExampleController : Controller
+    public class PermissionController : Controller
     {
         // ===== ROLE-BASED AUTHORIZATION =====
 
@@ -197,40 +197,6 @@ namespace Chapeau.Controllers
             };
 
             return View(viewData);
-        }
-
-        // ===== ROLE AND PERMISSION SHORTCUTS =====
-
-        /// <summary>
-        /// Examples using shortcut extension methods for common permissions.
-        /// </summary>
-        [Authorize]
-        public IActionResult PermissionShortcuts()
-        {
-            var user = User;
-
-            // These shortcut methods make code more readable
-            if (user.CanTakeOrders())
-            {
-                // Show order form
-            }
-
-            if (user.CanPrepareFood())
-            {
-                // Show kitchen orders
-            }
-
-            if (user.CanManageEmployees())
-            {
-                // Show employee management
-            }
-
-            if (user.CanViewReports())
-            {
-                // Show reports
-            }
-
-            return View();
         }
 
         // ===== COMPLEX AUTHORIZATION SCENARIOS =====
