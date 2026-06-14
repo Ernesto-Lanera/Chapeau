@@ -191,7 +191,7 @@
 
         <div id="paymentData"
              data-total="@Model.Total.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
-             data-order-id="@Model.OrderID"
+             data-order-ids="@string.Join(",", Model.OrderIDs)"
              data-table-number="@Model.TableNumber"
              style="display:none;">
         </div>

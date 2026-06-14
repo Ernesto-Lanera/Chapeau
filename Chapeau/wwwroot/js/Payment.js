@@ -1,5 +1,6 @@
 ﻿let TOTAL = 0;
 let ORDER_ID = 0;
+let ORDER_IDS = [];
 let TABLE_NUMBER = 0;
 let payments = [];
 
@@ -9,6 +10,10 @@ document.addEventListener('DOMContentLoaded', function () {
         TOTAL = parseFloat(dataEl.getAttribute('data-total')) || 0;
         ORDER_ID = parseInt(dataEl.getAttribute('data-order-id')) || 0;
         TABLE_NUMBER = parseInt(dataEl.getAttribute('data-table-number')) || 0;
+
+        const idsRaw = dataEl.getAttribute('data-order-ids') || '';
+        ORDER_IDS = idsRaw.split(',').map(Number).filter(n => n > 0);
+        if (ORDER_IDS.length === 0) ORDER_IDS = [ORDER_ID];
     }
 });
 
@@ -139,7 +144,6 @@ function addPayment() {
 
     renderPayments();
 
-    // Reset inputs
     document.getElementById('amountInput').value = '';
     document.getElementById('feedbackInput').value = '';
     document.getElementById('splitCheck').checked = false;
@@ -187,7 +191,7 @@ function doPay() {
             <span>Table</span><strong>${TABLE_NUMBER}</strong>
         </div>
         <div class="confirm-detail-row">
-            <span>Order</span><strong>#${ORDER_ID}</strong>
+            <span>Orders</span><strong>${ORDER_IDS.map(id => '#' + id).join(', ')}</strong>
         </div><hr/>`;
 
     payments.forEach((p, i) => {
@@ -220,20 +224,23 @@ function doPay() {
 }
 
 function saveAllPayments() {
-    const promises = payments.map(p =>
+    const totalTip = payments.reduce((s, p) => s + (p.tip || 0), 0);
+    const allFeedback = payments.map(p => p.feedback).filter(f => f).join(', ');
+
+    const savePromises = ORDER_IDS.map(orderId =>
         fetch('/Payment/SavePayment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                orderId: ORDER_ID,
+                orderId: orderId,
                 tableNumber: TABLE_NUMBER,
-                tipAmount: p.tip || 0,
-                feedback: p.feedback || ''
+                tipAmount: totalTip / ORDER_IDS.length,
+                feedback: allFeedback || ''
             })
         }).then(r => r.json())
     );
 
-    Promise.all(promises)
+    Promise.all(savePromises)
         .then(results => {
             const failed = results.filter(r => !r.success);
             if (failed.length > 0) {

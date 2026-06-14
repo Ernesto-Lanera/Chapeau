@@ -687,4 +687,32 @@ public class OrderRepository : IOrderRepository
 
         command.ExecuteNonQuery();
     }
+
+    public List<Order> GetOrdersByTableNumber(int tableNumber)
+    {
+        List<Order> orders = new List<Order>();
+
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
+        FROM Orders o
+        JOIN Table_ t ON o.TableID = t.TableID
+        WHERE t.TableNumber = @TableNumber
+        AND o.OrderStatus = @Served
+        ORDER BY o.OrderDate ASC";
+
+        using SqlCommand command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@TableNumber", tableNumber);
+        command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+
+        using SqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+            orders.Add(MapOrder(reader));
+
+        foreach (var order in orders)
+            order.Items = GetOrderItemsByOrderId(order.OrderId);
+
+        return orders;
+    }
 }
