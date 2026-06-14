@@ -18,14 +18,7 @@ namespace Chapeau.Services
 
         public List<Order> GetRunningOrders(OrderType type)
         {
-            try
-            {
-                return _orderRepository.GetRunningOrders(type);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to retrieve running orders.", ex);
-            }
+            return _orderRepository.GetRunningOrders(type);
         }
 
         public List<Order> GetAllRunningOrders()
@@ -37,7 +30,7 @@ namespace Chapeau.Services
                 .GroupBy(o => o.OrderId)
                 .Select(g => {
                     var order = g.First();
-                    order.Items = g.SelectMany(o => o.Items ?? new List<OrderItem>()).ToList();
+                    order.OrderItems = g.SelectMany(o => o.OrderItems ?? new List<OrderItem>()).ToList();
                     return order;
                 })
                 .ToList();
@@ -210,35 +203,17 @@ namespace Chapeau.Services
         public void UpdateOrderStatus(int orderId, OrderStatus status)
         {
             if (orderId <= 0)
-            {
                 throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
 
-            try
-            {
-                _orderRepository.UpdateOrderStatus(orderId, status);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to update order status.", ex);
-            }
+            _orderRepository.UpdateOrderStatus(orderId, status);
         }
 
         public void UpdateOrderItemStatus(int orderItemId, OrderStatus status)
         {
             if (orderItemId <= 0)
-            {
                 throw new ArgumentException("Ongeldig OrderItemId.", nameof(orderItemId));
-            }
 
-            try
-            {
-                _orderRepository.UpdateOrderItemStatus(orderItemId, status);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to update order item status.", ex);
-            }
+            _orderRepository.UpdateOrderItemStatus(orderItemId, status);
         }
 
         public void UpdateOrderIfServed(int orderId)
@@ -257,38 +232,17 @@ namespace Chapeau.Services
 
         public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status)
         {
-            try
-            {
-                _orderRepository.UpdateAllOrderItemStatuses(orderId, type, status);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to update all order item statuses.", ex);
-            }
+            _orderRepository.UpdateAllOrderItemStatuses(orderId, type, status);
         }
 
         public void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status)
         {
-            try
-            {
-                _orderRepository.UpdateCourseItemStatuses(orderId, course, status);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to update course item statuses.", ex);
-            }
+            _orderRepository.UpdateCourseItemStatuses(orderId, course, status);
         }
 
         public List<Order> GetFinishedOrdersToday(OrderType type)
         {
-            try
-            {
-                return _orderRepository.GetFinishedOrdersToday(type);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to retrieve finished orders.", ex);
-            }
+            return _orderRepository.GetFinishedOrdersToday(type);
         }
 
         public void SaveOrderToDb(Order order)

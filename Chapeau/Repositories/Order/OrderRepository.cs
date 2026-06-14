@@ -142,10 +142,10 @@ public class OrderRepository : IOrderRepository
         connection.Open();
 
         string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
-            FROM Orders o
-            JOIN Table_ t ON o.TableID = t.TableID
-            WHERE o.OrderStatus = @Status
-            ORDER BY o.OrderDate ASC";
+        FROM Orders o
+        JOIN Table_ t ON o.TableID = t.TableID
+        WHERE o.OrderStatus = @Status
+        ORDER BY o.OrderDate ASC";
 
         using SqlCommand command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@Status", (int)status);
@@ -154,6 +154,11 @@ public class OrderRepository : IOrderRepository
         while (reader.Read())
         {
             orders.Add(MapOrder(reader));
+        }
+
+        foreach (var order in orders)
+        {
+            order.OrderItems = GetOrderItemsByOrderId(order.OrderId);
         }
 
         return orders;
@@ -217,10 +222,11 @@ public class OrderRepository : IOrderRepository
         SELECT oi.OrderItemID, oi.OrderID, oi.MenuItemID, oi.AmountOrdered, 
                oi.Comment, oi.OrderItemStatus, m.Name,
         CASE 
-        WHEN m.CategoryID IN (1, 5, 16) THEN 0
-        WHEN m.CategoryID IN (2, 14) THEN 1
-        WHEN m.CategoryID IN (3, 15) THEN 2
-        ELSE NULL
+        WHEN m.CategoryID IN (34, 37) THEN 0
+        WHEN m.CategoryID IN (36, 39) THEN 1
+        WHEN m.CategoryID IN (35, 38) THEN 2
+        WHEN m.CategoryID IN (8, 9) THEN 3
+        ELSE 0
         END AS Course
         FROM OrderItem oi
         JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
@@ -568,11 +574,12 @@ public class OrderRepository : IOrderRepository
             JOIN MenuItems m ON m.MenuItemID = oi.MenuItemID
             WHERE oi.OrderID = @OrderID
             AND oi.OrderItemStatus < @Status
-            AND CASE
-                WHEN m.CategoryID IN (1, 5, 16) THEN 0
-                WHEN m.CategoryID IN (2, 14) THEN 1
-                WHEN m.CategoryID IN (3, 15) THEN 2
-            END = @Course";
+            AND (
+                (@Course = 0 AND m.CategoryID IN (34, 37)) OR
+                (@Course = 1 AND m.CategoryID IN (36, 39)) OR
+                (@Course = 2 AND m.CategoryID IN (35, 38)) OR
+                (@Course = 3 AND m.CategoryID IN (8, 9))
+            )";
 
             using (SqlCommand command = new SqlCommand(query, connection))
             {
