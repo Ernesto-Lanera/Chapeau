@@ -1,14 +1,14 @@
 ﻿let currentCartItems = [];
+try {
+    currentCartItems = JSON.parse(sessionStorage.getItem('chapeau_cart')) || [];
+} catch (e) {
+    currentCartItems = [];
+}
+
 let editingCommentId = null;
-let quantityTimers = {};
-let activeNetworkRequests = 0;
-let pendingAdds = new Set();
-let pendingDeletes = new Set();
 
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('/Menu/GetActiveOrderItems')
-        .then(res => res.json())
-        .then(data => { if (data.success) updateCartUI(data.items); });
+    updateCartUI(currentCartItems);
 });
 
 function showNotification(message, type = "warning") {
@@ -24,34 +24,6 @@ function showNotification(message, type = "warning") {
             typeof bootstrap !== 'undefined' ? new bootstrap.Alert(alertDiv).close() : alertDiv.remove();
         }
     }, 2000);
-}
-
-function sendApiRequest(url, paramsData, onComplete = null) {
-    activeNetworkRequests++;
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(paramsData)
-    })
-        .then(res => res.json())
-        .then(data => {
-            activeNetworkRequests--;
-            if (onComplete) onComplete(data.success);
-            if (data.success) {
-                currentCartItems = data.items;
-                checkAndRedrawUI();
-            }
-        })
-        .catch(() => {
-            activeNetworkRequests--;
-            if (onComplete) onComplete(false);
-        });
-}
-
-function checkAndRedrawUI() {
-    if (activeNetworkRequests === 0 && Object.keys(quantityTimers).length === 0) {
-        updateCartUI(currentCartItems);
-    }
 }
 
 function preserveActiveComment() {
@@ -111,19 +83,71 @@ function buildCartItemHtml(item, activeCommentValue) {
 }
 
 function updateCartUI(items) {
-    currentCartItems = items;
     const activeCommentValue = preserveActiveComment();
-
     document.getElementById('cart-container').innerHTML = items.map(item => buildCartItemHtml(item, activeCommentValue)).join('');
-
     restoreActiveComment();
 }
 
-function adjustQuantity(menuItemId, delta) {
-    let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
-    if (existingQtySpan) {
-        updateQuantity(menuItemId, parseInt(existingQtySpan.innerText) + delta);
+function saveCartState() {
+    try {
+        sessionStorage.setItem('chapeau_cart', JSON.stringify(currentCartItems));
+    } catch (e) {
+        showNotification("Warning: Could not save cart locally.", "warning");
     }
+    updateCartUI(currentCartItems);
+}
+
+function addToOrder(menuItemId, menuItemName) {
+    let maxStock = window.stockLevels ? (window.stockLevels[menuItemId] || 0) : 999;
+    if (maxStock <= 0) {
+        showNotification("Item out of stock.", "danger");
+        return;
+    }
+
+    let existingItem = currentCartItems.find(i => i.menuItemId === menuItemId);
+
+    if (existingItem) {
+        if (existingItem.amountOrdered >= maxStock) {
+            showNotification(`Maximum stock reached. Only ${maxStock} available.`);
+            return;
+        }
+        existingItem.amountOrdered += 1;
+    } else {
+        currentCartItems.push({
+            menuItemId: menuItemId,
+            menuItemName: menuItemName,
+            amountOrdered: 1,
+            comment: ""
+        });
+    }
+
+    saveCartState();
+}
+
+function adjustQuantity(menuItemId, delta) {
+    let maxStock = window.stockLevels ? (window.stockLevels[menuItemId] || 0) : 999;
+    let item = currentCartItems.find(i => i.menuItemId === menuItemId);
+
+    if (item) {
+        let newQty = item.amountOrdered + delta;
+
+        if (newQty > maxStock) {
+            showNotification(`Maximum stock reached. Only ${maxStock} available.`);
+            return;
+        }
+
+        item.amountOrdered = newQty;
+        if (item.amountOrdered <= 0) {
+            removeFromOrder(menuItemId);
+        } else {
+            saveCartState();
+        }
+    }
+}
+
+function removeFromOrder(menuItemId) {
+    currentCartItems = currentCartItems.filter(i => i.menuItemId !== menuItemId);
+    saveCartState();
 }
 
 function toggleCommentInput(menuItemId) {
@@ -133,102 +157,68 @@ function toggleCommentInput(menuItemId) {
 
 function saveComment(menuItemId) {
     const inputField = document.getElementById(`comment-input-${menuItemId}`);
-    const commentText = inputField ? inputField.value : '';
+    let item = currentCartItems.find(i => i.menuItemId === menuItemId);
 
-    sendApiRequest(
-        '/Menu/UpdateItemComment',
-        { 'MenuItemId': menuItemId, 'Comment': commentText },
-        (success) => { if (success) editingCommentId = null; }
-    );
+    if (item && inputField) {
+        item.comment = inputField.value;
+        editingCommentId = null;
+        saveCartState();
+    }
 }
 
 function deleteComment(menuItemId) {
-    sendApiRequest('/Menu/UpdateItemComment', { 'MenuItemId': menuItemId, 'Comment': '' });
+    let item = currentCartItems.find(i => i.menuItemId === menuItemId);
+    if (item) {
+        item.comment = "";
+        saveCartState();
+    }
 }
 
-function addToOrder(menuItemId, menuItemName) {
-    let maxStock = window.stockLevels[menuItemId] || 0;
-    if (maxStock <= 0) {
-        showNotification("Item out of stock.", "danger");
+function cancelLocalOrder() {
+    sessionStorage.removeItem('chapeau_cart');
+    currentCartItems = [];
+    window.location.href = '/Table/Index';
+}
+
+function submitOrderToServer() {
+    if (currentCartItems.length === 0) {
+        showNotification("Cannot send an empty order.", "warning");
         return;
     }
 
-    let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
-    if (existingQtySpan) {
-        if (parseInt(existingQtySpan.innerText) >= maxStock) {
-            showNotification(`Maximum stock reached. Only ${maxStock} available.`);
-            return;
-        }
-        adjustQuantity(menuItemId, 1);
-        return;
-    }
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentTableId = parseInt(urlParams.get('tableId')) || 0;
 
-    if (pendingAdds.has(menuItemId)) return;
-    pendingAdds.add(menuItemId);
+    const jsCartItems = currentCartItems.map(item => ({
+        MenuItemId: item.menuItemId,
+        Amount: item.amountOrdered,
+        Comment: item.comment
+    }));
 
-    currentCartItems.push({ menuItemId, menuItemName, amountOrdered: 1, comment: "" });
-    updateCartUI(currentCartItems);
+    const finalPayload = {
+        TableId: currentTableId,
+        Items: jsCartItems
+    };
 
-    sendApiRequest(
-        '/Menu/AddMenuItemToOrder',
-        { 'MenuItemId': menuItemId, 'MenuItemName': menuItemName },
-        () => pendingAdds.delete(menuItemId)
-    );
-}
-
-function removeFromOrder(menuItemId) {
-    if (pendingDeletes.has(menuItemId)) return;
-    pendingDeletes.add(menuItemId);
-
-    if (quantityTimers[menuItemId]) {
-        clearTimeout(quantityTimers[menuItemId]);
-        delete quantityTimers[menuItemId];
-    }
-
-    let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
-    if (existingQtySpan) {
-        let cartItemBox = existingQtySpan.closest('.border.rounded');
-        if (cartItemBox) cartItemBox.style.display = 'none';
-    }
-
-    sendApiRequest('/Menu/RemoveMenuItemFromOrder', { 'MenuItemId': menuItemId }, () => {
-        pendingDeletes.delete(menuItemId);
-    });
-}
-
-function updateQuantity(menuItemId, newQuantity) {
-    if (updateLocalQuantity(menuItemId, newQuantity)) {
-        syncQuantityWithServer(menuItemId, newQuantity);
-    }
-}
-
-function updateLocalQuantity(menuItemId, newQuantity) {
-    let maxStock = window.stockLevels[menuItemId] || 0;
-
-    if (newQuantity > maxStock) {
-        showNotification(`Maximum stock reached. Only ${maxStock} available.`);
-        return false;
-    }
-
-    if (newQuantity <= 0) {
-        removeFromOrder(menuItemId);
-        return false;
-    }
-
-    let existingQtySpan = document.getElementById(`qty-${menuItemId}`);
-    if (existingQtySpan) existingQtySpan.innerText = newQuantity;
-
-    let itemToUpdate = currentCartItems.find(i => i.menuItemId === menuItemId);
-    if (itemToUpdate) itemToUpdate.amountOrdered = newQuantity;
-
-    return true;
-}
-
-function syncQuantityWithServer(menuItemId, newQuantity) {
-    if (quantityTimers[menuItemId]) clearTimeout(quantityTimers[menuItemId]);
-
-    quantityTimers[menuItemId] = setTimeout(() => {
-        delete quantityTimers[menuItemId];
-        sendApiRequest('/Menu/UpdateMenuItemQuantity', { 'MenuItemId': menuItemId, 'NewQuantity': newQuantity });
-    }, 300);
+    fetch('/Menu/SaveOrderToDb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalPayload)
+    })
+        .then(res => {
+            if (!res.ok) throw new Error("Server error");
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                sessionStorage.removeItem('chapeau_cart');
+                currentCartItems = [];
+                window.location.href = data.redirectUrl;
+            } else {
+                showNotification(data.message || "Failed to save the order.", "danger");
+            }
+        })
+        .catch(() => {
+            showNotification("Network error. Please check your connection and try again.", "danger");
+        });
 }

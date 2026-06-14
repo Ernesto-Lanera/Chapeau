@@ -102,15 +102,15 @@
 
             <div id="cart-container" class="flex-grow-1 overflow-y-auto hide-scrollbar">
             </div>
-
             <div class="mt-auto d-flex justify-content-between pt-3 menu-border-top">
-                <form method="post" asp-controller="Menu" asp-action="CancelOrder" class="w-50 ms-1">
-                <button class="btn btn-danger w-100 fw-bold rounded-3">Cancel</button>
-                </form>
-                <form method="post" asp-controller="Menu" asp-action="SaveOrderToDb" class="w-50 ms-1">
-                    <button class="btn btn-primary w-100 fw-bold rounded-3" type="submit">Send To Kitchen</button>
-                </form>
-            </div>
+    <div class="w-50 ms-1">
+        <button class="btn btn-danger w-100 fw-bold rounded-3" onclick="cancelLocalOrder()">Cancel</button>
+    </div>
+    <div class="w-50 ms-1">
+        <button class="btn btn-primary w-100 fw-bold rounded-3" onclick="submitOrderToServer()">Send To Kitchen</button>
+    </div>
+</div>
+           
         </div>
 
     </div>
