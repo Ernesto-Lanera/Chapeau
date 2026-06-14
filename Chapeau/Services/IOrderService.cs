@@ -32,5 +32,6 @@ namespace Chapeau.Services
         Order UpdateItemComment(int menuItemId, Order order, string comment);
         void UpdateItemComment(int orderItemId, string comment);
         void SaveOrderToDb(Order order);
+        List<Order> GetServedOrdersByTableNumber(int tableNumber);
     }
 }

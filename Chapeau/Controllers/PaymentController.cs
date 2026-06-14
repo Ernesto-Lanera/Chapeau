@@ -160,5 +160,27 @@ namespace Chapeau.Controllers
                 RequestId = HttpContext.TraceIdentifier
             });
         }
+        public IActionResult CheckoutTable(int tableNumber)
+        {
+            var orders = _orderService.GetServedOrdersByTableNumber(tableNumber);
+
+            if (!orders.Any())
+                return RedirectToAction("Index");
+
+            var allItems = orders.SelectMany(o => o.Items ?? new List<OrderItem>()).ToList();
+
+            var viewModel = new PaymentOrderViewModel
+            {
+                TableNumber = tableNumber,
+                OrderID = orders.First().OrderId,
+                OrderIDs = orders.Select(o => o.OrderId).ToList(),
+                Items = allItems,
+                LowVAT = allItems.Where(i => i.VATRate == 0.06m).Sum(i => i.Price * i.Amount * i.VATRate),
+                HighVAT = allItems.Where(i => i.VATRate == 0.21m).Sum(i => i.Price * i.Amount * i.VATRate),
+                Total = allItems.Sum(i => i.Price * i.Amount * (1 + i.VATRate))
+            };
+
+            return View("ViewOrder", viewModel);
+        }
     }    
 }

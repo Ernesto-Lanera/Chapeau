@@ -293,5 +293,13 @@ namespace Chapeau.Services
 
             return orders;
         }
+        public List<Order> GetServedOrdersByTableNumber(int tableNumber)
+        {
+            if (tableNumber <= 0)
+                throw new ArgumentException("Ongeldig tafelnummer.", nameof(tableNumber));
+
+            return _orderRepository.GetOrdersByTableNumber(tableNumber);
+        }
     }
+
 }

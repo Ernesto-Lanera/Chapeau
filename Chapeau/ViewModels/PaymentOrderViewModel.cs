@@ -6,6 +6,7 @@ namespace Chapeau.ViewModels
     public class PaymentOrderViewModel
     {
         public int OrderID { get; set; }
+        public List<int> OrderIDs { get; set; } = new List<int>(); // nieuw
         public int TableNumber { get; set; }
         public IReadOnlyList<OrderItem> Items { get; set; } = new List<OrderItem>();
         public decimal LowVAT { get; set; }

@@ -1,25 +1,32 @@
 ﻿@model List<Chapeau.Models.Order>
 @{
     ViewData["Title"] = "Betaling";
+    var ordersByTable = Model?.GroupBy(o => o.TableNumber).ToList();
 }
 
 <div class="container payment-index-container">
     <h1 class="payment-index-header">Betalen - Alle tafels</h1>
 
-    @if (Model != null && Model.Count > 0)
+    @if (ordersByTable != null && ordersByTable.Count > 0)
     {
-        @foreach (var order in Model)
+        @foreach (var tableGroup in ordersByTable)
         {
+            var allItems = tableGroup.SelectMany(o => o.Items ?? new List<Chapeau.Models.OrderItem>()).ToList();
+            var orderIds = tableGroup.Select(o => o.OrderId).ToList();
+
             <div class="card payment-index-card mb-4">
                 <div class="payment-index-card-header">
-                    <h5>Tafel @order.TableNumber - Bestelling #@order.OrderId</h5>
-                    <small>Gast: @order.GuestName | Datum: @order.OrderDate.ToString("g")</small>
+                    <h5>Tafel @tableGroup.Key</h5>
+                    <small>
+                        @string.Join(", ", tableGroup.Select(o => $"Bestelling #{o.OrderId}")) |
+                        Gast: @tableGroup.First().GuestName
+                    </small>
                 </div>
                 <div class="card-body">
                     <h6>Bestelregels</h6>
-                    @if (order.Items != null && order.Items.Count > 0)
+                    @if (allItems.Count > 0)
                     {
-                        <partial name="_PaymentItemsTable" model="order.Items" />
+                        <partial name="_PaymentItemsTable" model="allItems" />
 
                         <!-- VAT Summary -->
                         <div class="row mt-3">
@@ -28,33 +35,26 @@
                                 <div class="vat-summary-card">
                                     <h6>BTW verdeling:</h6>
                                     <p class="mb-1">
-                                        <strong>Lage BTW (6%):</strong> 
-                                        €@order.Items.Where(i => i.VATRate == 0.06m).Sum(i => i.Price * i.Amount * i.VATRate).ToString("F2")
+                                        <strong>Lage BTW (6%):</strong>
+                                        €@allItems.Where(i => i.VATRate == 0.06m).Sum(i => i.Price * i.Amount * i.VATRate).ToString("F2")
                                     </p>
                                     <p class="mb-2">
-                                        <strong>Hoge BTW (21%):</strong> 
-                                        €@order.Items.Where(i => i.VATRate == 0.21m).Sum(i => i.Price * i.Amount * i.VATRate).ToString("F2")
+                                        <strong>Hoge BTW (21%):</strong>
+                                        €@allItems.Where(i => i.VATRate == 0.21m).Sum(i => i.Price * i.Amount * i.VATRate).ToString("F2")
                                     </p>
                                     <hr />
                                     <div class="total-summary">
-                                        <strong>Totaal (incl. BTW): €@order.Items.Sum(i => i.Price * i.Amount * (1 + i.VATRate)).ToString("F2")</strong>
+                                        <strong>Totaal (incl. BTW): €@allItems.Sum(i => i.Price * i.Amount * (1 + i.VATRate)).ToString("F2")</strong>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     }
-                    else
-                    {
-                        <div class="alert alert-info mb-0">
-                            Geen items in de order.
-                        </div>
-                    }
 
-                    
                     <div class="mt-3">
-                        <a href="@Url.Action("CheckoutOrder", "Payment", new { orderId = order.OrderId, tableNumber = order.TableNumber })"
+                        <a href="@Url.Action("CheckoutTable", "Payment", new { tableNumber = tableGroup.Key })"
                            class="btn btn-success btn-lg">
-                            Afrekenen - Tafel @order.TableNumber
+                            Afrekenen - Tafel @tableGroup.Key
                         </a>
                     </div>
                 </div>
@@ -63,13 +63,10 @@
     }
     else
     {
-        <div class="alert alert-info" role="alert">
-            Geen actieve bestellingen op dit moment.
-        </div>
+        <div class="alert alert-info">Geen actieve bestellingen op dit moment.</div>
     }
 
     <div class="mt-4">
         <a href="@Url.Action("Index", "Table")" class="btn btn-secondary">Terug</a>
     </div>
 </div>
-

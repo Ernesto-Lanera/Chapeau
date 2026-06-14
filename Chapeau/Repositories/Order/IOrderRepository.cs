@@ -24,5 +24,6 @@ namespace Chapeau.Repositories
 
         int MarkReadyOrdersAsServed(int tableId);
         void SaveOrder(Order order);
+        List<Order> GetOrdersByTableNumber(int tableNumber);
     }
 }
