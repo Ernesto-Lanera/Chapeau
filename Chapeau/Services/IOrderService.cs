@@ -5,12 +5,12 @@ namespace Chapeau.Services
 {
     public interface IOrderService
     {
-        Order? GetActiveOrderByTableId(int tableId);
+       
         Order? GetServedOrderByTableId(int tableId);
         Order? GetOrderById(int orderId);
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
         List<Order> GetRunningOrders(OrderType type);
-        List<Order> GetAllRunningOrders();
+
         List<Order> GetServedOrdersForPayment();
         TimeSpan GetWaitingTime(Order order);
         List<TableStatus> GetAllTableStatuses();
@@ -24,13 +24,6 @@ namespace Chapeau.Services
         void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status);
         List<Order> GetFinishedOrdersToday(OrderType type);
 
-        Order MakeNewOrder(int tableId);
-        Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName);
-        Order RemoveItemFromOrder(int menuItemId, Order order);
-        Order UpdateItemFromOrder(int menuItemId, Order order, int newAmount);
-        Order ChangeCommentInItem(int menuItemId, Order order, string comment);
-        Order UpdateItemComment(int menuItemId, Order order, string comment);
-        void UpdateItemComment(int orderItemId, string comment);
         void SaveOrderToDb(Order order);
         List<Order> GetServedOrdersByTableNumber(int tableNumber);
     }
