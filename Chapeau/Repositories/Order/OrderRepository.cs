@@ -395,7 +395,7 @@ public class OrderRepository : IOrderRepository
             OrderId = (int)reader["OrderID"],
             MenuItemId = (int)reader["MenuItemID"],
             AmountOrdered = (int)reader["AmountOrdered"],
-            MenuItemName = reader["Name"].ToString(),
+            MenuItemName = reader["Name"].ToString() ?? string.Empty,
             Comment = reader["Comment"] == DBNull.Value ? null : reader["Comment"].ToString(),
             OrderItemStatus = (OrderStatus)(int)reader["OrderItemStatus"],
             MenuItem = menuItem,
@@ -588,7 +588,7 @@ public class OrderRepository : IOrderRepository
                 command.Parameters.AddWithValue("@Course", (int)course);
                 command.ExecuteNonQuery();
             }
-        }
+        }   
     }
 
     public List<Order> GetFinishedOrdersToday(OrderType type)
@@ -607,6 +607,8 @@ public class OrderRepository : IOrderRepository
             FROM Orders o
             JOIN Table_ t ON o.TableID = t.TableID
             WHERE o.OrderStatus = @ReadyToBeServed
+            OR o.OrderStatus = @Served
+            OR o.OrderStatus = @Paid
             AND CAST(o.OrderDate AS DATE) = CAST(GETDATE() AS DATE)
             AND EXISTS (
                 SELECT 1 FROM OrderItem oi
@@ -619,6 +621,8 @@ public class OrderRepository : IOrderRepository
             using (SqlCommand command = new SqlCommand(query, connection))
             {
                 command.Parameters.AddWithValue("@ReadyToBeServed", (int)OrderStatus.ReadyToBeServed);
+                command.Parameters.AddWithValue("@Served", (int)OrderStatus.Served);
+                command.Parameters.AddWithValue("@Paid", (int)OrderStatus.Paid);
                 command.Parameters.AddWithValue("@FoodCard1", MenuCardConstants.FoodMenuCard);
                 command.Parameters.AddWithValue("@FoodCard2", MenuCardConstants.FoodMenuCard2);
                 command.Parameters.AddWithValue("@DrinkCard", MenuCardConstants.DrinkMenuCard);

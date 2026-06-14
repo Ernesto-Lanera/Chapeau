@@ -19,57 +19,99 @@ namespace Chapeau.Controllers
 
         public IActionResult Index()
         {
-            List<Order> orders = _orderService.GetRunningOrders(OrderType.Food);
-            List<OrderViewModel> viewModels = orders.Select(MapToViewModel).ToList();
-            return View(viewModels);
+            try
+            {
+                List<Order> orders = _orderService.GetRunningOrders(OrderType.Food);
+                List<OrderViewModel> viewModels = orders.Select(MapToViewModel).ToList();
+                return View(viewModels);
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Something went wrong loading the orders.");
+            }
         }
 
         [HttpPost]
         public IActionResult UpdateOrderItemStatus(int orderItemId, int orderId, int status)
         {
-            _orderService.UpdateOrderItemStatus(orderItemId, (OrderStatus)status);
-            _orderService.UpdateOrderIfServed(orderId);
-            return RedirectToAction("Index");
+            try
+            {
+                _orderService.UpdateOrderItemStatus(orderItemId, (OrderStatus)status);
+                _orderService.UpdateOrderIfServed(orderId);
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Something went wrong updating the order status.");
+            }
         }
 
         [HttpPost]
         public IActionResult PrepareAllItems(int orderId, int? course)
         {
-            if (course.HasValue)
-                _orderService.UpdateCourseItemStatuses(orderId, (CourseType)course.Value, OrderStatus.BeingPrepared);
-            else
-                _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.BeingPrepared);
+            try
+            {
+                if (course.HasValue)
+                    _orderService.UpdateCourseItemStatuses(orderId, (CourseType)course.Value, OrderStatus.BeingPrepared);
+                else
+                    _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.BeingPrepared);
 
-            _orderService.UpdateOrderStatus(orderId, OrderStatus.BeingPrepared);
-            return RedirectToAction("Index");
+                _orderService.UpdateOrderStatus(orderId, OrderStatus.BeingPrepared);
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Something went wrong preparing the items.");
+            }
         }
 
         [HttpPost]
         public IActionResult ReadyAllItems(int orderId, int? course)
         {
-            if (course.HasValue)
-                _orderService.UpdateCourseItemStatuses(orderId, (CourseType)course.Value, OrderStatus.ReadyToBeServed);
-            else
-                _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.ReadyToBeServed);
+            try
+            {
+                if (course.HasValue)
+                    _orderService.UpdateCourseItemStatuses(orderId, (CourseType)course.Value, OrderStatus.ReadyToBeServed);
+                else
+                    _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.ReadyToBeServed);
 
-            _orderService.UpdateOrderIfServed(orderId);
-            return RedirectToAction("Index");
+                _orderService.UpdateOrderIfServed(orderId);
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Something went wrong marking the items as ready.");
+            }
         }
 
         [HttpPost]
         public IActionResult MarkOrderReady(int orderId)
         {
-            _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.ReadyToBeServed);
-            _orderService.UpdateOrderIfServed(orderId);
-            return RedirectToAction("Index");
+            try
+            {
+                _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.ReadyToBeServed);
+                _orderService.UpdateOrderIfServed(orderId);
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Something went wrong marking the order as ready.");
+            }
         }
 
         [HttpGet]
         public IActionResult Finished()
         {
-            List<Order> orders = _orderService.GetFinishedOrdersToday(OrderType.Food);
-            List<OrderViewModel> viewModels = orders.Select(MapToFinishedViewModel).ToList();
-            return View(viewModels);
+            try
+            {
+                List<Order> orders = _orderService.GetFinishedOrdersToday(OrderType.Food);
+                List<OrderViewModel> viewModels = orders.Select(MapToFinishedViewModel).ToList();
+                return View(viewModels);
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Something went wrong loading the finished orders.");
+            }
         }
 
         private OrderViewModel MapToViewModel(Order o)
@@ -83,8 +125,8 @@ namespace Chapeau.Controllers
                 WaitingTime = _orderService.GetWaitingTime(o),
                 ControllerName = "Kitchen",
                 OrderType = OrderType.Food,
-                OrderItems = MapItems(o.OrderItems),
-                CourseGroups = MapCourseGroups(o.OrderItems)
+                OrderItems = MapItems(o.OrderItems ?? new List<OrderItem>()),
+                CourseGroups = MapCourseGroups(o.OrderItems ?? new List<OrderItem>())
             };
         }
 
@@ -96,7 +138,7 @@ namespace Chapeau.Controllers
                 TableNumber = o.TableNumber,
                 OrderDate = o.OrderDate,
                 OrderStatus = o.OrderStatus,
-                OrderItems = MapItems(o.OrderItems)
+                OrderItems = MapItems(o.OrderItems ?? new List<OrderItem>())
             };
         }
 
@@ -132,6 +174,12 @@ namespace Chapeau.Controllers
                 })
                 .OrderBy(g => g.Course)
                 .ToList();
+        }
+
+        private IActionResult HandleError(Exception ex, string message)
+        {
+            TempData["Error"] = message;
+            return RedirectToAction("Index");
         }
     }
 }
