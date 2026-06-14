@@ -1,5 +1,4 @@
 ﻿@model Chapeau.ViewModels.OrderViewModel
-
 @using Chapeau.Emums
 
 <div class="order-card">
@@ -15,26 +14,15 @@
     </div>
 
     <div class="mb-2 d-flex justify-content-between align-items-center">
-        <span class="status-badge">
-            @((int)Model.OrderStatus == 5 || (int)Model.OrderStatus == 6
-                ? "Ordered"
-                : Model.OrderStatus.ToString())
-        </span>
-        @{
-            var allItems = Model.CourseGroups != null && Model.CourseGroups.Any()
-                ? Model.CourseGroups.SelectMany(g => g.Items).ToList()
-                : Model.OrderItems;
-            bool orderAllReady = allItems.All(i => i.Status == OrderStatus.ReadyToBeServed);
-            bool orderAnyPreparing = allItems.Any(i => i.Status == OrderStatus.BeingPrepared);
-        }
-        @if (orderAllReady)
+        <span class="status-badge">@Model.StatusDisplay</span>
+        @if (Model.AllItemsReady)
         {
             <form asp-action="MarkOrderReady" asp-controller="@Model.ControllerName" method="post">
                 <input type="hidden" name="orderId" value="@Model.OrderID" />
                 <button type="submit" class="btn btn-sm btn-success">✓ Order Ready</button>
             </form>
         }
-        else if (orderAnyPreparing)
+        else if (Model.AnyItemPreparing)
         {
             <form asp-action="ReadyAllItems" asp-controller="@Model.ControllerName" method="post">
                 <input type="hidden" name="orderId" value="@Model.OrderID" />
@@ -52,21 +40,19 @@
 
     <hr />
 
-    @if (Model.CourseGroups != null && Model.CourseGroups.Any())
+    @if (Model.HasCourseGroups)
     {
         foreach (var group in Model.CourseGroups)
         {
-            bool courseAllReady = group.Items.All(i => i.Status == OrderStatus.ReadyToBeServed);
-            bool courseAnyPreparing = group.Items.Any(i => i.Status == OrderStatus.BeingPrepared);
             int courseValue = (int)group.Course;
 
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <h6 class="mb-0">@group.Course</h6>
-                @if (courseAllReady)
+                @if (group.AllReady)
                 {
                     <span class="btn btn-sm btn-success disabled">✓</span>
                 }
-                else if (courseAnyPreparing)
+                else if (group.AnyPreparing)
                 {
                     <form asp-action="ReadyAllItems" asp-controller="@Model.ControllerName" method="post">
                         <input type="hidden" name="orderId" value="@Model.OrderID" />
@@ -88,7 +74,7 @@
             {
                 <div class="d-flex justify-content-between align-items-center mb-1 ms-2">
                     <div>
-                        <span class="@(item.Status == OrderStatus.ReadyToBeServed ? "text-success text-decoration-line-through" : "")">
+                        <span class="@(item.IsReady ? "text-success text-decoration-line-through" : "")">
                             @item.Amount× @item.Name
                         </span>
                         @if (!string.IsNullOrEmpty(item.Comment))
@@ -96,7 +82,7 @@
                             <small class="text-muted d-block">@item.Comment</small>
                         }
                     </div>
-                    @if (item.Status == OrderStatus.ReadyToBeServed)
+                    @if (item.IsReady)
                     {
                         <button class="btn btn-sm btn-success disabled">✓</button>
                     }
@@ -105,9 +91,9 @@
                         <form asp-action="UpdateOrderItemStatus" asp-controller="@Model.ControllerName" method="post">
                             <input type="hidden" name="orderItemId" value="@item.OrderItemId" />
                             <input type="hidden" name="orderId" value="@Model.OrderID" />
-                            <input type="hidden" name="status" value="@(item.Status == OrderStatus.Ordered ? (int)OrderStatus.BeingPrepared : (int)OrderStatus.ReadyToBeServed)" />
-                            <button type="submit" class="btn btn-sm @(item.Status == OrderStatus.BeingPrepared ? "btn-warning" : "btn-outline-secondary")">
-                                @(item.Status == OrderStatus.BeingPrepared ? "Ready" : "Prepare")
+                            <input type="hidden" name="status" value="@item.NextStatus" />
+                            <button type="submit" class="btn btn-sm @item.ButtonCssClass">
+                                @item.ButtonLabel
                             </button>
                         </form>
                     }
@@ -121,7 +107,7 @@
         {
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <div>
-                    <span class="@(item.Status == OrderStatus.ReadyToBeServed ? "text-success text-decoration-line-through" : "")">
+                    <span class="@(item.IsReady ? "text-success text-decoration-line-through" : "")">
                         @item.Amount× @item.Name
                     </span>
                     @if (!string.IsNullOrEmpty(item.Comment))
@@ -129,7 +115,7 @@
                         <small class="text-muted d-block">@item.Comment</small>
                     }
                 </div>
-                @if (item.Status == OrderStatus.ReadyToBeServed)
+                @if (item.IsReady)
                 {
                     <button class="btn btn-sm btn-success disabled">✓</button>
                 }
@@ -138,9 +124,9 @@
                     <form asp-action="UpdateOrderItemStatus" asp-controller="@Model.ControllerName" method="post">
                         <input type="hidden" name="orderItemId" value="@item.OrderItemId" />
                         <input type="hidden" name="orderId" value="@Model.OrderID" />
-                        <input type="hidden" name="status" value="@(item.Status == OrderStatus.Ordered ? (int)OrderStatus.BeingPrepared : (int)OrderStatus.ReadyToBeServed)" />
-                        <button type="submit" class="btn btn-sm @(item.Status == OrderStatus.BeingPrepared ? "btn-warning" : "btn-outline-secondary")">
-                            @(item.Status == OrderStatus.BeingPrepared ? "Ready" : "Prepare")
+                        <input type="hidden" name="status" value="@item.NextStatus" />
+                        <button type="submit" class="btn btn-sm @item.ButtonCssClass">
+                            @item.ButtonLabel
                         </button>
                     </form>
                 }

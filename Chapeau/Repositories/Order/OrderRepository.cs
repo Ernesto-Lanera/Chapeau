@@ -142,10 +142,10 @@ public class OrderRepository : IOrderRepository
         connection.Open();
 
         string query = @"SELECT o.OrderID, o.TableID, t.TableNumber, o.GuestName, o.OrderDate, o.OrderStatus
-            FROM Orders o
-            JOIN Table_ t ON o.TableID = t.TableID
-            WHERE o.OrderStatus = @Status
-            ORDER BY o.OrderDate ASC";
+        FROM Orders o
+        JOIN Table_ t ON o.TableID = t.TableID
+        WHERE o.OrderStatus = @Status
+        ORDER BY o.OrderDate ASC";
 
         using SqlCommand command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@Status", (int)status);
@@ -154,6 +154,11 @@ public class OrderRepository : IOrderRepository
         while (reader.Read())
         {
             orders.Add(MapOrder(reader));
+        }
+
+        foreach (var order in orders)
+        {
+            order.OrderItems = GetOrderItemsByOrderId(order.OrderId);
         }
 
         return orders;
