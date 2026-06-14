@@ -15,7 +15,11 @@
     </div>
 
     <div class="mb-2 d-flex justify-content-between align-items-center">
-        <span class="status-badge">@Model.OrderStatus</span>
+        <span class="status-badge">
+            @((int)Model.OrderStatus == 5 || (int)Model.OrderStatus == 6
+                ? "Ordered"
+                : Model.OrderStatus.ToString())
+        </span>
         @{
             var allItems = Model.CourseGroups != null && Model.CourseGroups.Any()
                 ? Model.CourseGroups.SelectMany(g => g.Items).ToList()

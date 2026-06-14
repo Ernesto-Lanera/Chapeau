@@ -43,11 +43,10 @@ namespace Chapeau.Controllers
                     }).ToList(),
 
                 CourseGroups = o.OrderItems
-                    .OrderBy(i => i.Course)
-                    .GroupBy(i => i.Course)
+                    .GroupBy(i => i.Course ?? CourseType.Starter)
                     .Select(g => new CourseGroupViewModel
                     {
-                        Course = g.Key ?? CourseType.Starter,
+                        Course = g.Key,
                         Items = g.Select(i => new OrderItemViewModel
                         {
                             OrderItemId = i.OrderItemId,
@@ -56,7 +55,9 @@ namespace Chapeau.Controllers
                             Comment = i.Comment,
                             Status = i.OrderItemStatus
                         }).ToList()
-                    }).ToList()
+                    })
+                    .OrderBy(g => g.Course)
+                    .ToList(),
             }).ToList();
 
             return View(viewModels);
