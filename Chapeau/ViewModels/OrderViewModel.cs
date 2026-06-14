@@ -31,7 +31,7 @@ namespace Chapeau.ViewModels
         }
 
         public string StatusDisplay =>
-            OrderStatus == OrderStatus.Ordered || OrderStatus == OrderStatus.BeingPrepared
+            OrderStatus == OrderStatus.DrinksReady || OrderStatus == OrderStatus.FoodReady
                 ? "Ordered"
                 : OrderStatus.ToString();
     }
