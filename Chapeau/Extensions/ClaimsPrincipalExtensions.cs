@@ -124,5 +124,6 @@ namespace Chapeau.Extensions
         public static bool CanViewFinance(this ClaimsPrincipal principal) => principal.HasPermission("ViewFinance");
         public static bool CanViewReports(this ClaimsPrincipal principal) => principal.HasPermission("ViewReports");
         public static bool CanManageRoles(this ClaimsPrincipal principal) => principal.HasPermission("ManageRoles");
+        public static bool CanViewMenu(this ClaimsPrincipal principal) => principal.HasPermission("ViewMenu");
     }
 }

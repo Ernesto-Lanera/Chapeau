@@ -152,12 +152,14 @@ namespace Chapeau.Services.Login
                     PermissionConstants.ManageMenuItems,
                     PermissionConstants.ManageStock,
                     PermissionConstants.ViewFinance,
-                    PermissionConstants.ManageRoles
+                    PermissionConstants.ManageRoles,
+                    PermissionConstants.ViewMenu
                 },
 
                 RoleConstants.BedieningId => new List<string>
                 {
-                    PermissionConstants.TakeOrders
+                    PermissionConstants.TakeOrders,
+                    PermissionConstants.ViewMenu
                 },
 
                 RoleConstants.KeukenId => new List<string>
