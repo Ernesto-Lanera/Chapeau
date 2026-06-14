@@ -11,7 +11,8 @@ html {
 }
 
 body {
-    background: #0E0F11;
+    background: #0e0f11 !important;
+    color: var(--bs-body-color);
 }
 
 .btn:focus,
@@ -19,7 +20,7 @@ body {
 .btn-link.nav-link:focus,
 .form-control:focus,
 .form-check-input:focus {
-    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem var(--bs-body-bg), 0 0 0 0.25rem #258cfb;
 }
 
 /* --- Management UI --- */
@@ -36,7 +37,7 @@ body {
 .app-container {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
-    background: #0E0F11;
+    background: var(--bs-body-bg);
 }
 
 .app-tabs {
@@ -46,19 +47,19 @@ body {
     .app-tabs .nav-link {
         border-radius: 0;
         padding: 0.65rem 1rem;
-        color: #111827;
+        color: var(--bs-body-color);
         border-bottom: 3px solid transparent;
     }
 
         .app-tabs .nav-link:hover {
-            background: #f3f6fb;
+            background: var(--bs-tertiary-bg);
         }
 
         .app-tabs .nav-link.active {
-            background: #eaf2ff;
-            color: #0b5ed7;
+            background: rgba(11, 94, 215, 0.15);
+            color: #4dabf7;
             font-weight: 600;
-            border-bottom-color: #0b5ed7;
+            border-bottom-color: #4dabf7;
         }
 
 .page-header {
@@ -79,15 +80,15 @@ body {
 }
 
 .card-soft {
-    border: 1px solid #e5e7eb;
-    background: #f7fbff;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
 }
 
 .table-responsive {
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
     border-radius: 0.5rem;
-    box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.04);
+    box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.2);
 }
 
 .app-table {
@@ -95,36 +96,36 @@ body {
 }
 
     .app-table tbody tr {
-        border-top: 1px solid #eef2f7;
+        border-top: 1px solid var(--bs-border-color);
     }
 
         .app-table tbody tr:hover {
-            background: #fafcff;
+            background: var(--bs-tertiary-bg);
         }
 
 .table thead th {
-    color: #374151;
+    color: var(--bs-body-color);
     font-weight: 600;
     font-size: 0.9rem;
-    border-bottom: 1px solid #eef2f7;
+    border-bottom: 1px solid var(--bs-border-color);
 }
 
 .status-badge {
     font-weight: 600;
     font-size: 12px;
     padding: 4px 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--bs-border-color);
     border-radius: 20px;
 }
 
     .status-badge.status-active {
-        background: #e7f7ee;
-        color: #137a3c;
+        background: rgba(19, 122, 60, 0.2);
+        color: #4ade80;
     }
 
     .status-badge.status-inactive {
-        background: #fde8e8;
-        color: #b42318;
+        background: rgba(180, 35, 24, 0.2);
+        color: #f87171;
     }
 
 .stock-pill {
@@ -138,18 +139,18 @@ body {
 }
 
     .stock-pill.ok {
-        background: #e7f7ee;
-        color: #137a3c;
+        background: rgba(19, 122, 60, 0.2);
+        color: #4ade80;
     }
 
     .stock-pill.warn {
-        background: #fff7e6;
-        color: #8a5a00;
+        background: rgba(138, 90, 0, 0.2);
+        color: #fbbf24;
     }
 
     .stock-pill.danger {
-        background: #fde8e8;
-        color: #b42318;
+        background: rgba(180, 35, 24, 0.2);
+        color: #f87171;
     }
 
 .icon-btn {
@@ -158,14 +159,15 @@ body {
     padding: 0.25rem 0.35rem;
     border-radius: 0.375rem;
     line-height: 1;
+    color: var(--bs-body-color);
 }
 
     .icon-btn:hover {
-        background: #f3f4f6;
+        background: var(--bs-tertiary-bg);
     }
 
     .icon-btn.text-danger:hover {
-        background: #fde8e8;
+        background: rgba(180, 35, 24, 0.2);
     }
 
 .qty-actions .btn {
@@ -174,20 +176,22 @@ body {
 }
 
 .flash-alert {
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.2);
 }
 
 /* Form fields */
 
 .form-control,
 .form-select {
-    background-color: #fff;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
 }
 
     .form-control:read-only,
     .form-control[readonly] {
-        background-color: #fff;
+        background-color: var(--bs-tertiary-bg);
     }
 
 .form-floating > .form-control-plaintext::placeholder,
@@ -204,30 +208,30 @@ body {
 /* Inactive rows */
 
 .table tbody tr.is-inactive {
-    --bs-table-bg: #f3f4f6;
-    --bs-table-hover-bg: #e9ecef;
-    color: #6b7280;
+    --bs-table-bg: var(--bs-tertiary-bg);
+    --bs-table-hover-bg: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
 }
 
     .table tbody tr.is-inactive td,
     .table tbody tr.is-inactive .fw-semibold {
-        color: #6b7280 !important;
+        color: var(--bs-secondary-color) !important;
     }
 
 /* Finance */
 
 .finance-period-card {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--bs-border-color);
 }
 
 .finance-kpi-card {
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.2);
 }
 
 .finance-kpi-label {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--bs-secondary-color);
 }
 
 .finance-kpi-value {
@@ -238,12 +242,12 @@ body {
 }
 
 .finance-kpi-sub {
-    color: #9ca3af;
+    color: var(--bs-tertiary-color);
     font-size: 0.78rem;
 }
 
 .text-purple {
-    color: #7c3aed !important;
+    color: #a78bfa !important;
 }
 
 .finance-table-wrap {
@@ -259,14 +263,14 @@ body {
 
 .finance-chart-grid {
     height: 220px;
-    border-left: 1px solid #e5e7eb;
-    border-bottom: 1px solid #e5e7eb;
+    border-left: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--bs-border-color);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 2.5rem;
     padding: 0 1rem 0.5rem;
     align-items: end;
-    background-image: linear-gradient( to top, transparent 24%, #f3f4f6 25%, transparent 26%, transparent 49%, #f3f4f6 50%, transparent 51%, transparent 74%, #f3f4f6 75%, transparent 76% );
+    background-image: linear-gradient( to top, transparent 24%, var(--bs-tertiary-bg) 25%, transparent 26%, transparent 49%, var(--bs-tertiary-bg) 50%, transparent 51%, transparent 74%, var(--bs-tertiary-bg) 75%, transparent 76% );
 }
 
 .finance-chart-col {
@@ -286,7 +290,7 @@ body {
 }
 
 .finance-chart-label {
-    color: #6b7280;
+    color: var(--bs-secondary-color);
     font-size: 0.8rem;
 }
 
@@ -296,7 +300,7 @@ body {
     gap: 1rem;
     margin-top: 0.5rem;
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--bs-secondary-color);
 }
 
     .finance-chart-legend i {
@@ -308,7 +312,7 @@ body {
 
 .table-label {
     font-size: 12px;
-    color: #888;
+    color: var(--bs-secondary-color);
     display: block;
 }
 
@@ -320,7 +324,7 @@ body {
 
 .order-time {
     font-size: 14px;
-    color: #888;
+    color: var(--bs-secondary-color);
     display: block;
 }
 
@@ -334,10 +338,10 @@ body {
     min-width: 350px;
     width: 350px;
     flex-shrink: 0;
-    background: white;
+    background: var(--bs-tertiary-bg);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .order-list {
@@ -355,5 +359,3 @@ body {
     margin: 0 -12px;
     overflow: hidden;
 }
-
-
