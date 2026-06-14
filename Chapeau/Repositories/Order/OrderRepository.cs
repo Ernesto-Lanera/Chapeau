@@ -683,7 +683,7 @@ public class OrderRepository : IOrderRepository
         command.Parameters.AddWithValue("@MenuItemId", item.MenuItemId);
         command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
         command.Parameters.AddWithValue("@OrderItemStatus", (int)OrderStatus.Ordered);
-        command.Parameters.AddWithValue("@Comment", (object)item.Comment ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Comment", (object)item.Comment! ?? DBNull.Value);
 
         command.ExecuteNonQuery();
     }
