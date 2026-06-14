@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Chapeau.Models.Login
+namespace Chapeau.ViewModels.Login
 {
     public class LoginViewModel
     {
