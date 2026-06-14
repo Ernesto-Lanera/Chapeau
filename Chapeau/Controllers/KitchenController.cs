@@ -20,45 +20,7 @@ namespace Chapeau.Controllers
         public IActionResult Index()
         {
             List<Order> orders = _orderService.GetRunningOrders(OrderType.Food);
-
-            List<OrderViewModel> viewModels = orders.Select(o => new OrderViewModel
-            {
-                OrderID = o.OrderId,
-                TableNumber = o.TableNumber,
-                OrderDate = o.OrderDate,
-                OrderStatus = o.OrderStatus,
-                WaitingTime = _orderService.GetWaitingTime(o),
-                ControllerName = "Kitchen",
-                OrderType = OrderType.Food,
-
-                OrderItems = o.OrderItems
-                    .OrderBy(i => i.Course)
-                    .Select(i => new OrderItemViewModel
-                    {
-                        OrderItemId = i.OrderItemId,
-                        Name = i.MenuItemName,
-                        Amount = i.AmountOrdered,
-                        Comment = i.Comment,
-                        Status = i.OrderItemStatus
-                    }).ToList(),
-
-                CourseGroups = o.OrderItems
-                    .OrderBy(i => i.Course)
-                    .GroupBy(i => i.Course)
-                    .Select(g => new CourseGroupViewModel
-                    {
-                        Course = g.Key ?? CourseType.Starter,
-                        Items = g.Select(i => new OrderItemViewModel
-                        {
-                            OrderItemId = i.OrderItemId,
-                            Name = i.MenuItemName,
-                            Amount = i.AmountOrdered,
-                            Comment = i.Comment,
-                            Status = i.OrderItemStatus
-                        }).ToList()
-                    }).ToList()
-            }).ToList();
-
+            List<OrderViewModel> viewModels = orders.Select(MapToViewModel).ToList();
             return View(viewModels);
         }
 
@@ -77,6 +39,7 @@ namespace Chapeau.Controllers
                 _orderService.UpdateCourseItemStatuses(orderId, (CourseType)course.Value, OrderStatus.BeingPrepared);
             else
                 _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.BeingPrepared);
+
             _orderService.UpdateOrderStatus(orderId, OrderStatus.BeingPrepared);
             return RedirectToAction("Index");
         }
@@ -88,6 +51,7 @@ namespace Chapeau.Controllers
                 _orderService.UpdateCourseItemStatuses(orderId, (CourseType)course.Value, OrderStatus.ReadyToBeServed);
             else
                 _orderService.UpdateAllOrderItemStatuses(orderId, OrderType.Food, OrderStatus.ReadyToBeServed);
+
             _orderService.UpdateOrderIfServed(orderId);
             return RedirectToAction("Index");
         }
@@ -104,16 +68,60 @@ namespace Chapeau.Controllers
         public IActionResult Finished()
         {
             List<Order> orders = _orderService.GetFinishedOrdersToday(OrderType.Food);
+            List<OrderViewModel> viewModels = orders.Select(MapToFinishedViewModel).ToList();
+            return View(viewModels);
+        }
 
-            List<OrderViewModel> viewModels = orders.Select(o => new OrderViewModel
+        private OrderViewModel MapToViewModel(Order o)
+        {
+            return new OrderViewModel
             {
                 OrderID = o.OrderId,
                 TableNumber = o.TableNumber,
                 OrderDate = o.OrderDate,
                 OrderStatus = o.OrderStatus,
-                OrderItems = o.OrderItems
-                    .OrderBy(i => i.Course)
-                    .Select(i => new OrderItemViewModel
+                WaitingTime = _orderService.GetWaitingTime(o),
+                ControllerName = "Kitchen",
+                OrderType = OrderType.Food,
+                OrderItems = MapItems(o.OrderItems),
+                CourseGroups = MapCourseGroups(o.OrderItems)
+            };
+        }
+
+        private static OrderViewModel MapToFinishedViewModel(Order o)
+        {
+            return new OrderViewModel
+            {
+                OrderID = o.OrderId,
+                TableNumber = o.TableNumber,
+                OrderDate = o.OrderDate,
+                OrderStatus = o.OrderStatus,
+                OrderItems = MapItems(o.OrderItems)
+            };
+        }
+
+        private static List<OrderItemViewModel> MapItems(List<OrderItem> items)
+        {
+            return items
+                .OrderBy(i => i.Course)
+                .Select(i => new OrderItemViewModel
+                {
+                    OrderItemId = i.OrderItemId,
+                    Name = i.MenuItemName,
+                    Amount = i.AmountOrdered,
+                    Comment = i.Comment,
+                    Status = i.OrderItemStatus
+                }).ToList();
+        }
+
+        private static List<CourseGroupViewModel> MapCourseGroups(List<OrderItem> items)
+        {
+            return items
+                .GroupBy(i => i.Course ?? CourseType.Starter)
+                .Select(g => new CourseGroupViewModel
+                {
+                    Course = g.Key,
+                    Items = g.Select(i => new OrderItemViewModel
                     {
                         OrderItemId = i.OrderItemId,
                         Name = i.MenuItemName,
@@ -121,9 +129,9 @@ namespace Chapeau.Controllers
                         Comment = i.Comment,
                         Status = i.OrderItemStatus
                     }).ToList()
-            }).ToList();
-
-            return View(viewModels);
+                })
+                .OrderBy(g => g.Course)
+                .ToList();
         }
     }
 }
