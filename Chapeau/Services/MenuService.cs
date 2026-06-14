@@ -25,10 +25,6 @@ namespace Chapeau.Services
             List<Category> categories = _categoryRepository.GetCategories();
             categoryId = ValidateFilterCategory(cardId, categoryId, categories);
             MenuItem? editItem = editId.HasValue ? _menuRepository.GetMenuItemById(editId.Value) : null;
-
-            // Bij toevoegen moeten alle categorieen in de HTML staan, zodat JavaScript
-            // direct tussen Lunch, Diner en Dranken kan wisselen zonder ontbrekende opties.
-            // Bij bewerken mag een item alleen binnen de bestaande kaart worden gewijzigd.
             List<Category> formCategories = editItem is null
                 ? categories
                 : FilterCategories(categories, editItem.Category.MenuCardID);
@@ -160,8 +156,6 @@ namespace Chapeau.Services
             RetailPrice = ParsePrice(input.RetailPrice),
             Stock = input.Stock,
             CategoryID = category.CategoryID,
-            // Alleen alcoholgeschikte drankcategorieen mogen als alcoholisch worden opgeslagen.
-            // Hierdoor kunnen Frisdrank en Koffie / Thee ook via een gemanipuleerde POST geen 21%-keuze krijgen.
             IsAlcoholic = category.AllowsAlcoholicChoice && input.IsAlcoholic
         };
 

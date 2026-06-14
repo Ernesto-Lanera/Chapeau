@@ -4,26 +4,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Example controller demonstrating permission-based and role-based authorization.
-    /// This shows all the different ways to use claims for access control.
-    /// </summary>
-    public class PermissionExampleController : Controller
+    public class PermissionController : Controller
     {
         // ===== ROLE-BASED AUTHORIZATION =====
 
-        /// <summary>
-        /// Only accessible to authenticated managers.
-        /// </summary>
         [Authorize(Roles = "Manager")]
         public IActionResult ManagerOnly()
         {
             return View();
         }
 
-        /// <summary>
-        /// Only accessible to waiters or kitchen staff.
-        /// </summary>
         [Authorize(Roles = "Waiter,Kitchen")]
         public IActionResult StaffOnly()
         {
@@ -32,54 +22,36 @@ namespace Chapeau.Controllers
 
         // ===== PERMISSION-BASED AUTHORIZATION =====
 
-        /// <summary>
-        /// Only accessible to users with "CanManageEmployees" permission.
-        /// </summary>
         [Authorize(Policy = "CanManageEmployees")]
         public IActionResult ManageEmployees()
         {
             return View();
         }
 
-        /// <summary>
-        /// Only accessible to users with "CanTakeOrders" permission.
-        /// </summary>
         [Authorize(Policy = "CanTakeOrders")]
         public IActionResult TakeOrders()
         {
             return View();
         }
 
-        /// <summary>
-        /// Only accessible to users with "CanPrepareFood" permission.
-        /// </summary>
         [Authorize(Policy = "CanPrepareFood")]
         public IActionResult KitchenOrders()
         {
             return View();
         }
 
-        /// <summary>
-        /// Only accessible to users with "CanManageMenuItems" permission.
-        /// </summary>
         [Authorize(Policy = "CanManageMenuItems")]
         public IActionResult ManageMenuItems()
         {
             return View();
         }
 
-        /// <summary>
-        /// Only accessible to users with "CanViewReports" permission.
-        /// </summary>
         [Authorize(Policy = "CanViewReports")]
         public IActionResult ViewReports()
         {
             return View();
         }
 
-        /// <summary>
-        /// Only accessible to users with "CanManageRoles" permission.
-        /// </summary>
         [Authorize(Policy = "CanManageRoles")]
         public IActionResult ManageRoles()
         {
@@ -88,18 +60,12 @@ namespace Chapeau.Controllers
 
         // ===== POLICY-BASED AUTHORIZATION (USING POLICIES) =====
 
-        /// <summary>
-        /// Uses a custom policy that requires the Manager role.
-        /// </summary>
         [Authorize(Policy = "IsManager")]
         public IActionResult AdminDashboard()
         {
             return View();
         }
 
-        /// <summary>
-        /// Uses a custom policy that requires Waiter or Kitchen role.
-        /// </summary>
         [Authorize(Policy = "IsWaiter")]
         public IActionResult WaiterDashboard()
         {
@@ -114,16 +80,11 @@ namespace Chapeau.Controllers
 
         // ===== CONDITIONAL AUTHORIZATION IN CODE =====
 
-        /// <summary>
-        /// Check permissions dynamically within an action.
-        /// Different views for different permission levels.
-        /// </summary>
         [Authorize]
         public IActionResult Dashboard()
         {
             var user = User;
 
-            // Return different views based on permissions
             if (user.CanManageEmployees())
             {
                 return View("AdminDashboard");
@@ -142,10 +103,6 @@ namespace Chapeau.Controllers
             }
         }
 
-        /// <summary>
-        /// Multiple permission checks using AND logic.
-        /// User must have ALL permissions to proceed.
-        /// </summary>
         [Authorize]
         public IActionResult RequireMultiplePermissions()
         {
@@ -158,10 +115,6 @@ namespace Chapeau.Controllers
             return View();
         }
 
-        /// <summary>
-        /// Multiple permission checks using OR logic.
-        /// User must have AT LEAST ONE permission.
-        /// </summary>
         [Authorize]
         public IActionResult RequireAnyPermission()
         {
@@ -174,9 +127,6 @@ namespace Chapeau.Controllers
             return View();
         }
 
-        /// <summary>
-        /// Check permissions and display user information.
-        /// </summary>
         [Authorize]
         public IActionResult UserInfo()
         {
@@ -199,45 +149,8 @@ namespace Chapeau.Controllers
             return View(viewData);
         }
 
-        // ===== ROLE AND PERMISSION SHORTCUTS =====
-
-        /// <summary>
-        /// Examples using shortcut extension methods for common permissions.
-        /// </summary>
-        [Authorize]
-        public IActionResult PermissionShortcuts()
-        {
-            var user = User;
-
-            // These shortcut methods make code more readable
-            if (user.CanTakeOrders())
-            {
-                // Show order form
-            }
-
-            if (user.CanPrepareFood())
-            {
-                // Show kitchen orders
-            }
-
-            if (user.CanManageEmployees())
-            {
-                // Show employee management
-            }
-
-            if (user.CanViewReports())
-            {
-                // Show reports
-            }
-
-            return View();
-        }
-
         // ===== COMPLEX AUTHORIZATION SCENARIOS =====
 
-        /// <summary>
-        /// Manager-only feature that requires multiple checks.
-        /// </summary>
         [Authorize]
         public IActionResult AdvancedFeature()
         {
@@ -264,9 +177,6 @@ namespace Chapeau.Controllers
             return Forbid();
         }
 
-        /// <summary>
-        /// Role with specific permission requirement.
-        /// </summary>
         [Authorize]
         public IActionResult RestrictedOperation()
         {

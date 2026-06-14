@@ -75,7 +75,6 @@ namespace Chapeau.Controllers
             return RedirectToAction(nameof(Index), new { cardId, categoryId });
         }
 
-        /// Handles exceptions from menu item operations and returns appropriate redirect with error message.
         private IActionResult HandleMenuItemError(Exception exception,string logMessage,int? cardId,int? categoryId,bool showCreate = false,int? editId = null)
         {
             string errorMessage = exception switch

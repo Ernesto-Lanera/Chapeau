@@ -49,3 +49,280 @@
 .filter-row {
     display: flex;
     gap: 14px;
+    margin-bottom: 22px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+    margin-bottom: 6px;
+}
+
+.filter-group select {
+    height: 38px;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 7px;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-size: 14px;
+    padding-left: 10px;
+}
+
+    .filter-group select[name="cardId"] {
+        width: 140px;
+    }
+
+    .filter-group select[name="categoryId"] {
+        width: 330px;
+        max-width: 100%;
+        text-overflow: ellipsis;
+    }
+
+    .filter-group select:focus {
+        border-color: #93c5fd;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+.menu-table-card {
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.menu-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+}
+
+    .menu-table thead {
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .menu-table th {
+        padding: 16px 22px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--bs-body-color);
+        text-align: left;
+    }
+
+    .menu-table td {
+        padding: 17px 22px;
+        border-top: 1px solid var(--bs-border-color);
+        color: var(--bs-body-color);
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .menu-table tbody tr:hover {
+        background-color: var(--bs-tertiary-bg);
+    }
+
+.inactive-row td {
+    color: var(--bs-secondary-color);
+    background-color: var(--bs-tertiary-bg);
+}
+
+.inactive-row:hover td {
+    background-color: var(--bs-tertiary-bg);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+
+.status-inactive {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.action-cell {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.action-icon {
+    border: none;
+    background: transparent;
+    padding: 0;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .action-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+    }
+
+.action-edit {
+    color: #60a5fa;
+}
+
+    .action-edit:hover {
+        color: #93c5fd;
+    }
+
+.action-active {
+    color: #4ade80;
+}
+
+    .action-active:hover {
+        color: #86efac;
+    }
+
+.action-inactive {
+    color: #f87171;
+}
+
+    .action-inactive:hover {
+        color: #fca5a5;
+    }
+
+.inline-action-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+.form-card {
+    background-color: var(--bs-tertiary-bg);
+    border: none;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    padding: 28px 30px;
+}
+
+.inline-edit-row td {
+    background-color: var(--bs-tertiary-bg);
+    padding: 24px;
+}
+
+.inline-edit-card {
+    background-color: var(--bs-tertiary-bg);
+    border-radius: 10px;
+}
+
+    .inline-edit-card h3,
+    .form-card h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        color: var(--bs-body-color);
+    }
+
+.menu-item-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+    .menu-item-form .form-group {
+        margin-bottom: 0 !important;
+    }
+
+    .menu-item-form input.form-control,
+    .menu-item-form select.form-select {
+        height: 48px;
+        border-radius: 8px;
+        border: 1px solid var(--bs-border-color);
+        background-color: var(--bs-body-bg);
+        padding: 10px 16px;
+        font-size: 15px;
+        color: var(--bs-body-color);
+        width: 100%;
+    }
+
+        .menu-item-form input.form-control::placeholder {
+            color: var(--bs-secondary-color);
+        }
+
+        .menu-item-form input.form-control:focus,
+        .menu-item-form select.form-select:focus {
+            border-color: #93c5fd;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+    .menu-item-form .form-actions {
+        grid-column: 1 / 3;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 12px;
+    }
+
+        .menu-item-form .form-actions button[type="submit"] {
+            min-width: 110px;
+            height: 46px;
+            border-radius: 8px;
+            font-weight: 700;
+            background-color: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+
+            .menu-item-form .form-actions button[type="submit"]:hover {
+                background-color: #1d4ed8;
+                border-color: #1d4ed8;
+                color: white;
+            }
+
+        .menu-item-form .form-actions a.btn-secondary {
+            min-width: 110px;
+            height: 46px;
+            border-radius: 8px;
+            font-weight: 700;
+            background-color: var(--bs-secondary-bg);
+            border-color: var(--bs-border-color);
+            color: var(--bs-body-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+            .menu-item-form .form-actions a.btn-secondary:hover {
+                background-color: var(--bs-tertiary-bg);
+                border-color: var(--bs-border-color);
+                color: var(--bs-body-color);
+            }
+
+.menu-item-preview-image {
+    max-width: 150px;
+    max-height: 150px;
+    border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+    .menu-item-form {
+        grid-template-columns: 1fr;
+    }
+
+        .menu-item-form .form-actions {
+            grid-column: 1 / 2;
+            flex-wrap: wrap;
+        }
+}

@@ -12,7 +12,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div class="d-flex gap-2">
         <a asp-action="Index" class="btn btn-outline-secondary">Running Orders</a>
-        <a asp-action="Finished" class="btn btn-primary">Finished Orders</a>
+        <a asp-action="Finished" class="btn btn-outline-secondary">Finished Orders</a>
     </div>
     <a asp-action="Finished" class="btn btn-outline-secondary">Refresh ↻</a>
 </div>
@@ -40,7 +40,7 @@ else
                     <td>
                         @foreach (var item in order.OrderItems)
                         {
-                            <span class="badge bg-secondary me-1">@item.Amount x @item.Name</span>
+                            <span class="badge item-badge me-1">@item.Amount x @item.Name</span>
                         }
                     </td>
                 </tr>
