@@ -88,7 +88,6 @@ namespace Chapeau.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        /// Handles exceptions from employee operations and returns appropriate redirect with error message.
         private IActionResult HandleEmployeeError(
             Exception exception,
             string logMessage,
