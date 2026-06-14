@@ -2,6 +2,7 @@ using Chapeau.Constants.Login;
 using Chapeau.Extensions;
 using Chapeau.Models;
 using Chapeau.Services.Login;
+using Chapeau.ViewModels.Login;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -37,13 +38,13 @@ namespace Chapeau.Controllers
                 return RedirectToAction("Index", controller);
             }
 
-            return View(new Models.Login.LoginViewModel { ReturnUrl = returnUrl });
+            return View(new LoginViewModel { ReturnUrl = returnUrl });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
-        public async Task<IActionResult> Login(Models.Login.LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
 

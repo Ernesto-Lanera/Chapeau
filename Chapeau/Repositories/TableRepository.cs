@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Chapeau.Emums;
 
 namespace Chapeau.Repositories
@@ -10,11 +11,13 @@ namespace Chapeau.Repositories
     public class TableRepository : ITableRepository
     {
         private readonly string _connectionString;
+        private readonly ILogger<TableRepository> _logger;
 
-        public TableRepository(IConfiguration configuration)
+        public TableRepository(IConfiguration configuration, ILogger<TableRepository> logger)
         {
             _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-                ?? throw new Exception("Database connection string is missing.");
+                ?? throw new InvalidOperationException("Connection string 'ChapeauDatabaseSQL' not found.");
+            _logger = logger;
         }
 
         /// <summary>
@@ -42,9 +45,9 @@ namespace Chapeau.Repositories
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Column may already exist or schema is locked; continue gracefully
+                _logger.LogWarning(ex, "Failed to add IsManuallyOccupied column; column may already exist or schema is locked.");
             }
         }
 

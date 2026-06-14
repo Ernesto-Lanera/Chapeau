@@ -5,13 +5,13 @@
 
 @{
     ViewData["Title"] = "Tables Overview";
-    Layout = null;
+    Layout = "_Layout";
 
     var roleName = User.FindFirst(ClaimTypeConstants.RoleName)?.Value
-                   ?? User.FindFirst(ClaimTypes.Role)?.Value
+                   ?? User.FindFirst(ClaimsIdentity.DefaultRoleClaimType)?.Value
                    ?? "";
     var employeeName = User.FindFirst(ClaimTypeConstants.EmployeeName)?.Value
-                       ?? User.FindFirst(ClaimTypes.GivenName)?.Value
+                       ?? User.FindFirst(ClaimsIdentity.DefaultNameClaimType)?.Value
                        ?? User.Identity?.Name
                        ?? "User";
 
@@ -31,35 +31,19 @@
             return "Ordered";
         return "Prepared";
     }
-
-    int GetGridTop(int tableNumber)
-    {
-        var row = (tableNumber - 1) / 2;
-        return 110 + row * 156;
-    }
-
-    int GetGridLeft(int tableNumber)
-    {
-        var col = (tableNumber - 1) % 2;
-        return 556 + col * 439;
-    }
-
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta charset="utf-8" />
-<title>Tables Overview</title>
-<link rel="stylesheet" href="~/css/Table_Overview/globals.css">
-<link rel="stylesheet" href="~/css/Table_Overview/styleguide.css">
-<link rel="stylesheet" href="~/css/Table_Overview/style.css">
-</head>
-<body>
-<main class="final-table-overview">
+@section Styles {
+    <link rel="stylesheet" href="~/css/Table_Overview/globals.css">
+    <link rel="stylesheet" href="~/css/Table_Overview/styleguide.css">
+    <link rel="stylesheet" href="~/css/Table_Overview/style.css">
+}
+
+<div class="final-table-overview">
+
 <div class="frame">
 <aside class="menu" aria-label="Ordered and prepared tables">
+<div class="table-sidebar-header">Orders</div>
 @for (int i = 0; i < sidebarTables.Count; i++)
 {
     var table = sidebarTables[i];
@@ -93,30 +77,20 @@
     </section>
 }
 </aside>
-<div class="rectangle-4" aria-hidden="true"></div>
-<div class="rectangle-5" aria-hidden="true"></div>
-<a class="proceed-to-payment" href="/Payment/Index" aria-label="Proceed to pay">
-    <span class="text-wrapper-4">Proceed To Pay</span>
-    <div class="rectangle-6" aria-hidden="true"></div>
-</a>
-<img class="afbeelding" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
-<div class="rectangle-7" aria-hidden="true"></div>
-<h1 class="text-wrapper-5">Tables</h1>
-<img class="line" src="~/img/line-7.svg" alt="" aria-hidden="true" />
-</div>
 
+<div class="main-area">
+<div class="table-grid">
 @for (int i = 0; i < sortedTables.Count; i++)
 {
     var table = sortedTables[i];
-    var top = GetGridTop(table.TableNumber);
-    var left = GetGridLeft(table.TableNumber);
 
     if (table.IsOccupied)
     {
-        <form method="get" action="/Menu/Index" style="position: absolute; top: @(top)px; left: @(left)px; width: 150px; height: 150px; margin: 0; padding: 0;">
+        <div class="table-cell">
+        <form method="get" action="/Menu/Index">
             <input type="hidden" name="tableId" value="@table.TableId" />
             <input type="hidden" name="tableNumber" value="@table.TableNumber" />
-            <button class="occupied-table" type="submit" aria-label="Occupied Table @table.TableNumber" style="top: 0; left: 0; width: 100%; height: 100%; position: absolute;">
+            <button class="occupied-table" type="submit" aria-label="Occupied Table @table.TableNumber">
                 <span class="table">Table @table.TableNumber</span>
                 <div class="rectangle-12" aria-hidden="true"></div>
                 <div class="rectangle-13" aria-hidden="true"></div>
@@ -124,20 +98,20 @@
                 <div class="rectangle-15" aria-hidden="true"></div>
             </button>
         </form>
+        </div>
     }
     else
     {
+        <div class="table-cell">
         <form method="post" asp-action="ToggleStatus" asp-controller="Table"
-              id="available-form-@table.TableId"
-              style="position: absolute; top: @(top)px; left: @(left)px; width: 150px; height: 150px; margin: 0; padding: 0;">
+              id="available-form-@table.TableId">
             @Html.AntiForgeryToken()
             <input type="hidden" name="tableId" value="@table.TableId" />
             <input type="hidden" name="occupied" value="true" />
             <input type="hidden" name="returnUrl" value="/Menu/Index?tableId=@table.TableId&amp;tableNumber=@table.TableNumber" />
             <input type="hidden" name="guestNames" id="guest-names-@table.TableId" value="" />
             <button class="available-table" type="button" aria-label="Available Table @table.TableNumber"
-                    onclick="openGuestModal(@table.TableId, @table.TableNumber)"
-                    style="top: 0; left: 0; width: 100%; height: 100%; position: absolute;">
+                    onclick="openGuestModal(@table.TableId, @table.TableNumber)">
                 <div class="rectangle-8" aria-hidden="true"></div>
                 <div class="rectangle-9" aria-hidden="true"></div>
                 <div class="rectangle-10" aria-hidden="true"></div>
@@ -146,94 +120,51 @@
                 <span class="text-wrapper-6">Table @table.TableNumber</span>
             </button>
         </form>
+        </div>
     }
 }
+</div>
+</div>
+</div>
+</div>
 
-<header class="table-overview">
-<div class="block">
-<img class="img" src="~/images/logo/Chapeau.svg" alt="Le Chapeau logo" />
-</div>
-<div class="text-content-title"></div>
-<div class="container">
-<div class="div-wrapper">
-<div class="text-wrapper-7">@employeeName</div>
-</div>
-<div class="div-wrapper">
-<div class="keukenmedewerker">@roleName</div>
-</div>
-</div>
-<form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="margin: 0; padding: 0;">
-    @Html.AntiForgeryToken()
-    <button class="button" type="submit" aria-label="Log out">
-        <div class="text">
-            <div class="text-wrapper-8">Log Out</div>
-        </div>
-        <div class="icon" aria-hidden="true">
-            <img class="vector" src="~/img/image.svg" alt="" />
-            <img class="vector-2" src="~/img/vector.svg" alt="" />
-            <img class="vector-3" src="~/img/vector-2.svg" alt="" />
-        </div>
-    </button>
-</form>
-<div class="text-content-title-2" aria-label="Current time">
-<div class="container-2"></div>
-<div class="title-3" id="clock-display">18:42:07</div>
-</div>
-</header>
-</main>
-
-<div id="guest-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#25272c; padding:32px; border-radius:12px; width:360px; text-align:center;">
-        <h3 style="font-family:'Inter-Bold',Helvetica; color:#fff; font-size:20px; margin-bottom:8px;">Aantal gasten</h3>
-        <p style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:14px; margin-bottom:24px;">Wat is het aantal gasten voor deze tafel?</p>
-        <div style="display:flex; gap:12px; justify-content:center; margin-bottom:24px;">
-            <button type="button" onclick="setGuestCount(1)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">1</button>
-            <button type="button" onclick="setGuestCount(2)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #16a34a; background:#3e9b4b40; color:#16a34a; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">2</button>
-            <button type="button" onclick="setGuestCount(3)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">3</button>
-            <button type="button" onclick="setGuestCount(4)" class="guest-option" style="width:56px; height:56px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-size:20px; font-family:'Inter-Bold',Helvetica; cursor:pointer;">4</button>
+<div id="guest-modal" class="guest-modal-overlay">
+    <div class="guest-modal-content">
+        <h3 class="guest-modal-title">Aantal gasten</h3>
+        <p class="guest-modal-text">Wat is het aantal gasten voor deze tafel?</p>
+        <div class="guest-options-row">
+            <button type="button" onclick="setGuestCount(1)" class="guest-option-btn guest-option">1</button>
+            <button type="button" onclick="setGuestCount(2)" class="guest-option-btn guest-option selected">2</button>
+            <button type="button" onclick="setGuestCount(3)" class="guest-option-btn guest-option">3</button>
+            <button type="button" onclick="setGuestCount(4)" class="guest-option-btn guest-option">4</button>
         </div>
         <input type="hidden" id="selected-guests" value="2" />
-        <div id="guest-name-fields" style="margin-bottom:24px;"></div>
-        <div style="display:flex; gap:8px; justify-content:flex-end;">
-            <button type="button" onclick="closeGuestModal()" style="padding:8px 24px; border-radius:8px; border:1px solid #555; background:transparent; color:#9f9fa9; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Annuleren</button>
-            <button type="button" onclick="confirmGuest()" style="padding:8px 24px; border-radius:8px; border:1px solid #16a34a; background:#3e9b4b40; color:#16a34a; font-family:Inter,Helvetica; font-size:14px; cursor:pointer;">Opslaan</button>
+        <div id="guest-name-fields" class="guest-name-fields"></div>
+        <div class="guest-modal-actions">
+            <button type="button" onclick="closeGuestModal()" class="guest-modal-btn guest-modal-btn-cancel">Annuleren</button>
+            <button type="button" onclick="confirmGuest()" class="guest-modal-btn guest-modal-btn-save">Opslaan</button>
         </div>
     </div>
 </div>
 
+@section Scripts {
 <script>
 var currentTableId = 0;
-
-(function() {
-    function updateClock() {
-        var now = new Date();
-        var hours = String(now.getHours()).padStart(2, '0');
-        var minutes = String(now.getMinutes()).padStart(2, '0');
-        var seconds = String(now.getSeconds()).padStart(2, '0');
-        document.getElementById('clock-display').textContent = hours + ':' + minutes + ':' + seconds;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
-})();
 
 function openGuestModal(tableId, tableNumber) {
     currentTableId = tableId;
     document.getElementById('selected-guests').value = 2;
     var options = document.querySelectorAll('.guest-option');
     options.forEach(function(btn) {
-        btn.style.borderColor = '#555';
-        btn.style.background = '#16181c';
-        btn.style.color = '#fff';
+        btn.classList.remove('selected');
     });
-    options[1].style.borderColor = '#16a34a';
-    options[1].style.background = '#3e9b4b40';
-    options[1].style.color = '#16a34a';
-    document.getElementById('guest-modal').style.display = 'flex';
+    options[1].classList.add('selected');
+    document.getElementById('guest-modal').classList.add('show');
     renderGuestNameFields(2);
 }
 
 function closeGuestModal() {
-    document.getElementById('guest-modal').style.display = 'none';
+    document.getElementById('guest-modal').classList.remove('show');
 }
 
 function setGuestCount(count) {
@@ -241,13 +172,9 @@ function setGuestCount(count) {
     var options = document.querySelectorAll('.guest-option');
     options.forEach(function(btn, index) {
         if (index + 1 === count) {
-            btn.style.borderColor = '#16a34a';
-            btn.style.background = '#3e9b4b40';
-            btn.style.color = '#16a34a';
+            btn.classList.add('selected');
         } else {
-            btn.style.borderColor = '#555';
-            btn.style.background = '#16181c';
-            btn.style.color = '#fff';
+            btn.classList.remove('selected');
         }
     });
     renderGuestNameFields(count);
@@ -257,9 +184,9 @@ function renderGuestNameFields(count) {
     var container = document.getElementById('guest-name-fields');
     var html = '';
     for (var i = 1; i <= count; i++) {
-        html += '<div style="margin-bottom:8px; text-align:left;">' +
-            '<label style="font-family:Inter,Helvetica; color:#9f9fa9; font-size:12px; display:block; margin-bottom:4px;">Gast ' + i + '</label>' +
-            '<input type="text" id="guest-name-' + i + '" placeholder="Naam gast ' + i + '" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #555; background:#16181c; color:#fff; font-family:Inter,Helvetica; font-size:14px; box-sizing:border-box;" />' +
+        html += '<div class="guest-field-container">' +
+            '<label class="guest-field-label" for="guest-name-' + i + '">Gast ' + i + '</label>' +
+            '<input type="text" id="guest-name-' + i + '" class="guest-field-input" placeholder="Naam gast ' + i + '" />' +
             '</div>';
     }
     container.innerHTML = html;
@@ -284,5 +211,4 @@ function confirmGuest() {
     }
 }
 </script>
-</body>
-</html>
+}
