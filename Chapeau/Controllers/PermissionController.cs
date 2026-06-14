@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-    /// <summary>
-    /// Example controller demonstrating permission-based and role-based authorization.
-    /// This shows all the different ways to use claims for access control.
-    /// </summary>
     public class PermissionController : Controller
     {
         // ===== ROLE-BASED AUTHORIZATION =====
