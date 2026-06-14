@@ -24,22 +24,17 @@
         </button>
 
         <div class="collapse navbar-collapse" id="mainNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link @(currentController == "Menu" ? "active" : string.Empty)" asp-controller="Menu" asp-action="Index">
-                        Menu
-                    </a>
-                </li>
-            </ul>
-
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link @(currentController == "ManageMenu" ? "active" : string.Empty)" asp-controller="ManageMenu" asp-action="Index">
-                            <i class="bi bi-tools me-1"></i>Menubeheer
-                        </a>
-                    </li>
+                    @if (User.HasPermission(PermissionConstants.ManageMenuItems))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "ManageMenu" ? "active" : string.Empty)" asp-controller="ManageMenu" asp-action="Index">
+                                <i class="bi bi-tools me-1"></i>Menubeheer
+                            </a>
+                        </li>
+                    }
                     @if (User.HasPermission(PermissionConstants.ManageEmployees))
                     {
                         <li class="nav-item">
