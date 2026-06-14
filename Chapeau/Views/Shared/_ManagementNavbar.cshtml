@@ -6,8 +6,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark app-navbar">
     <div class="container-fluid">
-        <a class="navbar-brand fw-semibold app-brand"
-            >
+        <a class="navbar-brand fw-semibold app-brand">
             Restaurant Chapeau
         </a>
 
@@ -80,7 +79,7 @@
                             </a>
                         </li>
                     }
-                    @if (User.HasPermission(PermissionConstants.PrepareFood))
+                    @if (User.HasPermission(PermissionConstants.PrepareFood) && User.IsInRole(RoleConstants.ManagerName))
                     {
                         <li class="nav-item">
                             <a class="nav-link @(currentController == "Kitchen" ? "active" : string.Empty)" asp-controller="Kitchen" asp-action="Index">
@@ -88,7 +87,7 @@
                             </a>
                         </li>
                     }
-                    @if (User.HasPermission(PermissionConstants.PrepareDrinks))
+                    @if (User.HasPermission(PermissionConstants.PrepareDrinks) && User.IsInRole(RoleConstants.ManagerName))
                     {
                         <li class="nav-item">
                             <a class="nav-link @(currentController == "Bar" ? "active" : string.Empty)" asp-controller="Bar" asp-action="Index">
