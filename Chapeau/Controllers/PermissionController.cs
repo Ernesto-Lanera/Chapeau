@@ -4,8 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
-
-    public class PermissionExampleController : Controller
+    /// <summary>
+    /// Example controller demonstrating permission-based and role-based authorization.
+    /// This shows all the different ways to use claims for access control.
+    /// </summary>
+    public class PermissionController : Controller
     {
         // ===== ROLE-BASED AUTHORIZATION =====
 
@@ -148,37 +151,6 @@ namespace Chapeau.Controllers
             };
 
             return View(viewData);
-        }
-
-        // ===== ROLE AND PERMISSION SHORTCUTS =====
-
-        [Authorize]
-        public IActionResult PermissionShortcuts()
-        {
-            var user = User;
-
-            // These shortcut methods make code more readable
-            if (user.CanTakeOrders())
-            {
-                // Show order form
-            }
-
-            if (user.CanPrepareFood())
-            {
-                // Show kitchen orders
-            }
-
-            if (user.CanManageEmployees())
-            {
-                // Show employee management
-            }
-
-            if (user.CanViewReports())
-            {
-                // Show reports
-            }
-
-            return View();
         }
 
         // ===== COMPLEX AUTHORIZATION SCENARIOS =====
