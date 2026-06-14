@@ -4,11 +4,10 @@ try {
 } catch (e) {
     currentCartItems = [];
 }
-
 let editingCommentId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateCartUI(currentCartItems);
+    updateCartUI();
 });
 
 function showNotification(message, type = "warning") {
@@ -24,6 +23,20 @@ function showNotification(message, type = "warning") {
             typeof bootstrap !== 'undefined' ? new bootstrap.Alert(alertDiv).close() : alertDiv.remove();
         }
     }, 2000);
+}
+
+function toggleLoadingState(isLoading) {
+    const submitBtn = document.getElementById('submitOrderBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+
+    if (submitBtn) submitBtn.disabled = isLoading;
+    if (submitText) submitText.textContent = isLoading ? 'Saving...' : 'Send To Kitchen';
+
+    if (submitSpinner) {
+        if (isLoading) submitSpinner.classList.remove('d-none');
+        else submitSpinner.classList.add('d-none');
+    }
 }
 
 function preserveActiveComment() {
@@ -82,9 +95,9 @@ function buildCartItemHtml(item, activeCommentValue) {
         </div>`;
 }
 
-function updateCartUI(items) {
+function updateCartUI() {
     const activeCommentValue = preserveActiveComment();
-    document.getElementById('cart-container').innerHTML = items.map(item => buildCartItemHtml(item, activeCommentValue)).join('');
+    document.getElementById('cart-container').innerHTML = currentCartItems.map(item => buildCartItemHtml(item, activeCommentValue)).join('');
     restoreActiveComment();
 }
 
@@ -94,12 +107,24 @@ function saveCartState() {
     } catch (e) {
         showNotification("Warning: Could not save cart locally.", "warning");
     }
-    updateCartUI(currentCartItems);
+    updateCartUI();
+}
+
+function getStockLimit(menuItemId) {
+    return window.stockLevels ? (window.stockLevels[menuItemId] || 0) : 999;
+}
+
+function checkStockAvailability(menuItemId, requestedQty) {
+    const maxStock = getStockLimit(menuItemId);
+    if (requestedQty > maxStock) {
+        showNotification(`Maximum stock reached. Only ${maxStock} available.`);
+        return false;
+    }
+    return true;
 }
 
 function addToOrder(menuItemId, menuItemName) {
-    let maxStock = window.stockLevels ? (window.stockLevels[menuItemId] || 0) : 999;
-    if (maxStock <= 0) {
+    if (getStockLimit(menuItemId) <= 0) {
         showNotification("Item out of stock.", "danger");
         return;
     }
@@ -107,10 +132,7 @@ function addToOrder(menuItemId, menuItemName) {
     let existingItem = currentCartItems.find(i => i.menuItemId === menuItemId);
 
     if (existingItem) {
-        if (existingItem.amountOrdered >= maxStock) {
-            showNotification(`Maximum stock reached. Only ${maxStock} available.`);
-            return;
-        }
+        if (!checkStockAvailability(menuItemId, existingItem.amountOrdered + 1)) return;
         existingItem.amountOrdered += 1;
     } else {
         currentCartItems.push({
@@ -125,16 +147,12 @@ function addToOrder(menuItemId, menuItemName) {
 }
 
 function adjustQuantity(menuItemId, delta) {
-    let maxStock = window.stockLevels ? (window.stockLevels[menuItemId] || 0) : 999;
     let item = currentCartItems.find(i => i.menuItemId === menuItemId);
 
     if (item) {
         let newQty = item.amountOrdered + delta;
 
-        if (newQty > maxStock) {
-            showNotification(`Maximum stock reached. Only ${maxStock} available.`);
-            return;
-        }
+        if (!checkStockAvailability(menuItemId, newQty)) return;
 
         item.amountOrdered = newQty;
         if (item.amountOrdered <= 0) {
@@ -152,7 +170,7 @@ function removeFromOrder(menuItemId) {
 
 function toggleCommentInput(menuItemId) {
     editingCommentId = (editingCommentId === menuItemId) ? null : menuItemId;
-    updateCartUI(currentCartItems);
+    updateCartUI();
 }
 
 function saveComment(menuItemId) {
@@ -180,45 +198,53 @@ function cancelLocalOrder() {
     window.location.href = '/Table/Index';
 }
 
+function getTableIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return parseInt(urlParams.get('tableId')) || 0;
+}
+
+function buildOrderPayload() {
+    return {
+        TableId: getTableIdFromUrl(),
+        Items: currentCartItems.map(item => ({
+            MenuItemId: item.menuItemId,
+            Amount: item.amountOrdered,
+            Comment: item.comment
+        }))
+    };
+}
+
+function handleServerResponse(data) {
+    if (data.success) {
+        sessionStorage.removeItem('chapeau_cart');
+        currentCartItems = [];
+        window.location.href = data.redirectUrl;
+    } else {
+        showNotification(data.message || "Failed to save the order.", "danger");
+        toggleLoadingState(false);
+    }
+}
+
 function submitOrderToServer() {
     if (currentCartItems.length === 0) {
         showNotification("Cannot send an empty order.", "warning");
         return;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentTableId = parseInt(urlParams.get('tableId')) || 0;
-
-    const jsCartItems = currentCartItems.map(item => ({
-        MenuItemId: item.menuItemId,
-        Amount: item.amountOrdered,
-        Comment: item.comment
-    }));
-
-    const finalPayload = {
-        TableId: currentTableId,
-        Items: jsCartItems
-    };
+    toggleLoadingState(true);
 
     fetch('/Menu/SaveOrderToDb', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalPayload)
+        body: JSON.stringify(buildOrderPayload())
     })
         .then(res => {
             if (!res.ok) throw new Error("Server error");
             return res.json();
         })
-        .then(data => {
-            if (data.success) {
-                sessionStorage.removeItem('chapeau_cart');
-                currentCartItems = [];
-                window.location.href = data.redirectUrl;
-            } else {
-                showNotification(data.message || "Failed to save the order.", "danger");
-            }
-        })
+        .then(data => handleServerResponse(data))
         .catch(() => {
             showNotification("Network error. Please check your connection and try again.", "danger");
+            toggleLoadingState(false);
         });
 }
