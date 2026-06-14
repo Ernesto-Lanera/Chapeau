@@ -124,14 +124,12 @@ namespace Chapeau.Services
             return order;
         }
 
-        // Compatibility method for the existing MenuController.
-        // Keeps the old controller name working while reusing the Payment/order logic.
         public Order UpdateItemComment(int menuItemId, Order order, string comment)
         {
             return ChangeCommentInItem(menuItemId, order, comment);
         }
 
-        // Optional database update overload, in case another controller uses OrderItemId directly.
+
         public void UpdateItemComment(int orderItemId, string comment)
         {
             if (orderItemId <= 0)
@@ -181,8 +179,6 @@ namespace Chapeau.Services
             }
         }
 
-        // Compatibility method for the existing TableController.
-        // Returns affected rows, because TableController expects an int.
         public int MarkTableServed(int tableId)
         {
             if (tableId <= 0)

@@ -15,7 +15,6 @@ namespace Chapeau.Models
         public int OrderId { get; set; }
         public string? Comment { get; set; }
 
-        // Uit kapotte versie — extra veld van collega's
         public string MenuItemName { get; set; } = string.Empty;
         public int MenuCardID { get; set; }
 

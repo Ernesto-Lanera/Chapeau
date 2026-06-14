@@ -5,9 +5,7 @@ using Chapeau.Emums;
 
 namespace Chapeau.Repositories
 {
-    /// <summary>
-    /// Repository for table management including occupation status and order tracking.
-    /// </summary>
+
     public class TableRepository : ITableRepository
     {
         private readonly string _connectionString;
@@ -20,10 +18,6 @@ namespace Chapeau.Repositories
             _logger = logger;
         }
 
-        /// <summary>
-        /// Ensures the IsManuallyOccupied column exists on the Table_ table.
-        /// Gracefully handles cases where the column already exists or schema is locked.
-        /// </summary>
         public void EnsureColumnExists()
         {
             try
@@ -51,9 +45,6 @@ namespace Chapeau.Repositories
             }
         }
 
-        /// <summary>
-        /// Sets the manual occupation status of a table.
-        /// </summary>
         public void SetOccupied(int tableId, bool occupied)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -66,9 +57,6 @@ namespace Chapeau.Repositories
             command.ExecuteNonQuery();
         }
 
-        /// <summary>
-        /// Checks if a table has active (non-paid) orders.
-        /// </summary>
         public bool HasActiveOrders(int tableId)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
