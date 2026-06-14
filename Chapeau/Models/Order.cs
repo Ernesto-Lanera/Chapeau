@@ -22,12 +22,6 @@ namespace Chapeau.Models
             set => Items = value ?? new List<OrderItem>();
         }
 
-        public List<OrderItem>? OrderParts
-        {
-            get => Items;
-            set => Items = value ?? new List<OrderItem>();
-        }
-
         public Order() { }
 
         public Order(int orderId, List<OrderItem> order, int tableId, DateTime date)
