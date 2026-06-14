@@ -98,9 +98,6 @@ namespace Chapeau
                 options.AddPolicy("CanManageRoles", policy =>
                     policy.RequireClaim("Permission", "ManageRoles"));
 
-                options.AddPolicy("CanViewMenu", policy =>
-                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewMenu));
-
                 // Role-based policies
                 options.AddPolicy("IsManager", policy =>
                     policy.RequireRole("Manager"));
