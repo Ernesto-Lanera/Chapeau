@@ -15,6 +15,9 @@ namespace Chapeau.ViewModels
         public OrderType OrderType { get; set; }
         public List<OrderItemViewModel> OrderItems { get; set; } = new();
         public List<CourseGroupViewModel> CourseGroups { get; set; } = new();
+        public bool AllItemsReady => OrderItems.All(i => i.Status == OrderStatus.ReadyToBeServed);
+        public bool AnyItemPreparing => OrderItems.Any(i => i.Status == OrderStatus.BeingPrepared);
+        public bool HasCourseGroups => CourseGroups != null && CourseGroups.Any();
 
         public string WaitingTimeDisplay
         {
@@ -26,5 +29,10 @@ namespace Chapeau.ViewModels
                     return $"{(int)WaitingTime.TotalHours} hr {WaitingTime.Minutes} m";
             }
         }
+
+        public string StatusDisplay =>
+            OrderStatus == OrderStatus.Ordered || OrderStatus == OrderStatus.BeingPrepared
+                ? "Ordered"
+                : OrderStatus.ToString();
     }
 }

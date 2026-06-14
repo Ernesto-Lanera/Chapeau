@@ -1,4 +1,21 @@
-﻿/* Kitchen / Bar station views */
+﻿/* Nav bar */
+body {
+    background: #0e0f11 !important;
+}
+
+header {
+    background: #16181c !important;
+    border-bottom: 1px solid #25272c !important;
+}
+
+    header .navbar {
+        background: #16181c !important;
+    }
+
+        header .navbar * {
+            color: #ffffff !important;
+        }
+/* Kitchen / Bar station views */
 
 .station-page {
     background: #0f1117;
@@ -131,24 +148,24 @@
 }
 
 /* Nav toggle buttons (Running Orders / Finished Orders) */
-.station-nav .btn-primary {
-    background: #ffffff;
-    border-color: #ffffff;
-    color: #000000;
+.station-nav a.btn,
+.d-flex > a.btn-outline-secondary {
+    background: #16181c !important;
+    border-color: #25272c !important;
+    color: #ffffff !important;
+}
+
+    .station-nav a.btn:hover,
+    .d-flex > a.btn-outline-secondary:hover {
+        background: #25272c !important;
+    }
+
+.station-nav a.btn-primary {
+    background: #16181c !important;
+    border-color: #25272c !important;
+    color: #ffffff !important;
     font-weight: 600;
 }
-
-.station-nav .btn-outline-secondary {
-    border-color: #444;
-    color: #888;
-    background: transparent;
-}
-
-    .station-nav .btn-outline-secondary:hover {
-        background: #2a2d3a;
-        color: #ccc;
-        border-color: #666;
-    }
 
 .order-card small.text-muted {
     color: #f59e0b !important;
