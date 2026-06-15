@@ -154,15 +154,7 @@ namespace Chapeau.Services
             _orderRepository.SavePayment(orderId, tableNumber, tipAmount, feedback);
         }
 
-        public Order? GetOrderById(int orderId)
-        {
-            if (orderId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
 
-            return _orderRepository.GetOrderById(orderId);
-        }
 
         public Order? GetServedOrderByTableId(int tableId)
         {

@@ -7,7 +7,7 @@ namespace Chapeau.Services
     {
        
         Order? GetServedOrderByTableId(int tableId);
-        Order? GetOrderById(int orderId);
+     
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
         List<Order> GetRunningOrders(OrderType type);
 
