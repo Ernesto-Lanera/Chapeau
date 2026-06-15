@@ -8,6 +8,19 @@ let editingCommentId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     updateCartUI();
+
+    const menuGrid = document.getElementById('menuGrid');
+    if (menuGrid) {
+        menuGrid.addEventListener('click', function (e) {
+            const card = e.target.closest('.menu-item-card');
+
+            if (card) {
+                const itemId = parseInt(card.getAttribute('data-item-id'));
+                const itemName = card.getAttribute('data-item-name');
+                addToOrder(itemId, itemName);
+            }
+        });
+    }
 });
 
 function showNotification(message, type = "warning") {

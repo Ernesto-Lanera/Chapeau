@@ -66,7 +66,10 @@
                             <input type="hidden" name="MenuItemId" value="@item.MenuItemID" />
                             <input type="hidden" name="MenuItemName" value="@item.Name" />
 
-                            <div class="card h-100 shadow-sm menu-item-card @stockClasses" onclick="addToOrder(@item.MenuItemID, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(item.Name))')">
+                            <div class="card h-100 shadow-sm menu-item-card @stockClasses"
+                                 data-item-id="@item.MenuItemID"
+                                 data-item-name="@item.Name">
+
                                 @if (!string.IsNullOrEmpty(item.ImagePath))
                                 {
                                     <img class="card-img-top menu-item-img @(item.Stock == 0 ? "out-of-stock-img style-grayscale" : "")"
@@ -122,12 +125,7 @@
 
 @section Scripts {
     <script>
-        window.stockLevels = {
-            @foreach (var item in Model)
-            {
-                    @:@item.MenuItemID: @item.Stock,
-            }
-        };
+        window.stockLevels = @Html.Raw(ViewBag.StockLevelsJson);
     </script>
 
     <script src="~/js/MenuFilter.js"></script>

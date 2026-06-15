@@ -40,6 +40,7 @@
 }
 
 .menu-item-card {
+    content-visibility: auto;
     min-height: 160px;
     background-color: var(--menu-bg-panel);
     color: var(--menu-text-primary);
