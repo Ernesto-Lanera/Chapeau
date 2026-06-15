@@ -102,7 +102,7 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="tableId" value="@table.TableId" />
             <input type="hidden" name="occupied" value="true" />
-            <input type="hidden" name="returnUrl" value="/Menu/Index?tableId=@table.TableId&amp;tableNumber=@table.TableNumber" />
+            <input type="hidden" name="returnUrl" value="/Order/Index?tableId=@table.TableId&amp;tableNumber=@table.TableNumber" />
             <input type="hidden" name="guestNames" id="guest-names-@table.TableId" value="" />
             <button class="available-table" type="button" aria-label="Available Table @table.TableNumber"
                     onclick="openGuestModal(@table.TableId, @table.TableNumber)">

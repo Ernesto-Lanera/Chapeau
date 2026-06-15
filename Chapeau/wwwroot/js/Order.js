@@ -246,7 +246,7 @@ function submitOrderToServer() {
 
     toggleLoadingState(true);
 
-    fetch('/Menu/SaveOrderToDb', {
+    fetch('/Order/SaveOrderToDb', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildOrderPayload())
