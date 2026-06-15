@@ -11,13 +11,13 @@ using System.Text.Json;
 namespace Chapeau.Controllers
 {
     [Authorize(Policy = "CanTakeOrders")]
-    public class MenuController : Controller
+    public class OrderController : Controller
     {
         private readonly MenuService _menuService;
         private readonly OrderService _orderService;
         private readonly CategoryService _categoryService;
 
-        public MenuController(MenuService menuService, CategoryService categoryService, OrderService orderService)
+        public OrderController(MenuService menuService, CategoryService categoryService, OrderService orderService)
         {
             _menuService = menuService;
             _orderService = orderService;

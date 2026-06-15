@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
 using Chapeau.Middleware;
+using Chapeau.Services.Stock;
 
 namespace Chapeau
 {
@@ -130,7 +131,7 @@ namespace Chapeau
 
             // Scenario 5: application services via interfaces
             builder.Services.AddScoped<Services.IMenuService, Services.MenuService>();
-            builder.Services.AddScoped<Services.IStockService, Services.StockService>();
+            builder.Services.AddScoped<Services.IStockService, StockService>();
             builder.Services.AddScoped<Services.ICategoryService, Services.CategoryService>();
             builder.Services.AddScoped<Services.IImageService, Services.ImageService>();
             builder.Services.AddScoped<Services.Overview.IEmployeeService, Services.Overview.EmployeeService>();

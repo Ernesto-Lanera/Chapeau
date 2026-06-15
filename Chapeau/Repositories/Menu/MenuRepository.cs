@@ -3,7 +3,7 @@ using Chapeau.Constants;
 using Chapeau.Models;
 using Microsoft.Data.SqlClient;
 
-namespace Chapeau.Repositories.Menu
+namespace Chapeau.Repositories
 {
     public class MenuRepository(IConfiguration configuration, ILogger<MenuRepository> logger) : IMenuRepository
     {

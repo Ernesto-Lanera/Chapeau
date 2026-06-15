@@ -1,6 +1,6 @@
 using Chapeau.Models;
 
-namespace Chapeau.Repositories.Menu
+namespace Chapeau.Repositories
 {
     public interface IMenuRepository
     {
