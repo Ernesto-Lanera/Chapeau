@@ -1,6 +1,6 @@
 using Chapeau.Models;
 
-namespace Chapeau.Repositories.Category
+namespace Chapeau.Repositories
 {
     public interface ICategoryRepository
     {

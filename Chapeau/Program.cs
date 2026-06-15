@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
 using Chapeau.Middleware;
 
+
 namespace Chapeau
 {
     public class Program
@@ -123,14 +124,14 @@ namespace Chapeau
             builder.Services.AddScoped<IOrderService, OrderService>();
 
             // Scenario 5: repositories via interfaces
-            builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
+            builder.Services.AddScoped<Repositories.IMenuRepository, Repositories.MenuRepository>();
             builder.Services.AddScoped<Repositories.IEmployeeRepository, Repositories.EmployeeRepository>();
-            builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
+            builder.Services.AddScoped<Repositories.ICategoryRepository, Repositories.CategoryRepository>();
             builder.Services.AddScoped<Repositories.IRoleRepository, Repositories.RoleRepository>();
 
             // Scenario 5: application services via interfaces
             builder.Services.AddScoped<Services.IMenuService, Services.MenuService>();
-            builder.Services.AddScoped<Services.IStockService, Services.StockService>();
+            builder.Services.AddScoped<Services.IStockService, StockService>();
             builder.Services.AddScoped<Services.ICategoryService, Services.CategoryService>();
             builder.Services.AddScoped<Services.IImageService, Services.ImageService>();
             builder.Services.AddScoped<Services.Overview.IEmployeeService, Services.Overview.EmployeeService>();

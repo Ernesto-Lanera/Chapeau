@@ -3,7 +3,7 @@ using Chapeau.Constants;
 using Chapeau.Models;
 using Microsoft.Data.SqlClient;
 
-namespace Chapeau.Repositories.Category
+namespace Chapeau.Repositories
 {
     public class CategoryRepository(IConfiguration configuration, ILogger<CategoryRepository> logger) : ICategoryRepository
     {
