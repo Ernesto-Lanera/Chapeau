@@ -56,9 +56,7 @@
         <h2 class="div">Table @table.TableNumber</h2>
         <div class="rectangle-2" aria-hidden="true"></div>
         <div class="text-wrapper-2">Occupied</div>
-        <a href="/Menu/Index?tableId=@table.TableId&tableNumber=@table.TableNumber" class="sidebar-btn sidebar-btn-edit" aria-label="Edit Table @table.TableNumber order">
-            <span class="sidebar-btn-text sidebar-btn-text-edit">Edit</span>
-        </a>
+     
         <form method="post" asp-action="MarkTableServed" asp-controller="Table" class="sidebar-btn sidebar-btn-served" aria-label="Mark Table @table.TableNumber as served">
             @Html.AntiForgeryToken()
             <input type="hidden" name="tableId" value="@table.TableId" />
