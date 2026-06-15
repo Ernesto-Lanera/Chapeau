@@ -6,11 +6,15 @@ using Chapeau.Emums;
 namespace Chapeau.Repositories
 {
 
+    /// <summary>
+    /// Repository for table occupancy management, including runtime schema migration.
+    /// </summary>
     public class TableRepository : ITableRepository
     {
         private readonly string _connectionString;
         private readonly ILogger<TableRepository> _logger;
 
+        /// <summary>Initializes the repository with configuration and logging.</summary>
         public TableRepository(IConfiguration configuration, ILogger<TableRepository> logger)
         {
             _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
@@ -18,6 +22,7 @@ namespace Chapeau.Repositories
             _logger = logger;
         }
 
+        /// <summary>Ensures the IsManuallyOccupied column exists, adding it if necessary (runtime migration).</summary>
         public void EnsureColumnExists()
         {
             try
@@ -45,6 +50,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        /// <summary>Sets the manual occupancy status of a table.</summary>
         public void SetOccupied(int tableId, bool occupied)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
@@ -57,6 +63,7 @@ namespace Chapeau.Repositories
             command.ExecuteNonQuery();
         }
 
+        /// <summary>Checks whether a table has any active (non-paid) orders.</summary>
         public bool HasActiveOrders(int tableId)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);

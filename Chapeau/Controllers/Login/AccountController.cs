@@ -11,12 +11,18 @@ using System.Security.Claims;
 
 namespace Chapeau.Controllers
 {
+    /// <summary>
+    /// Handles user authentication including login, logout, and access denied pages.
+    /// </summary>
     public class AccountController : Controller
     {
         private readonly IAuthService _authService;
         private readonly IClaimsService _claimsService;
         private readonly IDashboardRouterService _dashboardRouter;
 
+        /// <summary>
+        /// Initializes the controller with authentication and claims services.
+        /// </summary>
         public AccountController(
             IAuthService authService,
             IClaimsService claimsService,
@@ -27,6 +33,9 @@ namespace Chapeau.Controllers
             _dashboardRouter = dashboardRouter;
         }
 
+        /// <summary>
+        /// Displays the login page. Redirects already authenticated users to their dashboard.
+        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
@@ -41,6 +50,9 @@ namespace Chapeau.Controllers
             return View(new LoginViewModel { ReturnUrl = returnUrl });
         }
 
+        /// <summary>
+        /// Processes login credentials, authenticates the user, and signs them in.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
@@ -70,6 +82,9 @@ namespace Chapeau.Controllers
             return RedirectToAction("Index", controller);
         }
 
+        /// <summary>
+        /// Signs the user in by creating an authentication cookie with the specified claims.
+        /// </summary>
         private async Task SignInUserAsync(ClaimsPrincipal claimsPrincipal, bool isPersistent)
         {
             ArgumentNullException.ThrowIfNull(claimsPrincipal);
@@ -87,12 +102,18 @@ namespace Chapeau.Controllers
             );
         }
 
+        /// <summary>
+        /// Validates that the return URL is a relative path to prevent open redirect attacks.
+        /// </summary>
         private static bool IsValidReturnUrl(string? returnUrl)
         {
             return !string.IsNullOrWhiteSpace(returnUrl)
                 && Uri.TryCreate(returnUrl, UriKind.Relative, out _);
         }
 
+        /// <summary>
+        /// Displays the logout confirmation page.
+        /// </summary>
         [HttpGet]
         [Authorize]
         public IActionResult Logout()
@@ -100,6 +121,9 @@ namespace Chapeau.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Signs the user out and redirects to the login page.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -110,6 +134,9 @@ namespace Chapeau.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        /// <summary>
+        /// Displays the access denied page when a user lacks required permissions.
+        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult AccessDenied()

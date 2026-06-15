@@ -9,6 +9,9 @@ using Chapeau.Middleware;
 
 namespace Chapeau
 {
+    /// <summary>
+    /// Application entry point. Configures services, middleware, authentication, authorization, and the request pipeline.
+    /// </summary>
     public class Program
     {
         public static void Main(string[] args)
@@ -28,7 +31,6 @@ namespace Chapeau
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
             }).AddSessionStateTempDataProvider();
 
-       
             builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
             {
                 options.ViewLocationFormats.Add("Views/Login/{0}.cshtml");
@@ -39,7 +41,6 @@ namespace Chapeau
 
             builder.Services.AddScoped<IClaimsTransformation, Services.Login.PermissionClaimsTransformation>();
 
-            // Add Session
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(20);
@@ -47,14 +48,12 @@ namespace Chapeau
                 options.Cookie.IsEssential = true;
             });
 
-            // Add Response Compression
             builder.Services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true;
                 options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
             });
 
-            // Add Authentication
             builder.Services.AddAuthentication("Cookies")
                 .AddCookie("Cookies", options =>
                 {
@@ -62,10 +61,8 @@ namespace Chapeau
                     options.AccessDeniedPath = "/Account/AccessDenied";
                 });
 
-            // Add Authorization with permission-based policies
             builder.Services.AddAuthorization(options =>
             {
-                // Permission-based policies
                 options.AddPolicy("CanTakeOrders", policy =>
                     policy.RequireClaim("Permission", "TakeOrders"));
 
@@ -89,7 +86,6 @@ namespace Chapeau
                         context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
                         context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.LegacyViewReports)));
 
-                // Backwards compatible policy for older non-management controller examples.
                 options.AddPolicy("CanViewReports", policy =>
                     policy.RequireAssertion(context =>
                         context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
@@ -98,7 +94,6 @@ namespace Chapeau
                 options.AddPolicy("CanManageRoles", policy =>
                     policy.RequireClaim("Permission", "ManageRoles"));
 
-                // Role-based policies
                 options.AddPolicy("IsManager", policy =>
                     policy.RequireRole("Manager"));
 
@@ -118,24 +113,20 @@ namespace Chapeau
                 options.Cookie.IsEssential = true;
             });
 
-            // Register repositories and services
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
 
-            // Scenario 5: repositories via interfaces
             builder.Services.AddScoped<Repositories.Menu.IMenuRepository, Repositories.Menu.MenuRepository>();
             builder.Services.AddScoped<Repositories.IEmployeeRepository, Repositories.EmployeeRepository>();
             builder.Services.AddScoped<Repositories.Category.ICategoryRepository, Repositories.Category.CategoryRepository>();
             builder.Services.AddScoped<Repositories.IRoleRepository, Repositories.RoleRepository>();
 
-            // Scenario 5: application services via interfaces
             builder.Services.AddScoped<Services.IMenuService, Services.MenuService>();
             builder.Services.AddScoped<Services.IStockService, Services.StockService>();
             builder.Services.AddScoped<Services.ICategoryService, Services.CategoryService>();
             builder.Services.AddScoped<Services.IImageService, Services.ImageService>();
             builder.Services.AddScoped<Services.Overview.IEmployeeService, Services.Overview.EmployeeService>();
 
-            // Concrete registrations remain for existing non-management controllers.
             builder.Services.AddScoped<Services.MenuService>();
             builder.Services.AddScoped<Services.CategoryService>();
             builder.Services.AddScoped<Services.ImageService>();
@@ -145,11 +136,9 @@ namespace Chapeau
             builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
             builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
 
-            // Register Financial services and repositories
             builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
             builder.Services.AddScoped<IFinancialService, FinancialService>();
 
-            // Register Table repository
             builder.Services.AddScoped<ITableRepository, TableRepository>();
 
             var app = builder.Build();
@@ -178,9 +167,7 @@ namespace Chapeau
             app.UseSession();
             app.UseAuthorization();
 
-            
             app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
-
 
             app.MapStaticAssets();
             app.MapControllerRoute(

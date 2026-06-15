@@ -6,6 +6,10 @@ using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Repositories
 {
+    /// <summary>
+    /// Repository for role and permission operations, including assignments and known permission definitions.
+    /// Uses transactions for atomic role permission updates.
+    /// </summary>
     public class RoleRepository(IConfiguration configuration) : IRoleRepository
     {
         private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
@@ -24,6 +28,7 @@ namespace Chapeau.Repositories
                 [PermissionConstants.ManageRoles] = "Rollen en permissies beheren."
             };
 
+        /// <summary>Gets all roles ordered by name.</summary>
         public List<EmployeeRole> GetRoles()
         {
             const string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName;";
@@ -45,6 +50,7 @@ namespace Chapeau.Repositories
             return roles;
         }
 
+        /// <summary>Gets the list of permission names assigned to a specific role.</summary>
         public List<string> GetRolePermissions(int roleId)
         {
             const string query = """
@@ -70,6 +76,7 @@ namespace Chapeau.Repositories
             return permissions.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(permission => permission).ToList();
         }
 
+        /// <summary>Gets all known permission names from the database, merged with known defaults.</summary>
         public List<string> GetAllPermissionNames()
         {
             const string query = "SELECT PermissionName FROM Permissions ORDER BY PermissionName;";
@@ -91,6 +98,7 @@ namespace Chapeau.Repositories
                 .ToList();
         }
 
+        /// <summary>Replaces all permission assignments for a role with a new set, using a transaction.</summary>
         public void SetRolePermissions(int roleId, List<string> permissionNames)
         {
             using SqlConnection connection = new(_connectionString);
@@ -115,6 +123,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        /// <summary>Deletes all permission assignments for a role.</summary>
         private static void DeleteRolePermissions(int roleId, SqlConnection connection, SqlTransaction transaction)
         {
             const string query = "DELETE FROM RolePermissions WHERE RoleID = @RoleID;";
@@ -123,6 +132,7 @@ namespace Chapeau.Repositories
             command.ExecuteNonQuery();
         }
 
+        /// <summary>Creates the permission record if it does not already exist.</summary>
         private static void EnsurePermissionExists(string permissionName, SqlConnection connection, SqlTransaction transaction)
         {
             const string query = """
@@ -139,6 +149,7 @@ namespace Chapeau.Repositories
             command.ExecuteNonQuery();
         }
 
+        /// <summary>Inserts a role-permission assignment.</summary>
         private static void InsertRolePermission(int roleId, string permissionName, SqlConnection connection, SqlTransaction transaction)
         {
             const string query = """
@@ -154,12 +165,14 @@ namespace Chapeau.Repositories
             command.ExecuteNonQuery();
         }
 
+        /// <summary>Filters permission names to known permissions and handles normalization.</summary>
         private static IEnumerable<string> NormalizePermissionNames(IEnumerable<string> permissionNames) =>
             permissionNames
                 .Select(NormalizePermissionName)
                 .Where(permissionName => KnownPermissions.ContainsKey(permissionName))
                 .Distinct(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>Maps LegacyViewReports to ViewFinance for backward compatibility.</summary>
         private static string NormalizePermissionName(string permissionName) =>
             string.Equals(permissionName, PermissionConstants.LegacyViewReports, StringComparison.OrdinalIgnoreCase)
                 ? PermissionConstants.ViewFinance

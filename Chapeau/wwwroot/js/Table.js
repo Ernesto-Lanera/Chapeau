@@ -1,5 +1,11 @@
+/**
+ * Manages the guest count modal on the table overview page.
+ * Handles selecting guest count, entering guest names, and submitting the form.
+ */
+
 var currentTableId = 0;
 
+/** Opens the guest modal for a specific table and defaults to 2 guests. */
 function openGuestModal(tableId, tableNumber) {
     currentTableId = tableId;
     document.getElementById('selected-guests').value = 2;
@@ -12,10 +18,12 @@ function openGuestModal(tableId, tableNumber) {
     renderGuestNameFields(2);
 }
 
+/** Closes the guest modal without submitting. */
 function closeGuestModal() {
     document.getElementById('guest-modal').classList.remove('show');
 }
 
+/** Sets the selected guest count and re-renders name input fields. */
 function setGuestCount(count) {
     document.getElementById('selected-guests').value = count;
     var options = document.querySelectorAll('.guest-option');
@@ -29,6 +37,7 @@ function setGuestCount(count) {
     renderGuestNameFields(count);
 }
 
+/** Dynamically creates name input fields for each guest. */
 function renderGuestNameFields(count) {
     var container = document.getElementById('guest-name-fields');
     var html = '';
@@ -43,6 +52,7 @@ function renderGuestNameFields(count) {
     if (firstInput) firstInput.focus();
 }
 
+/** Collects guest names, stores them in the hidden field, and submits the form. */
 function confirmGuest() {
     if (currentTableId === 0) return;
     var count = parseInt(document.getElementById('selected-guests').value);

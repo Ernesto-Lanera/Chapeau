@@ -5,6 +5,9 @@ using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Repositories
 {
+    /// <summary>
+    /// Repository for employee CRUD operations using ADO.NET with SQL Server.
+    /// </summary>
     public class EmployeeRepository(IConfiguration configuration, ILogger<EmployeeRepository> logger) : IEmployeeRepository
     {
         private const string SelectEmployeeColumns = """
@@ -17,6 +20,7 @@ namespace Chapeau.Repositories
             ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
         private readonly ILogger<EmployeeRepository> _logger = logger;
 
+        /// <summary>Gets all employees ordered by name.</summary>
         public List<Employee> GetEmployees()
         {
             string query = SelectEmployeeColumns + " ORDER BY e.Name;";
@@ -30,6 +34,7 @@ namespace Chapeau.Repositories
             return employees;
         }
 
+        /// <summary>Gets a single employee by ID, or null if not found.</summary>
         public Employee? GetEmployeeById(int employeeId)
         {
             string query = SelectEmployeeColumns + " WHERE e.EmployeeID = @EmployeeID;";
@@ -42,6 +47,7 @@ namespace Chapeau.Repositories
             return reader.Read() ? MapEmployee(reader) : null;
         }
 
+        /// <summary>Gets a single employee by name, or null if not found.</summary>
         public Employee? GetEmployeeByName(string name)
         {
             string query = SelectEmployeeColumns + " WHERE e.Name = @Name;";
@@ -54,6 +60,7 @@ namespace Chapeau.Repositories
             return reader.Read() ? MapEmployee(reader) : null;
         }
 
+        /// <summary>Async version of GetEmployeeByName used during login.</summary>
         public async Task<Employee?> GetEmployeeByNameAsync(string name)
         {
             string query = SelectEmployeeColumns + " WHERE e.Name = @Name;";
@@ -66,6 +73,7 @@ namespace Chapeau.Repositories
             return await reader.ReadAsync() ? MapEmployee(reader) : null;
         }
 
+        /// <summary>Checks if an employee name already exists in the database, case-insensitive.</summary>
         public bool NameExists(string name, int? excludedEmployeeId = null)
         {
             const string query = """
@@ -84,6 +92,7 @@ namespace Chapeau.Repositories
             return Convert.ToInt32(command.ExecuteScalar()) > 0;
         }
 
+        /// <summary>Adds a new employee and sets the EmployeeID from the database-generated value.</summary>
         public void AddEmployee(Employee employee)
         {
             const string query = """
@@ -101,6 +110,7 @@ namespace Chapeau.Repositories
             _logger.LogInformation("Medewerker toegevoegd: {EmployeeId}.", employee.EmployeeID);
         }
 
+        /// <summary>Updates an existing employee's details.</summary>
         public void UpdateEmployee(Employee employee)
         {
             const string query = """
@@ -118,6 +128,7 @@ namespace Chapeau.Repositories
             EnsureUpdated(command.ExecuteNonQuery(), employee.EmployeeID);
         }
 
+        /// <summary>Sets the active/inactive status of an employee.</summary>
         public void SetEmployeeActive(int employeeId, bool active)
         {
             const string query = "UPDATE Employee SET IsActive = @IsActive WHERE EmployeeID = @EmployeeID;";
@@ -130,6 +141,7 @@ namespace Chapeau.Repositories
             EnsureUpdated(command.ExecuteNonQuery(), employeeId);
         }
 
+        /// <summary>Tests whether the database connection is available.</summary>
         public bool TestConnection()
         {
             try
@@ -145,6 +157,7 @@ namespace Chapeau.Repositories
             }
         }
 
+        /// <summary>Adds the common editable parameters (Name, PasswordHash, RoleID, IsActive) to a command.</summary>
         private static void AddEditableParameters(SqlCommand command, Employee employee)
         {
             command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = employee.Name.Trim();
@@ -153,6 +166,7 @@ namespace Chapeau.Repositories
             command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = employee.IsActive;
         }
 
+        /// <summary>Throws if no rows were affected by an update/delete operation.</summary>
         private void EnsureUpdated(int rowsAffected, int employeeId)
         {
             if (rowsAffected > 0) return;
@@ -160,6 +174,7 @@ namespace Chapeau.Repositories
             throw new InvalidOperationException(ErrorMessages.EmployeeNotFound);
         }
 
+        /// <summary>Maps a SqlDataReader row to an Employee object.</summary>
         private static Employee MapEmployee(SqlDataReader reader)
         {
             int roleId = reader.GetInt32(reader.GetOrdinal("RoleID"));

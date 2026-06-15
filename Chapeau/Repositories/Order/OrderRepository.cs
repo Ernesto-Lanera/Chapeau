@@ -4,16 +4,22 @@ using Chapeau.Models;
 using Chapeau.Repositories;
 using Microsoft.Data.SqlClient;
 
+/// <summary>
+/// Repository for order and order item data access using ADO.NET with SQL Server.
+/// Handles all CRUD operations for orders, order items, and related stock adjustments.
+/// </summary>
 public class OrderRepository : IOrderRepository
 {
     private readonly string _connectionString;
 
+    /// <summary>Initializes the repository with the database connection string from configuration.</summary>
     public OrderRepository(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
         ?? throw new Exception("Database connection string is missing.");
     }
 
+    /// <summary>Gets running (non-finished) orders filtered by food or drink type.</summary>
     public List<Order> GetRunningOrders(OrderType type)
     {
         List<Order> orders = new List<Order>();
@@ -69,6 +75,7 @@ public class OrderRepository : IOrderRepository
         return orders;
     }
 
+    /// <summary>Gets the active (Ordered or BeingPrepared) order for a table.</summary>
     public Order? GetActiveOrderByTableId(int tableId)
     {
         using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -98,6 +105,7 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    /// <summary>Gets the served order for a table, if one exists.</summary>
     public Order? GetServedOrderByTableId(int tableId)
     {
         using SqlConnection connection = new SqlConnection(_connectionString);
@@ -117,6 +125,7 @@ public class OrderRepository : IOrderRepository
         return reader.Read() ? MapOrder(reader) : null;
     }
 
+    /// <summary>Gets an order by its ID without its items.</summary>
     public Order? GetOrderById(int orderId)
     {
         using SqlConnection connection = new SqlConnection(_connectionString);
@@ -134,6 +143,7 @@ public class OrderRepository : IOrderRepository
         return reader.Read() ? MapOrder(reader) : null;
     }
 
+    /// <summary>Gets all orders matching a given status.</summary>
     public List<Order> GetOrdersByStatus(OrderStatus status)
     {
         List<Order> orders = new List<Order>();
@@ -164,6 +174,7 @@ public class OrderRepository : IOrderRepository
         return orders;
     }
 
+    /// <summary>Gets all table statuses with their active (non-paid) orders for the table overview.</summary>
     public List<TableStatus> GetAllTableStatuses()
     {
         Dictionary<int, TableStatus> tableDict = new Dictionary<int, TableStatus>();
@@ -194,6 +205,7 @@ public class OrderRepository : IOrderRepository
         return tableDict.Values.OrderBy(t => t.TableNumber).ToList();
     }
 
+    /// <summary>Updates the status of an order.</summary>
     public void UpdateOrderStatus(int orderId, OrderStatus newStatus)
     {
         using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -210,6 +222,7 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    /// <summary>Gets order items for an order, filtered by food or drink type with course mapping.</summary>
     public List<OrderItem> GetOrderItemsByOrderId(int orderId, OrderType type)
     {
         List<OrderItem> items = [];
@@ -276,6 +289,7 @@ public class OrderRepository : IOrderRepository
         return items;
     }
 
+    /// <summary>Gets all order items for an order with full menu item details.</summary>
     public List<OrderItem> GetOrderItemsByOrderId(int orderId)
     {
         List<OrderItem> items = new List<OrderItem>();
@@ -305,6 +319,7 @@ public class OrderRepository : IOrderRepository
         return items;
     }
 
+    /// <summary>Builds the SQL query for retrieving table statuses with food/drink indicators.</summary>
     private static string BuildTableStatusQuery()
     {
         return $@"SELECT t.TableID, t.TableNumber, t.IsManuallyOccupied,
@@ -327,6 +342,7 @@ public class OrderRepository : IOrderRepository
             ORDER BY t.TableNumber, o.OrderDate";
     }
 
+    /// <summary>Maps a data reader row to a TableStatus, grouping orders by table.</summary>
     private static void MapTableRow(SqlDataReader reader, Dictionary<int, TableStatus> tableDict)
     {
         int tableId = (int)reader["TableID"];
@@ -355,6 +371,7 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    /// <summary>Maps a data reader row to an Order.</summary>
     private static Order MapOrder(SqlDataReader reader)
     {
         var table = new Table_
@@ -375,6 +392,7 @@ public class OrderRepository : IOrderRepository
         };
     }
 
+    /// <summary>Maps a data reader row to an OrderItem with full menu item details.</summary>
     private static OrderItem MapOrderItem(SqlDataReader reader)
     {
         var menuItem = new MenuItem
@@ -403,12 +421,14 @@ public class OrderRepository : IOrderRepository
         };
     }
 
+    /// <summary>Returns the VAT rate based on whether the item is alcoholic (21%) or not (6%).</summary>
     private static decimal GetVatRate(bool isAlcoholic)
     {
         return isAlcoholic ? 0.21m : 0.06m;
     }
 
-        public int MarkReadyOrdersAsServed(int tableId)
+        /// <summary>Marks all ReadyToBeServed orders at a table as Served. Returns the number of orders updated.</summary>
+    public int MarkReadyOrdersAsServed(int tableId)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
             connection.Open();
@@ -424,7 +444,8 @@ public class OrderRepository : IOrderRepository
             return command.ExecuteNonQuery();
         }
 
-        public int InsertOrder(Order order)
+        /// <summary>Inserts a new order and returns the generated OrderID.</summary>
+    public int InsertOrder(Order order)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
             connection.Open();
@@ -439,7 +460,8 @@ public class OrderRepository : IOrderRepository
             return (int)command.ExecuteScalar();
         }
 
-        public void InsertOrderItems(int orderId, List<OrderItem> items)
+        /// <summary>Inserts order items for a given order ID.</summary>
+    public void InsertOrderItems(int orderId, List<OrderItem> items)
         {
             using SqlConnection connection = new SqlConnection(_connectionString);
             connection.Open();
@@ -457,7 +479,8 @@ public class OrderRepository : IOrderRepository
             }
         }
 
-        public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
+        /// <summary>Updates the preparation status of a single order item.</summary>
+    public void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus)
     {
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
@@ -473,6 +496,7 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    /// <summary>Updates the comment on a single order item.</summary>
     public void UpdateItemComment(int orderItemId, string? comment)
     {
         using SqlConnection connection = new SqlConnection(_connectionString);
@@ -486,6 +510,7 @@ public class OrderRepository : IOrderRepository
         command.ExecuteNonQuery();
     }
 
+    /// <summary>Saves a payment record, marks the order as Paid, and frees the table, all within a transaction.</summary>
     public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
     {
         using SqlConnection connection = new SqlConnection(_connectionString);
@@ -554,6 +579,7 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    /// <summary>Updates all order item statuses for a given type (food/drink) in an order, for items not yet at the target status.</summary>
     public void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus newStatus)
     {
         List<OrderItem> items = GetOrderItemsByOrderId(orderId, type)
@@ -563,6 +589,7 @@ public class OrderRepository : IOrderRepository
             UpdateOrderItemStatus(item.OrderItemId, newStatus);
     }
 
+    /// <summary>Updates order item statuses for a specific course within an order.</summary>
     public void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus newStatus)
     {
         using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -591,6 +618,7 @@ public class OrderRepository : IOrderRepository
         }   
     }
 
+    /// <summary>Gets finished orders (ReadyToBeServed, Served, or Paid) from today, filtered by type.</summary>
     public List<Order> GetFinishedOrdersToday(OrderType type)
     {
         List<Order> orders = new List<Order>();
@@ -641,6 +669,7 @@ public class OrderRepository : IOrderRepository
         return orders;
     }
 
+    /// <summary>Creates a new order with its items and deducts stock for each item.</summary>
     public void SaveOrder(Order order)
     {
         using var connection = new SqlConnection(_connectionString);
@@ -668,6 +697,7 @@ public class OrderRepository : IOrderRepository
         }
     }
 
+    /// <summary>Inserts a single order item and deducts its quantity from stock.</summary>
     private void SaveOrderItems(OrderItem item, SqlConnection connection)
     {
         string query = @"INSERT INTO OrderItem (orderid, MenuItemid, AmountOrdered, comment, OrderItemStatus) 
@@ -686,6 +716,70 @@ public class OrderRepository : IOrderRepository
         command.ExecuteNonQuery();
     }
 
+    /// <summary>Gets the active order for a table including all its items.</summary>
+    public Order? GetActiveOrderWithItemsByTableId(int tableId)
+    {
+        var order = GetActiveOrderByTableId(tableId);
+        if (order == null) return null;
+
+        order.Items = GetOrderItemsByOrderId(order.OrderId);
+        order.OrderItems = order.Items;
+        return order;
+    }
+
+    /// <summary>Updates an existing order by restoring old stock, deleting old items, inserting new items, and deducting new stock within a transaction.</summary>
+    public void UpdateExistingOrder(int orderId, List<OrderItem> newItems, List<OrderItem> oldItems)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+
+        try
+        {
+            foreach (var oldItem in oldItems)
+            {
+                using var restoreCmd = new SqlCommand(
+                    "UPDATE MenuItems SET Stock = Stock + @Amount WHERE MenuItemID = @MenuItemID",
+                    connection, transaction);
+                restoreCmd.Parameters.AddWithValue("@Amount", oldItem.AmountOrdered);
+                restoreCmd.Parameters.AddWithValue("@MenuItemID", oldItem.MenuItemId);
+                restoreCmd.ExecuteNonQuery();
+            }
+
+            using var deleteCmd = new SqlCommand(
+                "DELETE FROM OrderItem WHERE OrderID = @OrderID",
+                connection, transaction);
+            deleteCmd.Parameters.AddWithValue("@OrderID", orderId);
+            deleteCmd.ExecuteNonQuery();
+
+            foreach (var item in newItems)
+            {
+                using var insertCmd = new SqlCommand(
+                    @"INSERT INTO OrderItem (OrderID, MenuItemID, AmountOrdered, Comment, OrderItemStatus)
+                      VALUES (@OrderID, @MenuItemID, @AmountOrdered, @Comment, @OrderItemStatus);
+                      UPDATE MenuItems SET Stock = Stock - @AmountOrdered2
+                      WHERE MenuItemID = @MenuItemID2",
+                    connection, transaction);
+                insertCmd.Parameters.AddWithValue("@OrderID", orderId);
+                insertCmd.Parameters.AddWithValue("@MenuItemID", item.MenuItemId);
+                insertCmd.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
+                insertCmd.Parameters.AddWithValue("@Comment", (object?)item.Comment ?? DBNull.Value);
+                insertCmd.Parameters.AddWithValue("@OrderItemStatus", (int)OrderStatus.Ordered);
+                insertCmd.Parameters.AddWithValue("@AmountOrdered2", item.AmountOrdered);
+                insertCmd.Parameters.AddWithValue("@MenuItemID2", item.MenuItemId);
+                insertCmd.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    /// <summary>Gets served orders for a specific table number.</summary>
     public List<Order> GetOrdersByTableNumber(int tableNumber)
     {
         List<Order> orders = new List<Order>();

@@ -6,17 +6,23 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
+    /// <summary>
+    /// Manages the table overview grid, including occupancy toggling and marking orders as served.
+    /// </summary>
     [Authorize(Policy = "CanTakeOrders")]
     public class TableController : Controller
     {
         private readonly IOrderService _orderService;
         private readonly ITableRepository _tableRepository;
 
+        /// <summary>Initializes the controller with order and table repositories.</summary>
         public TableController(IOrderService orderService, ITableRepository tableRepository)
         {
             _orderService = orderService;
             _tableRepository = tableRepository;
         }
+
+        /// <summary>Displays the table overview with all table statuses.</summary>
         public IActionResult Index()
         {
             try
@@ -31,6 +37,7 @@ namespace Chapeau.Controllers
             }
         }
 
+        /// <summary>Marks a single order as served.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult MarkAsServed(int orderId)
@@ -47,6 +54,7 @@ namespace Chapeau.Controllers
             }
         }
 
+        /// <summary>Marks all ready orders at a table as served.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult MarkTableServed(int tableId)
@@ -71,6 +79,7 @@ namespace Chapeau.Controllers
             }
         }
 
+        /// <summary>Toggles the manual occupied status of a table, blocking free if active orders exist.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ToggleStatus(int tableId, bool occupied, string? returnUrl = null, string? guestNames = null)

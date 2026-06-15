@@ -1,28 +1,29 @@
-﻿let currentCartItems = [];
-try {
-    currentCartItems = JSON.parse(sessionStorage.getItem('chapeau_cart')) || [];
-} catch (e) {
-    currentCartItems = [];
-}
+﻿/**
+ * Manages the client-side shopping cart for menu ordering.
+ * Cart state is persisted in sessionStorage and can be pre-populated
+ * when editing an existing order (via window.existingCart).
+ */
+
+let currentCartItems = [];
 let editingCommentId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateCartUI();
-
-    const menuGrid = document.getElementById('menuGrid');
-    if (menuGrid) {
-        menuGrid.addEventListener('click', function (e) {
-            const card = e.target.closest('.menu-item-card');
-
-            if (card) {
-                const itemId = parseInt(card.getAttribute('data-item-id'));
-                const itemName = card.getAttribute('data-item-name');
-                addToOrder(itemId, itemName);
-            }
-        });
+    if (window.existingCart && Array.isArray(window.existingCart) && window.existingCart.length > 0) {
+        currentCartItems = window.existingCart;
+        sessionStorage.setItem('chapeau_cart', JSON.stringify(currentCartItems));
+    } else {
+        try {
+            currentCartItems = JSON.parse(sessionStorage.getItem('chapeau_cart')) || [];
+        } catch (e) {
+            currentCartItems = [];
+        }
+    }
+    updateCartUI(currentCartItems);
+});
     }
 });
 
+/** Shows a dismissible toast notification in the top-right corner. */
 function showNotification(message, type = "warning") {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -52,12 +53,14 @@ function toggleLoadingState(isLoading) {
     }
 }
 
+/** Saves the value from the currently open comment input before a UI re-render. */
 function preserveActiveComment() {
     if (editingCommentId === null) return '';
     const input = document.getElementById(`comment-input-${editingCommentId}`);
     return input ? input.value : '';
 }
 
+/** Re-focuses the comment input after a UI re-render. */
 function restoreActiveComment() {
     if (editingCommentId === null) return;
     const input = document.getElementById(`comment-input-${editingCommentId}`);
@@ -69,6 +72,7 @@ function restoreActiveComment() {
     }
 }
 
+/** Generates HTML for the comment section of a cart item (input field or display with delete). */
 function buildCommentHtml(item, isEditing, activeCommentValue) {
     if (isEditing) {
         const displayValue = activeCommentValue || item.comment || '';
@@ -88,6 +92,7 @@ function buildCommentHtml(item, isEditing, activeCommentValue) {
     return '';
 }
 
+/** Generates the full HTML for a single cart item card (name, quantity controls, comment, delete). */
 function buildCartItemHtml(item, activeCommentValue) {
     const isEditing = (editingCommentId === item.menuItemId);
     const commentHtml = buildCommentHtml(item, isEditing, activeCommentValue);
@@ -108,12 +113,14 @@ function buildCartItemHtml(item, activeCommentValue) {
         </div>`;
 }
 
+/** Re-renders the entire cart container from the currentCartItems array. */
 function updateCartUI() {
     const activeCommentValue = preserveActiveComment();
     document.getElementById('cart-container').innerHTML = currentCartItems.map(item => buildCartItemHtml(item, activeCommentValue)).join('');
     restoreActiveComment();
 }
 
+/** Persists the current cart to sessionStorage and re-renders the UI. */
 function saveCartState() {
     try {
         sessionStorage.setItem('chapeau_cart', JSON.stringify(currentCartItems));
@@ -136,6 +143,7 @@ function checkStockAvailability(menuItemId, requestedQty) {
     return true;
 }
 
+/** Adds an item to the cart, incrementing quantity if already present. Checks stock limits. */
 function addToOrder(menuItemId, menuItemName) {
     if (getStockLimit(menuItemId) <= 0) {
         showNotification("Item out of stock.", "danger");
@@ -159,6 +167,7 @@ function addToOrder(menuItemId, menuItemName) {
     saveCartState();
 }
 
+/** Increases or decreases the quantity of a cart item. Removes the item if quantity reaches zero. */
 function adjustQuantity(menuItemId, delta) {
     let item = currentCartItems.find(i => i.menuItemId === menuItemId);
 
@@ -176,16 +185,19 @@ function adjustQuantity(menuItemId, delta) {
     }
 }
 
+/** Removes an item from the cart entirely. */
 function removeFromOrder(menuItemId) {
     currentCartItems = currentCartItems.filter(i => i.menuItemId !== menuItemId);
     saveCartState();
 }
 
+/** Toggles the comment editing mode for a cart item. */
 function toggleCommentInput(menuItemId) {
     editingCommentId = (editingCommentId === menuItemId) ? null : menuItemId;
     updateCartUI();
 }
 
+/** Saves the comment text from the input field to the cart item. */
 function saveComment(menuItemId) {
     const inputField = document.getElementById(`comment-input-${menuItemId}`);
     let item = currentCartItems.find(i => i.menuItemId === menuItemId);
@@ -197,6 +209,7 @@ function saveComment(menuItemId) {
     }
 }
 
+/** Clears the comment for a cart item. */
 function deleteComment(menuItemId) {
     let item = currentCartItems.find(i => i.menuItemId === menuItemId);
     if (item) {
@@ -205,6 +218,7 @@ function deleteComment(menuItemId) {
     }
 }
 
+/** Clears the cart and redirects back to the table overview. */
 function cancelLocalOrder() {
     sessionStorage.removeItem('chapeau_cart');
     currentCartItems = [];
@@ -238,6 +252,7 @@ function handleServerResponse(data) {
     }
 }
 
+/** Submits the current cart as a JSON payload to the server. Supports both new orders and updates to existing orders. */
 function submitOrderToServer() {
     if (currentCartItems.length === 0) {
         showNotification("Cannot send an empty order.", "warning");

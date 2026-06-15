@@ -7,6 +7,11 @@ using System.Security.Claims;
 
 namespace Chapeau.Services.Login
 {
+    /// <summary>
+    /// Refreshes employee and permission claims from the database on every authenticated request.
+    /// Ensures deactivated employees lose access and permission changes take effect immediately.
+    /// Falls back to existing cookie claims when the database is unreachable.
+    /// </summary>
     public class PermissionClaimsTransformation : IClaimsTransformation
     {
         private readonly IEmployeeRepository _employeeRepository;
@@ -14,6 +19,7 @@ namespace Chapeau.Services.Login
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<PermissionClaimsTransformation> _logger;
 
+        /// <summary>Initializes the transformation with repositories and logging.</summary>
         public PermissionClaimsTransformation(
             IEmployeeRepository employeeRepository,
             IRoleRepository roleRepository,
@@ -26,6 +32,7 @@ namespace Chapeau.Services.Login
             _logger = logger;
         }
 
+        /// <summary>Refreshes the principal's claims from the database on every authenticated request.</summary>
         public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
             if (!ShouldRefreshPermissions(principal))
@@ -54,7 +61,6 @@ namespace Chapeau.Services.Login
 
                 List<string> currentPermissions = _roleRepository.GetRolePermissions(employee.RoleID);
 
-                // Clone first. Do not mutate the original cookie identity directly.
                 var refreshedIdentity = new ClaimsIdentity(currentIdentity);
                 RefreshEmployeeClaims(refreshedIdentity, employee);
                 ReplacePermissionClaims(refreshedIdentity, currentPermissions);
@@ -63,12 +69,12 @@ namespace Chapeau.Services.Login
             }
             catch (Exception exception)
             {
-                // Keep the existing claims from the login cookie when the database cannot be reached.
                 _logger.LogWarning(exception, "Employee/permission claims could not be refreshed for employee {EmployeeId}.", employeeId);
                 return Task.FromResult(principal);
             }
         }
 
+        /// <summary>Determines whether the permission claims should be refreshed, skipping static files.</summary>
         private bool ShouldRefreshPermissions(ClaimsPrincipal principal)
         {
             if (principal.Identity?.IsAuthenticated != true)
@@ -78,10 +84,10 @@ namespace Chapeau.Services.Login
 
             string? path = _httpContextAccessor.HttpContext?.Request.Path.Value;
 
-            // Do not query the database for css/js/images and other static files.
             return string.IsNullOrWhiteSpace(path) || !Path.HasExtension(path);
         }
 
+        /// <summary>Extracts the employee ID from claims, checking custom and standard claim types.</summary>
         private static bool TryGetEmployeeId(ClaimsPrincipal principal, out int employeeId)
         {
             string? employeeIdValue = principal.FindFirst(ClaimTypeConstants.EmployeeId)?.Value
@@ -90,6 +96,7 @@ namespace Chapeau.Services.Login
             return int.TryParse(employeeIdValue, out employeeId);
         }
 
+        /// <summary>Creates a principal with IsActive=false and no permissions for deactivated employees.</summary>
         private static ClaimsPrincipal CreateInactivePrincipal(ClaimsIdentity currentIdentity)
         {
             var refreshedIdentity = new ClaimsIdentity(currentIdentity);
@@ -100,6 +107,7 @@ namespace Chapeau.Services.Login
             return new ClaimsPrincipal(refreshedIdentity);
         }
 
+        /// <summary>Updates all employee-related claims with fresh data from the database.</summary>
         private static void RefreshEmployeeClaims(ClaimsIdentity identity, Employee employee)
         {
             string roleName = string.IsNullOrWhiteSpace(employee.Role.RoleName)
@@ -117,6 +125,7 @@ namespace Chapeau.Services.Login
             ReplaceClaim(identity, ClaimTypeConstants.IsActive, employee.IsActive.ToString());
         }
 
+        /// <summary>Replaces all permission claims with a fresh set from the database.</summary>
         private static void ReplacePermissionClaims(ClaimsIdentity identity, IEnumerable<string> permissions)
         {
             foreach (Claim claim in identity.FindAll(ClaimTypeConstants.Permission).ToList())
@@ -130,6 +139,7 @@ namespace Chapeau.Services.Login
             }
         }
 
+        /// <summary>Replaces all claims of a given type with a single new value.</summary>
         private static void ReplaceClaim(ClaimsIdentity identity, string claimType, string value)
         {
             foreach (Claim claim in identity.FindAll(claimType).ToList())
