@@ -3,13 +3,9 @@ using Chapeau.Models;
 
 namespace Chapeau.Services
 {
-    /// <summary>
-    /// Service interface for order management operations.
-    /// </summary>
     public interface IOrderService
     {
-        /// <summary>Gets the active (Ordered or BeingPrepared) order for a table.</summary>
-        Order? GetActiveOrderByTableId(int tableId);
+      
         /// <summary>Gets the served order for a table.</summary>
         Order? GetServedOrderByTableId(int tableId);
      
@@ -43,20 +39,7 @@ namespace Chapeau.Services
         /// <summary>Gets finished orders from today, filtered by type.</summary>
         List<Order> GetFinishedOrdersToday(OrderType type);
         /// <summary>Creates a new empty order for a table.</summary>
-        Order MakeNewOrder(int tableId);
-        /// <summary>Adds an item to an in-memory order.</summary>
-        Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName);
-        /// <summary>Removes an item from an in-memory order.</summary>
-        Order RemoveItemFromOrder(int menuItemId, Order order);
-        /// <summary>Updates item quantity in an in-memory order.</summary>
-        Order UpdateItemFromOrder(int menuItemId, Order order, int newAmount);
-        /// <summary>Changes the comment on an in-memory order item.</summary>
-        Order ChangeCommentInItem(int menuItemId, Order order, string comment);
-        /// <summary>Updates a comment on an in-memory order item.</summary>
-        Order UpdateItemComment(int menuItemId, Order order, string comment);
-        /// <summary>Updates a comment on a persisted order item.</summary>
-        void UpdateItemComment(int orderItemId, string comment);
-        /// <summary>Creates a new order in the database.</summary>
+    
         void SaveOrderToDb(Order order);
         /// <summary>Gets the active order for a table including all items.</summary>
         Order? GetActiveOrderWithItemsByTableId(int tableId);
