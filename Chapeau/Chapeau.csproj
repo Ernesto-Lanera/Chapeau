@@ -9,13 +9,9 @@
 
   <ItemGroup>
     <Compile Remove="Exceptions\**" />
-    <Compile Remove="Services\Menu\**" />
     <Content Remove="Exceptions\**" />
-    <Content Remove="Services\Menu\**" />
     <EmbeddedResource Remove="Exceptions\**" />
-    <EmbeddedResource Remove="Services\Menu\**" />
     <None Remove="Exceptions\**" />
-    <None Remove="Services\Menu\**" />
   </ItemGroup>
 
   <ItemGroup>

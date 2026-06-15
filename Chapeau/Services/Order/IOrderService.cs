@@ -12,9 +12,7 @@ namespace Chapeau.Services
         Order? GetActiveOrderByTableId(int tableId);
         /// <summary>Gets the served order for a table.</summary>
         Order? GetServedOrderByTableId(int tableId);
-        /// <summary>Gets an order by its ID.</summary>
-        Order? GetOrderById(int orderId);
-        /// <summary>Gets all order items for an order.</summary>
+     
         List<OrderItem> GetOrderItemsByOrderId(int orderId);
         /// <summary>Gets running orders filtered by food or drink type.</summary>
         List<Order> GetRunningOrders(OrderType type);

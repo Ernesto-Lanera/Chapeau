@@ -10,7 +10,7 @@ namespace Chapeau.ViewComponents
         {
             if (TempData["GlobalNotification"] != null)
             {
-                var json = TempData["GlobalNotification"]!.ToString();
+                var json = TempData["GlobalNotification"]!.ToString() ?? "Nothing to see here ";
                 var notification = JsonSerializer.Deserialize<Notification>(json);
                 return View(notification);
             }

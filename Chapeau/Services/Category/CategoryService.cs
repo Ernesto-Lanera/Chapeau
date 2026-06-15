@@ -1,6 +1,6 @@
 using Chapeau.Constants;
 using Chapeau.Models;
-using Chapeau.Repositories.Category;
+using Chapeau.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Services

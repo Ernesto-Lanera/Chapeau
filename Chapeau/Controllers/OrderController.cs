@@ -14,14 +14,13 @@ namespace Chapeau.Controllers
     /// Handles menu browsing, item selection, and order creation/editing for waitstaff.
     /// </summary>
     [Authorize(Policy = "CanTakeOrders")]
-    public class MenuController : Controller
+    public class OrderController : Controller
     {
         private readonly MenuService _menuService;
         private readonly OrderService _orderService;
         private readonly CategoryService _categoryService;
 
-        /// <summary>Initializes the controller with menu, order, and category services.</summary>
-        public MenuController(MenuService menuService, CategoryService categoryService, OrderService orderService)
+        public OrderController(MenuService menuService, CategoryService categoryService, OrderService orderService)
         {
             _menuService = menuService;
             _orderService = orderService;
