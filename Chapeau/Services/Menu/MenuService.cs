@@ -2,8 +2,7 @@ using Microsoft.AspNetCore.Http;
 using System.Globalization;
 using Chapeau.Constants;
 using Chapeau.Models;
-using Chapeau.Repositories.Category;
-using Chapeau.Repositories.Menu;
+using Chapeau.Repositories;
 using Chapeau.ViewModels;
 
 namespace Chapeau.Services
