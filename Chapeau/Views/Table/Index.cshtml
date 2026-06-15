@@ -85,17 +85,13 @@
     if (table.IsOccupied)
     {
         <div class="table-cell">
-        <form method="get" action="/Menu/Index">
-            <input type="hidden" name="tableId" value="@table.TableId" />
-            <input type="hidden" name="tableNumber" value="@table.TableNumber" />
-            <button class="occupied-table" type="submit" aria-label="Occupied Table @table.TableNumber">
-                <span class="table">Table @table.TableNumber</span>
-                <div class="rectangle-12" aria-hidden="true"></div>
-                <div class="rectangle-13" aria-hidden="true"></div>
-                <div class="rectangle-14" aria-hidden="true"></div>
-                <div class="rectangle-15" aria-hidden="true"></div>
-            </button>
-        </form>
+        <div class="occupied-table-static" aria-label="Occupied Table @table.TableNumber">
+            <span class="table">Table @table.TableNumber</span>
+            <div class="rectangle-12" aria-hidden="true"></div>
+            <div class="rectangle-13" aria-hidden="true"></div>
+            <div class="rectangle-14" aria-hidden="true"></div>
+            <div class="rectangle-15" aria-hidden="true"></div>
+        </div>
         </div>
     }
     else
@@ -146,67 +142,5 @@
 </div>
 
 @section Scripts {
-<script>
-var currentTableId = 0;
-
-function openGuestModal(tableId, tableNumber) {
-    currentTableId = tableId;
-    document.getElementById('selected-guests').value = 2;
-    var options = document.querySelectorAll('.guest-option');
-    options.forEach(function(btn) {
-        btn.classList.remove('selected');
-    });
-    options[1].classList.add('selected');
-    document.getElementById('guest-modal').classList.add('show');
-    renderGuestNameFields(2);
-}
-
-function closeGuestModal() {
-    document.getElementById('guest-modal').classList.remove('show');
-}
-
-function setGuestCount(count) {
-    document.getElementById('selected-guests').value = count;
-    var options = document.querySelectorAll('.guest-option');
-    options.forEach(function(btn, index) {
-        if (index + 1 === count) {
-            btn.classList.add('selected');
-        } else {
-            btn.classList.remove('selected');
-        }
-    });
-    renderGuestNameFields(count);
-}
-
-function renderGuestNameFields(count) {
-    var container = document.getElementById('guest-name-fields');
-    var html = '';
-    for (var i = 1; i <= count; i++) {
-        html += '<div class="guest-field-container">' +
-            '<label class="guest-field-label" for="guest-name-' + i + '">Gast ' + i + '</label>' +
-            '<input type="text" id="guest-name-' + i + '" class="guest-field-input" placeholder="Naam gast ' + i + '" />' +
-            '</div>';
-    }
-    container.innerHTML = html;
-    var firstInput = document.getElementById('guest-name-1');
-    if (firstInput) firstInput.focus();
-}
-
-function confirmGuest() {
-    if (currentTableId === 0) return;
-    var count = parseInt(document.getElementById('selected-guests').value);
-    var names = [];
-    for (var i = 1; i <= count; i++) {
-        var input = document.getElementById('guest-name-' + i);
-        var name = input ? input.value.trim() : '';
-        names.push(name || 'Gast ' + i);
-    }
-    document.getElementById('guest-names-' + currentTableId).value = names.join(', ');
-    closeGuestModal();
-    var form = document.getElementById('available-form-' + currentTableId);
-    if (form) {
-        form.submit();
-    }
-}
-</script>
+    <script src="~/js/Table.js" asp-append-version="true"></script>
 }
