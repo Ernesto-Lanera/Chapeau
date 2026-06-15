@@ -34,6 +34,7 @@ namespace Chapeau.Controllers
                 ViewBag.AllCategories = _categoryService.GetCategories();
                 ViewBag.MenuCards = GetMenuCardSelectList();
                 var menuItems = _menuService.GetMenuItems(null, null) ?? new List<MenuItem>();
+                ViewBag.StockLevelsJson = JsonSerializer.Serialize(menuItems.ToDictionary(m => m.MenuItemID, m => m.Stock));
 
                 return View(menuItems);
             }

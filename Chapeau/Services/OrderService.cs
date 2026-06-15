@@ -21,20 +21,7 @@ namespace Chapeau.Services
             return _orderRepository.GetRunningOrders(type);
         }
 
-        public List<Order> GetAllRunningOrders()
-        {
-            var food = _orderRepository.GetRunningOrders(OrderType.Food);
-            var drink = _orderRepository.GetRunningOrders(OrderType.Drink);
-
-            return food.Concat(drink)
-                .GroupBy(o => o.OrderId)
-                .Select(g => {
-                    var order = g.First();
-                    order.OrderItems = g.SelectMany(o => o.OrderItems ?? new List<OrderItem>()).ToList();
-                    return order;
-                })
-                .ToList();
-        }
+       
 
         public TimeSpan GetWaitingTime(Order order)
         {
@@ -42,104 +29,10 @@ namespace Chapeau.Services
             return DateTime.Now - order.OrderDate;
         }
 
-        public Order? GetActiveOrderByTableId(int tableId)
-        {
-            if (tableId <= 0)
-            {
-                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
-            }
+    
+    
 
-            try
-            {
-                return _orderRepository.GetActiveOrderByTableId(tableId);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to retrieve order for table.", ex);
-            }
-        }
-
-        public Order MakeNewOrder(int tableId)
-        {
-            List<OrderItem> orderItems = new List<OrderItem>();
-            Order order = new Order { TableId = tableId, OrderDate = DateTime.Now, OrderItems = orderItems, GuestName = "bob" };
-            return order;
-        }
-
-
-        public Order AddOrderItemToOrder(int menuItemId, Order order, string menuItemName)
-        {
-            if (order.OrderItems != null)
-            {
-                if (!order.OrderItems.Any(i => i.MenuItemId == menuItemId))
-                {
-                    OrderItem orderItem = new OrderItem { MenuItemId = menuItemId, AmountOrdered = 1, MenuItemName = menuItemName };
-                    order.OrderItems.Add(orderItem);
-                }
-                else
-                {
-                    var existingItem = order.OrderItems.First(i => i.MenuItemId == menuItemId);
-                    existingItem.AmountOrdered++;
-                }
-            }
-            return order;
-        }
-
-        public Order RemoveItemFromOrder(int menuItemId, Order order)
-        {
-            if (order.OrderItems != null)
-            {
-                var itemToRemove = order.OrderItems.FirstOrDefault(i => i.MenuItemId == menuItemId);
-                if (itemToRemove != null)
-                {
-                    order.OrderItems.Remove(itemToRemove);
-                }
-            }
-            return order;
-        }
-
-        public Order UpdateItemFromOrder(int menuItemId, Order order, int newAmount)
-        {
-            if (order.OrderItems != null)
-            {
-                var itemToUpdate = order.OrderItems.FirstOrDefault(i => i.MenuItemId == menuItemId);
-                if (itemToUpdate != null)
-                {
-                    itemToUpdate.AmountOrdered = newAmount;
-                }
-            }
-            return order;
-        }
-
-        public Order ChangeCommentInItem(int menuItemId, Order order, string comment)
-        {
-            if (order.OrderItems != null)
-            {
-                var itemToComment = order.OrderItems.FirstOrDefault(i => i.MenuItemId == menuItemId);
-                if (itemToComment != null)
-                {
-                    itemToComment.Comment = string.IsNullOrEmpty(comment) ? null : comment;
-                }
-            }
-            return order;
-        }
-
-        public Order UpdateItemComment(int menuItemId, Order order, string comment)
-        {
-            return ChangeCommentInItem(menuItemId, order, comment);
-        }
-
-
-        public void UpdateItemComment(int orderItemId, string comment)
-        {
-            if (orderItemId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order item ID.", nameof(orderItemId));
-            }
-
-            _orderRepository.UpdateItemComment(orderItemId, string.IsNullOrWhiteSpace(comment) ? null : comment);
-        }
-
+    
         public List<OrderItem> GetOrderItemsByOrderId(int orderId)
         {
             if (orderId <= 0)

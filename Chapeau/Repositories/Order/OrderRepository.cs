@@ -663,27 +663,25 @@ public class OrderRepository : IOrderRepository
             foreach (var item in order.OrderItems)
             {
                 item.OrderId = newOrderId;
-                SaveOrderItems(item);
+                SaveOrderItems(item, connection);
             }
         }
     }
 
-    private void SaveOrderItems(OrderItem item)
+    private void SaveOrderItems(OrderItem item, SqlConnection connection)
     {
-        using var connection = new SqlConnection(_connectionString);
-        connection.Open();
-
-        string query = @"INSERT INTO OrderItem (orderid, MenuItemid, AmountOrdered, comment,OrderItemStatus) 
-                     VALUES (@OrderId, @MenuItemId, @AmountOrdered, @Comment,@OrderItemStatus); 
+        string query = @"INSERT INTO OrderItem (orderid, MenuItemid, AmountOrdered, comment, OrderItemStatus) 
+                     VALUES (@OrderId, @MenuItemId, @AmountOrdered, @Comment, @OrderItemStatus); 
                      UPDATE MenuItems SET Stock = Stock - @AmountOrdered
                      WHERE MenuItemId = @MenuItemId;";
 
         using var command = new SqlCommand(query, connection);
+
         command.Parameters.AddWithValue("@OrderId", item.OrderId);
         command.Parameters.AddWithValue("@MenuItemId", item.MenuItemId);
         command.Parameters.AddWithValue("@AmountOrdered", item.AmountOrdered);
         command.Parameters.AddWithValue("@OrderItemStatus", (int)OrderStatus.Ordered);
-        command.Parameters.AddWithValue("@Comment", (object)item.Comment! ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Comment", (object?)item.Comment ?? DBNull.Value);
 
         command.ExecuteNonQuery();
     }

@@ -66,7 +66,10 @@
                             <input type="hidden" name="MenuItemId" value="@item.MenuItemID" />
                             <input type="hidden" name="MenuItemName" value="@item.Name" />
 
-                            <div class="card h-100 shadow-sm menu-item-card @stockClasses" onclick="addToOrder(@item.MenuItemID, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(item.Name))')">
+                            <div class="card h-100 shadow-sm menu-item-card @stockClasses"
+                                 data-item-id="@item.MenuItemID"
+                                 data-item-name="@item.Name">
+
                                 @if (!string.IsNullOrEmpty(item.ImagePath))
                                 {
                                     <img class="card-img-top menu-item-img @(item.Stock == 0 ? "out-of-stock-img style-grayscale" : "")"
@@ -103,27 +106,26 @@
             <div id="cart-container" class="flex-grow-1 overflow-y-auto hide-scrollbar">
             </div>
             <div class="mt-auto d-flex justify-content-between pt-3 menu-border-top">
-    <div class="w-50 ms-1">
-        <button class="btn btn-danger w-100 fw-bold rounded-3" onclick="cancelLocalOrder()">Cancel</button>
-    </div>
-    <div class="w-50 ms-1">
-        <button class="btn btn-primary w-100 fw-bold rounded-3" onclick="submitOrderToServer()">Send To Kitchen</button>
-    </div>
-</div>
-           
+                <div class="w-50 ms-1">
+                    <button class="btn btn-danger w-100 fw-bold rounded-3" onclick="cancelLocalOrder()">Cancel</button>
+                </div>
+                <div class="w-50 ms-1">
+                    <button id="submitOrderBtn" class="btn btn-primary w-100 fw-bold rounded-3 d-flex justify-content-center align-items-center gap-2" onclick="submitOrderToServer()">
+                        <span id="submitText">Send To Kitchen</span>
+                        <span id="submitSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
         </div>
 
     </div>
+
+</div>
 </div>
 
 @section Scripts {
     <script>
-        window.stockLevels = {
-            @foreach (var item in Model)
-            {
-                @:@item.MenuItemID: @item.Stock,
-            }
-        };
+        window.stockLevels = @Html.Raw(ViewBag.StockLevelsJson);
     </script>
 
     <script src="~/js/MenuFilter.js"></script>
