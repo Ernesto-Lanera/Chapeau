@@ -168,7 +168,6 @@ namespace Chapeau.Repositories.Financial
         }
 
         // Payment bepaalt welke orders betaald zijn. Daarna rekenen we per betaalde order de omzet uit.
-        // Zo hoeft er niks aangepast te worden aan de bestaande database.
         private const string PaidItemsQuery = """
             WITH paid AS (
                 SELECT DISTINCT p.OrderID
