@@ -11,7 +11,6 @@
 <div class="form-card @(isEdit ? "edit-form-card" : string.Empty)">
     <h3>@heading</h3>
     <form asp-action="@action" method="post" class="employee-form preserve-scroll-form">
-        @Html.AntiForgeryToken()
         @if (isEdit)
         {
             <input type="hidden" name="EmployeeID" value="@employee!.EmployeeID" />

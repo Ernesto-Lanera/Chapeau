@@ -12,10 +12,15 @@ namespace Chapeau.Services
         FinancialViewModel GetOverview(string? period, DateTime? startDate, DateTime? endDate);
     }
 
-    public class FinancialService(IFinancialRepository financialRepository) : IFinancialService
+    public class FinancialService : IFinancialService
     {
         private static readonly CultureInfo DutchCulture = CultureInfo.GetCultureInfo("nl-NL");
-        private readonly IFinancialRepository _financialRepository = financialRepository;
+        private readonly IFinancialRepository _financialRepository;
+
+        public FinancialService(IFinancialRepository financialRepository)
+        {
+            _financialRepository = financialRepository;
+        }
 
         public FinancialViewModel GetOverview(string? period, DateTime? startDate, DateTime? endDate)
         {
@@ -71,7 +76,6 @@ namespace Chapeau.Services
                 DinnerSalesCount = dinner.SalesCount,
                 DinnerIncome = dinner.TotalIncome,
                 TotalTips = _financialRepository.GetTotalTips(range.firstDay, range.lastDay),
-                CategorySummaries = _financialRepository.GetFinancialSummaryByCategory(range.firstDay, range.lastDay),
                 RevenueTrend = CompleteMonthlyTrend(
                     range.firstDay,
                     range.lastDay,
@@ -79,39 +83,70 @@ namespace Chapeau.Services
             };
         }
 
-        private static FinancialPeriod ParsePeriod(string? period) => period?.ToLowerInvariant() switch
+        private static FinancialPeriod ParsePeriod(string? period)
         {
-            "quarter" => FinancialPeriod.Quarter,
-            "year" => FinancialPeriod.Year,
-            "custom" => FinancialPeriod.Custom,
-            _ => FinancialPeriod.Month
-        };
+            if (string.IsNullOrWhiteSpace(period))
+            {
+                return FinancialPeriod.Month;
+            }
+
+            string value = period.ToLowerInvariant();
+
+            if (value == "quarter")
+            {
+                return FinancialPeriod.Quarter;
+            }
+
+            if (value == "year")
+            {
+                return FinancialPeriod.Year;
+            }
+
+            if (value == "custom")
+            {
+                return FinancialPeriod.Custom;
+            }
+
+            return FinancialPeriod.Month;
+        }
 
         private static (DateTime firstDay, DateTime lastDay, string display) GetRange(
-            FinancialPeriod period, DateTime? startDate, DateTime? endDate) => period switch
+            FinancialPeriod period, DateTime? startDate, DateTime? endDate)
         {
-            FinancialPeriod.Quarter => GetQuarterRange(DateTime.Today),
-            FinancialPeriod.Year => GetYearRange(DateTime.Today),
-            FinancialPeriod.Custom => GetCustomRange(startDate!.Value, endDate!.Value),
-            _ => GetMonthRange(DateTime.Today)
-        };
+            if (period == FinancialPeriod.Quarter)
+            {
+                return GetQuarterRange(DateTime.Today);
+            }
+
+            if (period == FinancialPeriod.Year)
+            {
+                return GetYearRange(DateTime.Today);
+            }
+
+            if (period == FinancialPeriod.Custom)
+            {
+                return GetCustomRange(startDate!.Value, endDate!.Value);
+            }
+
+            return GetMonthRange(DateTime.Today);
+        }
 
         private static (DateTime, DateTime, string) GetMonthRange(DateTime today)
         {
-            DateTime start = new(today.Year, today.Month, 1);
+            DateTime start = new DateTime(today.Year, today.Month, 1);
             return (start, start.AddMonths(1).AddDays(-1), start.ToString("MMMM yyyy", DutchCulture));
         }
 
         private static (DateTime, DateTime, string) GetQuarterRange(DateTime today)
         {
             int quarter = ((today.Month - 1) / 3) + 1;
-            DateTime start = new(today.Year, ((quarter - 1) * 3) + 1, 1);
+            DateTime start = new DateTime(today.Year, ((quarter - 1) * 3) + 1, 1);
             return (start, start.AddMonths(3).AddDays(-1), $"Kwartaal {quarter} {today.Year}");
         }
 
         private static (DateTime, DateTime, string) GetYearRange(DateTime today)
         {
-            DateTime start = new(today.Year, 1, 1);
+            DateTime start = new DateTime(today.Year, 1, 1);
             return (start, new DateTime(today.Year, 12, 31), $"Jaar {today.Year}");
         }
 
@@ -127,14 +162,14 @@ namespace Chapeau.Services
             summaries.FirstOrDefault(summary => summary.MenuCardID == menuCardId)
             ?? new MenuCardFinancialSummary { MenuCardID = menuCardId, MenuCardName = name };
 
-        private static IReadOnlyList<RevenueTrendSummary> CompleteMonthlyTrend(
+        private static List<RevenueTrendSummary> CompleteMonthlyTrend(
             DateTime startDate, DateTime endDate, IEnumerable<RevenueTrendSummary> databaseTrend)
         {
             Dictionary<DateTime, RevenueTrendSummary> values =
                 databaseTrend.ToDictionary(item => item.MonthStart.Date, item => item);
-            var result = new List<RevenueTrendSummary>();
+            List<RevenueTrendSummary> result = new List<RevenueTrendSummary>();
 
-            for (DateTime month = new(startDate.Year, startDate.Month, 1);
+            for (DateTime month = new DateTime(startDate.Year, startDate.Month, 1);
                  month <= new DateTime(endDate.Year, endDate.Month, 1);
                  month = month.AddMonths(1))
             {

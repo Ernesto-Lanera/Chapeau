@@ -1,57 +1,10 @@
-.page-content {
-    padding: 28px 24px;
-}
-
-.page-title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 22px;
-}
-
-.page-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--bs-body-color);
-    margin: 0;
-}
-
-.filter-row {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 22px;
-    flex-wrap: wrap;
-}
-
-.filter-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--bs-secondary-color);
-    margin-bottom: 6px;
-}
-
-.filter-group select {
-    width: 140px;
-    height: 38px;
-    border: 1px solid var(--bs-border-color);
-    border-radius: 7px;
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
-    font-size: 14px;
-    padding-left: 10px;
-}
-
-    .filter-group select[name="categoryId"] {
-        width: 360px;
-        max-width: 100%;
-        text-overflow: ellipsis;
-    }
+/* Voorraad beheer
+   Eerst de samenvatting, daarna de tabel met de voorraadregels. */
 
 .stock-summary-row {
     display: flex;
-    gap: 14px;
     flex-wrap: wrap;
+    gap: 14px;
     margin-bottom: 22px;
 }
 
@@ -65,37 +18,32 @@
     font-weight: 600;
 }
 
-    .stock-pill svg {
-        width: 17px;
-        height: 17px;
-        stroke-width: 2;
-    }
+.stock-pill.ok {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
 
-    .stock-pill.ok {
-        background-color: rgba(34, 197, 94, 0.2);
-        color: #4ade80;
-    }
+.stock-pill.warn {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
 
-    .stock-pill.warn {
-        background-color: rgba(245, 158, 11, 0.2);
-        color: #fbbf24;
-    }
+.stock-pill.danger {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
 
-    .stock-pill.danger {
-        background-color: rgba(239, 68, 68, 0.2);
-        color: #f87171;
-    }
+.stock-pill.inactive {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
 
-    .stock-pill.inactive {
-        background-color: var(--bs-tertiary-bg);
-        color: var(--bs-secondary-color);
-    }
-
+/* Tabel met voorraadregels */
 .stock-table-card {
-    background-color: var(--bs-body-bg);
+    overflow: hidden;
     border: 1px solid var(--bs-border-color);
     border-radius: 10px;
-    overflow: hidden;
+    background-color: var(--bs-body-bg);
 }
 
 .stock-table {
@@ -104,102 +52,79 @@
     border-collapse: collapse;
 }
 
-    .stock-table thead {
-        background-color: var(--bs-tertiary-bg);
-    }
+.stock-table thead {
+    background-color: var(--bs-tertiary-bg);
+}
 
-    .stock-table th {
-        padding: 16px 22px;
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--bs-body-color);
-        text-align: left;
-    }
+.stock-table th,
+.stock-table td {
+    padding: 16px 22px;
+    color: var(--bs-body-color);
+    font-size: 14px;
+    text-align: left;
+    vertical-align: middle;
+}
 
-    .stock-table td {
-        padding: 17px 22px;
-        border-top: 1px solid var(--bs-border-color);
-        color: var(--bs-body-color);
-        font-size: 14px;
-        vertical-align: middle;
-    }
+.stock-table td {
+    border-top: 1px solid var(--bs-border-color);
+}
 
-    .stock-table tbody tr:hover {
-        background-color: var(--bs-tertiary-bg);
-    }
+.stock-table tbody tr:hover {
+    background-color: var(--bs-tertiary-bg);
+}
 
 .stock-input {
     width: 90px;
     height: 38px;
+    padding: 6px 10px;
     border: 1px solid var(--bs-border-color);
     border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 14px;
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
+    font-size: 14px;
 }
 
-    .stock-input.is-invalid {
-        border-color: #dc2626;
-        background-color: rgba(220, 38, 38, 0.2);
-    }
-
-.qty-actions {
+/* Knoppen naast het voorraadveld */
+.inline-stock-actions {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin: 0;
+    padding: 0;
 }
 
 .stock-action-button {
-    border: none;
+    padding: 7px 13px;
+    border: 0;
     border-radius: 5px;
-    color: white;
+    color: #ffffff;
+    cursor: pointer;
     font-size: 14px;
     font-weight: 700;
-    padding: 7px 13px;
-    cursor: pointer;
 }
 
 .stock-plus {
     background-color: #16a34a;
 }
 
-    .stock-plus:hover {
-        background-color: #15803d;
-    }
-
 .stock-minus {
     background-color: #dc2626;
 }
 
-    .stock-minus:hover {
-        background-color: #b91c1c;
-    }
-
-.inline-stock-form {
-    display: inline;
-    margin: 0;
-    padding: 0;
-}
-
+/* Rijen die bijna leeg, leeg of inactief zijn */
 .sold-out-row td {
-    color: var(--bs-secondary-color);
     background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
 }
 
-.sold-out-row:hover td {
+.inactive-stock-row td {
     background-color: var(--bs-tertiary-bg);
-}
-
-.inactive-stock-row td,
-.inactive-stock-row:hover td {
     color: var(--bs-secondary-color);
-    background-color: var(--bs-tertiary-bg);
 }
 
 .inactive-stock-row .stock-input {
-    color: var(--bs-secondary-color);
     background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
     cursor: not-allowed;
 }
 
@@ -210,6 +135,16 @@
 }
 
 .alert {
-    border-radius: 8px;
     margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+@media (max-width: 800px) {
+    .stock-table-card {
+        overflow-x: auto;
+    }
+
+    .inline-stock-actions {
+        flex-wrap: wrap;
+    }
 }

@@ -1,4 +1,4 @@
-﻿let currentCartItems = [];
+let currentCartItems = [];
 try {
     currentCartItems = JSON.parse(sessionStorage.getItem('chapeau_cart')) || [];
 } catch (e) {
@@ -78,7 +78,7 @@ function buildCommentHtml(item, isEditing, activeCommentValue) {
                 <button class="btn btn-sm btn-success rounded-pill fw-bold px-3" onclick="saveComment(${item.menuItemId})">Add</button>
             </div>`;
     }
-    if (item.comment && item.comment.trim() !== '') {
+    if (item.comment && item.comment !== '') {
         return `
             <div class="d-flex justify-content-between align-items-center mt-2 w-100">
                 <span class="text-light small ms-1">Note: ${item.comment}</span>

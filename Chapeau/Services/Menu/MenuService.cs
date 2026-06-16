@@ -7,42 +7,53 @@ using Chapeau.ViewModels;
 
 namespace Chapeau.Services
 {
-    public class MenuService(
-        IMenuRepository menuRepository,
-        ICategoryRepository categoryRepository,
-        IImageService imageService,
-        ILogger<MenuService> logger) : IMenuService
+    public class MenuService : IMenuService
     {
-        private readonly IMenuRepository _menuRepository = menuRepository;
-        private readonly ICategoryRepository _categoryRepository = categoryRepository;
-        private readonly IImageService _imageService = imageService;
-        private readonly ILogger<MenuService> _logger = logger;
+        private readonly IMenuRepository _menuRepository;
+        private readonly ICategoryService _categoryService;
+        private readonly IImageService _imageService;
+        private readonly ILogger<MenuService> _logger;
+
+        public MenuService(
+            IMenuRepository menuRepository,
+            ICategoryService categoryService,
+            IImageService imageService,
+            ILogger<MenuService> logger)
+        {
+            _menuRepository = menuRepository;
+            _categoryService = categoryService;
+            _imageService = imageService;
+            _logger = logger;
+        }
 
         public MenuManagementViewModel GetManagementOverview(
             int? cardId, int? categoryId, int? editId, bool showCreate)
         {
-            List<Category> categories = _categoryRepository.GetCategories();
-            categoryId = ValidateFilterCategory(cardId, categoryId, categories);
+            // Eerst maken we de filter veilig: categorie en kaart moeten bij elkaar horen.
+            int? selectedCategoryId = _categoryService.GetValidCategoryId(cardId, categoryId);
             MenuItem? editItem = editId.HasValue ? _menuRepository.GetMenuItemById(editId.Value) : null;
-            List<Category> formCategories = editItem is null
-                ? categories
-                : FilterCategories(categories, editItem.Category.MenuCardID);
+
+            List<Category> allCategories = _categoryService.GetCategories();
+            List<Category> filterCategories = _categoryService.GetCategoriesByCard(cardId);
+            List<Category> formCategories = GetFormCategories(editItem, cardId, allCategories);
 
             return new MenuManagementViewModel
             {
-                MenuItems = _menuRepository.GetMenuItems(cardId, categoryId),
-                MenuCards = CreateMenuCards(),
-                FilterCategories = FilterCategories(categories, cardId),
+                MenuItems = _menuRepository.GetMenuItems(cardId, selectedCategoryId),
+                MenuCards = _categoryService.GetMenuCards(),
+                FilterCategories = filterCategories,
                 FormCategories = formCategories,
                 SelectedCardId = cardId,
-                SelectedCategoryId = categoryId,
+                SelectedCategoryId = selectedCategoryId,
                 ShowCreate = showCreate,
                 EditItem = editItem
             };
         }
 
-        public List<MenuItem> GetMenuItems(int? cardId, int? categoryId) =>
-            _menuRepository.GetMenuItems(cardId, categoryId);
+        public List<MenuItem> GetMenuItems(int? cardId, int? categoryId)
+        {
+            return _menuRepository.GetMenuItems(cardId, categoryId);
+        }
 
         public MenuItem? GetMenuItemById(int menuItemId)
         {
@@ -53,7 +64,7 @@ namespace Chapeau.Services
         public async Task AddMenuItemAsync(MenuItemInputModel input, IFormFile? imageFile)
         {
             Category category = ValidateForCreate(input);
-            var item = CreateItem(input, category);
+            MenuItem item = CreateItem(input, category);
             item.IsActive = true;
             item.ImagePath = await GetUploadedImagePath(imageFile, string.Empty);
 
@@ -84,8 +95,21 @@ namespace Chapeau.Services
             _logger.LogInformation("Menu-itemstatus gewijzigd: {MenuItemId} - {Active}.", menuItemId, active);
         }
 
+        private List<Category> GetFormCategories(MenuItem? editItem, int? cardId, List<Category> allCategories)
+        {
+            if (editItem != null)
+            {
+                return _categoryService.GetCategoriesByCard(editItem.Category.MenuCardID);
+            }
+
+            // Bij een nieuw item staan alle categorieën in de HTML.
+            // JavaScript laat daarna alleen zien wat bij de gekozen kaart hoort.
+            return allCategories;
+        }
+
         private Category ValidateForCreate(MenuItemInputModel input)
         {
+            // Bij toevoegen controleren we eerst de invoer, daarna slaan we het item pas op.
             ValidateInput(input);
             if (!MenuCardConstants.IsValidMenuCardId(input.MenuCardID))
             {
@@ -112,7 +136,7 @@ namespace Chapeau.Services
                 throw new ArgumentException(ErrorMessages.MenuItemNameRequired);
             }
 
-            if (input.Name.Trim().Length > 100)
+            if (input.Name.Length > 100)
             {
                 throw new ArgumentException(ErrorMessages.MenuItemNameTooLong);
             }
@@ -127,8 +151,11 @@ namespace Chapeau.Services
 
         private Category ValidateCategoryMatchesCard(int categoryId, int expectedCardId)
         {
-            Category category = _categoryRepository.GetCategoryById(categoryId)
-                ?? throw new ArgumentException(ErrorMessages.InvalidCategory);
+            Category? category = _categoryService.GetCategoryById(categoryId);
+            if (category == null)
+            {
+                throw new ArgumentException(ErrorMessages.InvalidCategory);
+            }
 
             if (category.MenuCardID != expectedCardId)
             {
@@ -140,23 +167,29 @@ namespace Chapeau.Services
 
         private void ValidateUniqueName(string name, int? excludedMenuItemId)
         {
-            if (_menuRepository.NameExists(name.Trim(), excludedMenuItemId))
+            if (_menuRepository.NameExists(name, excludedMenuItemId))
             {
-                throw new InvalidOperationException(
-                    excludedMenuItemId.HasValue
-                        ? ErrorMessages.UpdateMenuItemAlreadyExists
-                        : ErrorMessages.MenuItemDuplicateName);
+                if (excludedMenuItemId.HasValue)
+                {
+                    throw new InvalidOperationException(ErrorMessages.UpdateMenuItemAlreadyExists);
+                }
+
+                throw new InvalidOperationException(ErrorMessages.MenuItemDuplicateName);
             }
         }
 
-        private static MenuItem CreateItem(MenuItemInputModel input, Category category) => new()
+        private static MenuItem CreateItem(MenuItemInputModel input, Category category)
         {
-            Name = input.Name.Trim(),
-            RetailPrice = ParsePrice(input.RetailPrice),
-            Stock = input.Stock,
-            CategoryID = category.CategoryID,
-            IsAlcoholic = category.AllowsAlcoholicChoice && input.IsAlcoholic
-        };
+            // Van de formuliergegevens maken we één MenuItem object voor de repository.
+            return new MenuItem
+            {
+                Name = input.Name,
+                RetailPrice = ParsePrice(input.RetailPrice),
+                Stock = input.Stock,
+                CategoryID = category.CategoryID,
+                IsAlcoholic = category.AllowsAlcoholicChoice && input.IsAlcoholic
+            };
+        }
 
         private async Task<string> GetUploadedImagePath(IFormFile? imageFile, string existingPath)
         {
@@ -176,36 +209,17 @@ namespace Chapeau.Services
                 throw new ArgumentException(ErrorMessages.MenuItemPriceRequired);
             }
 
-            string normalized = priceText.Trim().Replace(',', '.');
-            if (!decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal price)
-                || price <= 0)
+            string normalized = priceText.Replace(',', '.');
+            decimal price;
+            bool validPrice = decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out price);
+
+            if (!validPrice || price <= 0)
             {
                 throw new ArgumentException(ErrorMessages.MenuItemPriceInvalid);
             }
 
             return price;
         }
-
-        private static int? ValidateFilterCategory(int? cardId, int? categoryId, IEnumerable<Category> categories)
-        {
-            if (!categoryId.HasValue) return null;
-            Category? selected = categories.FirstOrDefault(category => category.CategoryID == categoryId.Value);
-            if (selected is null) return null;
-            if (cardId.HasValue && selected.MenuCardID != cardId.Value) return null;
-            return categoryId;
-        }
-
-        private static List<Category> FilterCategories(IEnumerable<Category> categories, int? cardId) =>
-            cardId.HasValue
-                ? categories.Where(category => category.MenuCardID == cardId.Value).ToList()
-                : categories.ToList();
-
-        private static List<MenuCard> CreateMenuCards() =>
-        [
-            new() { MenuCardID = MenuCardConstants.LunchCardId, Name = MenuCardConstants.LunchCardName },
-            new() { MenuCardID = MenuCardConstants.DinnerCardId, Name = MenuCardConstants.DinnerCardName },
-            new() { MenuCardID = MenuCardConstants.DrinksCardId, Name = MenuCardConstants.DrinksCardName }
-        ];
 
         private static void ValidateId(int menuItemId)
         {

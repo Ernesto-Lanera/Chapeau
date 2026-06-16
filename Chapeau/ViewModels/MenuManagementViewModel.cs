@@ -4,15 +4,27 @@ namespace Chapeau.ViewModels
 {
     public class MenuManagementViewModel
     {
-        public IReadOnlyList<MenuItem> MenuItems { get; init; } = Array.Empty<MenuItem>();
-        public IReadOnlyList<MenuCard> MenuCards { get; init; } = Array.Empty<MenuCard>();
-        public IReadOnlyList<Category> FilterCategories { get; init; } = Array.Empty<Category>();
-        public IReadOnlyList<Category> FormCategories { get; init; } = Array.Empty<Category>();
-        public int? SelectedCardId { get; init; }
-        public int? SelectedCategoryId { get; init; }
-        public bool ShowCreate { get; init; }
-        public MenuItem? EditItem { get; init; }
-        public int? EditMenuCardId => EditItem?.Category.MenuCardID;
+        public List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+        public List<MenuCard> MenuCards { get; set; } = new List<MenuCard>();
+        public List<Category> FilterCategories { get; set; } = new List<Category>();
+        public List<Category> FormCategories { get; set; } = new List<Category>();
+        public int? SelectedCardId { get; set; }
+        public int? SelectedCategoryId { get; set; }
+        public bool ShowCreate { get; set; }
+        public MenuItem? EditItem { get; set; }
+
+        public int? EditMenuCardId
+        {
+            get
+            {
+                if (EditItem == null)
+                {
+                    return null;
+                }
+
+                return EditItem.Category.MenuCardID;
+            }
+        }
     }
 
     public class MenuItemInputModel

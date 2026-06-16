@@ -33,7 +33,7 @@ namespace Chapeau.Services.Login
 
             try
             {
-                Employee? employee = await _employeeRepository.GetEmployeeByNameAsync(loginIdentifier.Trim());
+                Employee? employee = await _employeeRepository.GetEmployeeByNameAsync(loginIdentifier);
 
                 if (employee is null || !PasswordHasher.VerifyPassword(password, employee.PasswordHash))
                 {

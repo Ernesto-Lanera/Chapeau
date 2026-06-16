@@ -49,7 +49,7 @@ function confirmGuest() {
     var names = [];
     for (var i = 1; i <= count; i++) {
         var input = document.getElementById('guest-name-' + i);
-        var name = input ? input.value.trim() : '';
+        var name = input ? input.value : '';
         names.push(name || 'Gast ' + i);
     }
     document.getElementById('guest-names-' + currentTableId).value = names.join(', ');

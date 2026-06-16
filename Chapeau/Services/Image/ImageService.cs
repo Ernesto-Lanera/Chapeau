@@ -1,18 +1,25 @@
 using Microsoft.AspNetCore.Http;
+
 namespace Chapeau.Services
 {
-    public class ImageService(IWebHostEnvironment webHostEnvironment, ILogger<ImageService> logger) : IImageService
+    public class ImageService : IImageService
     {
         private const string UploadFolderName = "images/menu-items";
         private const long MaxFileSize = 10 * 1024 * 1024;
-        private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
 
-        private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
-        private readonly ILogger<ImageService> _logger = logger;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ILogger<ImageService> _logger;
+
+        public ImageService(IWebHostEnvironment webHostEnvironment, ILogger<ImageService> logger)
+        {
+            _webHostEnvironment = webHostEnvironment;
+            _logger = logger;
+        }
 
         public async Task<(bool Success, string? Path, string? ErrorMessage)> UploadImageAsync(IFormFile? file)
         {
-            if (file is null || file.Length == 0)
+            if (file == null || file.Length == 0)
             {
                 return (true, null, null);
             }
@@ -33,12 +40,13 @@ namespace Chapeau.Services
                 string uploadPath = Path.Combine(_webHostEnvironment.WebRootPath, UploadFolderName);
                 Directory.CreateDirectory(uploadPath);
 
-                string filename = $"{Guid.NewGuid():N}{extension}";
+                string filename = Guid.NewGuid().ToString("N") + extension;
                 string filePath = Path.Combine(uploadPath, filename);
-                await using FileStream stream = new(filePath, FileMode.Create);
+
+                await using FileStream stream = new FileStream(filePath, FileMode.Create);
                 await file.CopyToAsync(stream);
 
-                return (true, $"/{UploadFolderName}/{filename}", null);
+                return (true, "/" + UploadFolderName + "/" + filename, null);
             }
             catch (IOException exception)
             {

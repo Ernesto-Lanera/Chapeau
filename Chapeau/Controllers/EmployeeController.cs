@@ -8,54 +8,64 @@ using Microsoft.AspNetCore.Mvc;
 namespace Chapeau.Controllers
 {
     [Authorize(Policy = "CanManageEmployees")]
-    public class EmployeeController(IEmployeeService employeeService, ILogger<EmployeeController> logger) : Controller
+    public class EmployeeController : Controller
     {
-        private readonly IEmployeeService _employeeService = employeeService;
-        private readonly ILogger<EmployeeController> _logger = logger;
+        private readonly IEmployeeService _employeeService;
+        private readonly ILogger<EmployeeController> _logger;
 
-        public IActionResult Index(int? editId, bool showCreate = false) =>
-            View(_employeeService.GetManagementOverview(editId, showCreate));
+        public EmployeeController(IEmployeeService employeeService, ILogger<EmployeeController> logger)
+        {
+            _employeeService = employeeService;
+            _logger = logger;
+        }
+
+        public IActionResult Index(int? editId, bool showCreate = false)
+        {
+            EmployeeManagementViewModel viewModel = _employeeService.GetManagementOverview(editId, showCreate);
+            return View(viewModel);
+        }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Create(EmployeeInputModel input)
         {
             try
             {
                 _employeeService.AddEmployee(input);
                 TempData[FlashMessages.SuccessKey] = "Medewerker toegevoegd.";
-                return RedirectToAction(nameof(Index));
             }
             catch (Exception exception)
             {
                 return HandleEmployeeError(
                     exception,
                     "Onverwachte fout bij toevoegen van een medewerker.",
-                    showCreate: true);
+                    true,
+                    null);
             }
+
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Edit(EmployeeInputModel input)
         {
             try
             {
                 _employeeService.UpdateEmployee(input);
                 TempData[FlashMessages.SuccessKey] = "Medewerker bijgewerkt.";
-                return RedirectToAction(nameof(Index));
             }
             catch (Exception exception)
             {
                 return HandleEmployeeError(
                     exception,
-                    $"Onverwachte fout bij bijwerken van medewerker {input.EmployeeID}.",
-                    editId: input.EmployeeID);
+                    "Onverwachte fout bij bijwerken van een medewerker.",
+                    false,
+                    input.EmployeeID);
             }
+
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult ToggleActive(int id, bool active)
         {
             try
@@ -67,9 +77,15 @@ namespace Chapeau.Controllers
                 }
 
                 _employeeService.SetEmployeeActive(id, active);
-                TempData[FlashMessages.SuccessKey] = active
-                    ? "Medewerker geactiveerd. Deze medewerker kan weer inloggen."
-                    : "Medewerker gedeactiveerd. Deze medewerker kan niet meer inloggen.";
+
+                if (active)
+                {
+                    TempData[FlashMessages.SuccessKey] = "Medewerker geactiveerd. Deze medewerker kan weer inloggen.";
+                }
+                else
+                {
+                    TempData[FlashMessages.SuccessKey] = "Medewerker gedeactiveerd. Deze medewerker kan niet meer inloggen.";
+                }
             }
             catch (ArgumentException exception)
             {
@@ -81,7 +97,7 @@ namespace Chapeau.Controllers
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Kon actieve status van medewerker {EmployeeId} niet wijzigen.", id);
+                _logger.LogError(exception, "Kon actieve status van medewerker niet wijzigen.");
                 TempData[FlashMessages.ErrorKey] = ErrorMessages.UnexpectedError;
             }
 
@@ -91,17 +107,16 @@ namespace Chapeau.Controllers
         private IActionResult HandleEmployeeError(
             Exception exception,
             string logMessage,
-            bool showCreate = false,
-            int? editId = null)
+            bool showCreate,
+            int? editId)
         {
-            string errorMessage = exception switch
-            {
-                ArgumentException => exception.Message,
-                InvalidOperationException => exception.Message,
-                _ => ErrorMessages.UnexpectedError
-            };
+            string errorMessage = ErrorMessages.UnexpectedError;
 
-            if (exception is not (ArgumentException or InvalidOperationException))
+            if (exception is ArgumentException || exception is InvalidOperationException)
+            {
+                errorMessage = exception.Message;
+            }
+            else
             {
                 _logger.LogError(exception, logMessage);
             }

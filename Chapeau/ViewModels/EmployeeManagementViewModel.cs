@@ -4,10 +4,10 @@ namespace Chapeau.ViewModels
 {
     public class EmployeeManagementViewModel
     {
-        public IReadOnlyList<Employee> Employees { get; init; } = Array.Empty<Employee>();
-        public IReadOnlyList<EmployeeRole> Roles { get; init; } = Array.Empty<EmployeeRole>();
-        public Employee? EditEmployee { get; init; }
-        public bool ShowCreate { get; init; }
+        public List<Employee> Employees { get; set; } = new List<Employee>();
+        public List<EmployeeRole> Roles { get; set; } = new List<EmployeeRole>();
+        public Employee? EditEmployee { get; set; }
+        public bool ShowCreate { get; set; }
     }
 
     public class EmployeeInputModel

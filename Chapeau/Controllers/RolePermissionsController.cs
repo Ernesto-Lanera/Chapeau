@@ -1,109 +1,78 @@
-using Chapeau.Constants;
 using Chapeau.Constants.Login;
-using Chapeau.Repositories;
+using Chapeau.Services;
+using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Chapeau.Controllers
 {
     [Authorize(Policy = "CanManageRoles")]
-    public class RolePermissionsController(IRoleRepository roleRepository) : Controller
+    public class RolePermissionsController : Controller
     {
-        private readonly IRoleRepository _roleRepository = roleRepository;
+        private readonly IRolePermissionsService _rolePermissionsService;
 
         private const string FlashErrorKey = "FlashError";
         private const string FlashSuccessKey = "FlashSuccess";
 
+        public RolePermissionsController(IRolePermissionsService rolePermissionsService)
+        {
+            _rolePermissionsService = rolePermissionsService;
+        }
+
         public IActionResult Index()
         {
-            var roles = _roleRepository.GetRoles();
-            var rolePermissions = roles.ToDictionary(r => r.RoleID, r => _roleRepository.GetRolePermissions(r.RoleID));
-
-            ViewBag.RolePermissions = rolePermissions;
-            return View(roles);
+            RolePermissionsIndexViewModel viewModel = _rolePermissionsService.GetOverview();
+            return View(viewModel);
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            var roles = _roleRepository.GetRoles();
-            var role = roles.FirstOrDefault(r => r.RoleID == id);
-
-            if (role == null)
+            RolePermissionsEditViewModel? viewModel = _rolePermissionsService.GetEditViewModel(id);
+            if (viewModel == null)
             {
                 TempData[FlashErrorKey] = "Rol niet gevonden.";
                 return RedirectToAction(nameof(Index));
             }
 
-            var allPermissions = GetAllKnownPermissions();
-            var currentPermissions = _roleRepository.GetRolePermissions(id);
-
-            ViewBag.Role = role;
-            ViewBag.AllPermissions = allPermissions;
-            ViewBag.CurrentPermissions = currentPermissions;
-
-            return View();
+            return View(viewModel);
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, List<string> selectedPermissions)
+        public IActionResult Edit(int id, List<string>? selectedPermissions)
         {
-            var roles = _roleRepository.GetRoles();
-            var role = roles.FirstOrDefault(r => r.RoleID == id);
-
-            if (role == null)
-            {
-                TempData[FlashErrorKey] = "Rol niet gevonden.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var permissionsToSave = selectedPermissions ?? new List<string>();
-
             try
             {
-                _roleRepository.SetRolePermissions(id, permissionsToSave);
-                TempData[FlashSuccessKey] = $"Permissies voor '{role.RoleName}' bijgewerkt. De navigatie gebruikt direct de nieuwe rechten.";
+                RolePermissionsSaveResult result = _rolePermissionsService.SavePermissions(id, selectedPermissions);
+                if (!result.Success)
+                {
+                    TempData[FlashErrorKey] = result.ErrorMessage;
+                    return RedirectToAction(nameof(Index));
+                }
+
+                TempData[FlashSuccessKey] = $"Permissies voor '{result.RoleName}' bijgewerkt.";
+
+                if (CurrentUserCannotManageRolesAnymore(id, result.SavedPermissions))
+                {
+                    return RedirectToAction("AccessDenied", "Account");
+                }
             }
             catch
             {
                 TempData[FlashErrorKey] = "Er is een fout opgetreden bij het opslaan van de permissies.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            bool changedOwnRole = User.HasClaim(ClaimTypeConstants.RoleId, id.ToString());
-            bool stillCanManageRoles = permissionsToSave.Contains(
-                PermissionConstants.ManageRoles,
-                StringComparer.OrdinalIgnoreCase);
-
-            if (changedOwnRole && !stillCanManageRoles)
-            {
-                return RedirectToAction("Index", "Home");
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        private List<string> GetAllKnownPermissions()
+        private bool CurrentUserCannotManageRolesAnymore(int changedRoleId, List<string> savedPermissions)
         {
-            var dbPermissions = _roleRepository.GetAllPermissionNames();
-            var defaultPermissions = new List<string>
-            {
-                PermissionConstants.TakeOrders,
-                PermissionConstants.PrepareFood,
-                PermissionConstants.PrepareDrinks,
-                PermissionConstants.ManageEmployees,
-                PermissionConstants.ManageMenuItems,
-                PermissionConstants.ManageStock,
-                PermissionConstants.ViewFinance,
-                PermissionConstants.ManageRoles
-            };
+            bool changedOwnRole = User.HasClaim(ClaimTypeConstants.RoleId, changedRoleId.ToString());
+            bool stillCanManageRoles = savedPermissions.Contains(
+                PermissionConstants.ManageRoles,
+                StringComparer.OrdinalIgnoreCase);
 
-            return dbPermissions
-                .Where(permission => permission != PermissionConstants.LegacyViewReports)
-                .Union(defaultPermissions)
-                .OrderBy(permission => permission)
-                .ToList();
+            return changedOwnRole && !stillCanManageRoles;
         }
     }
 }

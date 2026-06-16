@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using System.Globalization;
 
-
 namespace Chapeau
 {
     public class Program
@@ -28,36 +27,37 @@ namespace Chapeau
                     .RequireAuthenticatedUser()
                     .RequireClaim(ClaimTypeConstants.IsActive, bool.TrueString)
                     .Build();
+
                 options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
             }).AddSessionStateTempDataProvider();
 
-       
             builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
             {
                 options.ViewLocationFormats.Add("Views/Login/{0}.cshtml");
                 options.ViewLocationFormats.Add("Views/Overview/{0}.cshtml");
             });
+
             builder.Services.AddLogging();
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddDistributedMemoryCache();
 
             builder.Services.AddScoped<IClaimsTransformation, Services.Login.PermissionClaimsTransformation>();
 
-            // Add Session
+            // Session wordt gebruikt voor TempData en kleine gebruikersinformatie.
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(20);
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
 
-            // Add Response Compression
+            // Response compression houdt de pagina's iets kleiner tijdens het laden.
             builder.Services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true;
                 options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
             });
 
-            // Add Authentication
             builder.Services.AddAuthentication("Cookies")
                 .AddCookie("Cookies", options =>
                 {
@@ -65,12 +65,11 @@ namespace Chapeau
                     options.AccessDeniedPath = "/Account/AccessDenied";
                 });
 
-            // Add Authorization with permission-based policies
             builder.Services.AddAuthorization(options =>
             {
-                // Permission-based policies
+                // Permission policies voor de verschillende delen van de applicatie.
                 options.AddPolicy("CanTakeOrders", policy =>
-                    policy.RequireClaim("Permission", "TakeOrders"));
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.TakeOrders));
 
                 options.AddPolicy("CanPrepareFood", policy =>
                     policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.PrepareFood));
@@ -79,100 +78,83 @@ namespace Chapeau
                     policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.PrepareDrinks));
 
                 options.AddPolicy("CanManageEmployees", policy =>
-                    policy.RequireClaim("Permission", "ManageEmployees"));
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.ManageEmployees));
 
                 options.AddPolicy("CanManageMenuItems", policy =>
-                    policy.RequireClaim("Permission", "ManageMenuItems"));
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.ManageMenuItems));
 
                 options.AddPolicy("CanManageStock", policy =>
                     policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.ManageStock));
+
+                options.AddPolicy("CanManageRoles", policy =>
+                    policy.RequireClaim(ClaimTypeConstants.Permission, PermissionConstants.ManageRoles));
 
                 options.AddPolicy("CanViewFinance", policy =>
                     policy.RequireAssertion(context =>
                         context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
                         context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.LegacyViewReports)));
 
-                // Backwards compatible policy for older non-management controller examples.
+                // Oude naam blijft werken voor bestaande controllers of oude links.
                 options.AddPolicy("CanViewReports", policy =>
                     policy.RequireAssertion(context =>
                         context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.ViewFinance) ||
                         context.User.HasClaim(ClaimTypeConstants.Permission, PermissionConstants.LegacyViewReports)));
 
-                options.AddPolicy("CanManageRoles", policy =>
-                    policy.RequireClaim("Permission", "ManageRoles"));
-
-                // Role-based policies
-                options.AddPolicy("IsManager", policy =>
-                    policy.RequireRole("Manager"));
-
-                options.AddPolicy("IsWaiter", policy =>
-                    policy.RequireRole("Waiter"));
-
-                options.AddPolicy("IsKitchenStaff", policy =>
-                    policy.RequireRole("Kitchen"));
+                options.AddPolicy("IsManager", policy => policy.RequireRole("Manager"));
+                options.AddPolicy("IsWaiter", policy => policy.RequireRole("Waiter"));
+                options.AddPolicy("IsKitchenStaff", policy => policy.RequireRole("Kitchen"));
             });
 
-            builder.Services.AddDistributedMemoryCache();
-
-            builder.Services.AddSession(options =>
-            {
-                options.IdleTimeout = TimeSpan.FromMinutes(30);
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
-            });
-
-            // Register repositories and services
+            // Bestaande order en payment code.
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
             builder.Services.AddScoped<IPaymentService, PaymentService>();
+            builder.Services.AddScoped<ITableRepository, TableRepository>();
 
-            // Scenario 5: repositories via interfaces
-            builder.Services.AddScoped<Repositories.IMenuRepository, Repositories.MenuRepository>();
-            builder.Services.AddScoped<Repositories.IEmployeeRepository, Repositories.EmployeeRepository>();
-            builder.Services.AddScoped<Repositories.ICategoryRepository, Repositories.CategoryRepository>();
-            builder.Services.AddScoped<Repositories.IRoleRepository, Repositories.RoleRepository>();
+            // Scenario 5 repositories.
+            builder.Services.AddScoped<IMenuRepository, MenuRepository>();
+            builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+            builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
 
-            // Scenario 5: application services via interfaces
-            builder.Services.AddScoped<Services.IMenuService, Services.MenuService>();
-            builder.Services.AddScoped<Services.IStockService, StockService>();
-            builder.Services.AddScoped<Services.ICategoryService, Services.CategoryService>();
-            builder.Services.AddScoped<Services.IImageService, Services.ImageService>();
+            // Scenario 5 services.
+            builder.Services.AddScoped<IMenuService, MenuService>();
+            builder.Services.AddScoped<IStockService, StockService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<IImageService, ImageService>();
+            builder.Services.AddScoped<IFinancialService, FinancialService>();
+            builder.Services.AddScoped<IRolePermissionsService, RolePermissionsService>();
             builder.Services.AddScoped<Services.Overview.IEmployeeService, Services.Overview.EmployeeService>();
 
-            // Concrete registrations remain for existing non-management controllers.
-            builder.Services.AddScoped<Services.MenuService>();
-            builder.Services.AddScoped<Services.CategoryService>();
-            builder.Services.AddScoped<Services.ImageService>();
-            builder.Services.AddScoped<Services.OrderService>();
+            // Deze concrete services zijn er nog voor oudere controllers in het project.
+            builder.Services.AddScoped<MenuService>();
+            builder.Services.AddScoped<CategoryService>();
+            builder.Services.AddScoped<ImageService>();
+            builder.Services.AddScoped<OrderService>();
 
+            // Login services.
             builder.Services.AddScoped<Services.Login.IAuthService, Services.Login.AuthService>();
             builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
             builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
-
-            // Register Financial services and repositories
-            builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
-            builder.Services.AddScoped<IFinancialService, FinancialService>();
-
-            // Register Table repository
-            builder.Services.AddScoped<ITableRepository, TableRepository>();
 
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
             {
-                var tableRepo = scope.ServiceProvider.GetRequiredService<ITableRepository>();
-                tableRepo.EnsureColumnExists();
+                var tableRepository = scope.ServiceProvider.GetRequiredService<ITableRepository>();
+                tableRepository.EnsureColumnExists();
             }
 
-            if (!app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
+                app.UseDeveloperExceptionPage();
             }
             else
             {
-                app.UseDeveloperExceptionPage();
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
             }
 
             app.UseResponseCompression();
@@ -183,9 +165,7 @@ namespace Chapeau
             app.UseSession();
             app.UseAuthorization();
 
-            
             app.UseMiddleware<PermissionClaimsRefreshMiddleware>();
-
 
             app.MapStaticAssets();
             app.MapControllerRoute(

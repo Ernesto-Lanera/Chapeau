@@ -94,7 +94,6 @@
                                     </svg>
                                 </a>
                                 <form asp-action="ToggleActive" method="post" class="inline-action-form preserve-scroll-form">
-                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.MenuItemID" />
                                     <input type="hidden" name="cardId" value="@Model.SelectedCardId" />
                                     <input type="hidden" name="categoryId" value="@Model.SelectedCategoryId" />
