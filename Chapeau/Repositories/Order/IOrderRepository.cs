@@ -16,7 +16,6 @@ namespace Chapeau.Repositories
         void UpdateOrderStatus(int orderId, OrderStatus newStatus);
         void UpdateOrderItemStatus(int orderItemId, OrderStatus newStatus);
         void UpdateItemComment(int orderItemId, string? comment);
-        void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback);
         void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus newStatus);
         void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus newStatus);
 
@@ -24,6 +23,6 @@ namespace Chapeau.Repositories
 
         int MarkReadyOrdersAsServed(int tableId);
         void SaveOrder(Order order);
-        List<Order> GetOrdersByTableNumber(int tableNumber);
+        List<Order> GetOrdersByTableId(int tableId);
     }
 }

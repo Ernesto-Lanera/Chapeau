@@ -1,11 +1,13 @@
-using Chapeau.Repositories;
 using Chapeau.Constants.Login;
-using Chapeau.Repositories.Financial;
-using Chapeau.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication;
-using System.Globalization;
 using Chapeau.Middleware;
+using Chapeau.Repositories;
+using Chapeau.Repositories.Financial;
+using Chapeau.Repositories.Payment;
+using Chapeau.Services;
+using Chapeau.Services.Payment;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using System.Globalization;
 
 
 namespace Chapeau
@@ -122,6 +124,8 @@ namespace Chapeau
             // Register repositories and services
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+            builder.Services.AddScoped<IPaymentService, PaymentService>();
 
             // Scenario 5: repositories via interfaces
             builder.Services.AddScoped<Repositories.IMenuRepository, Repositories.MenuRepository>();

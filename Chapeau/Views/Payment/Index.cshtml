@@ -52,7 +52,7 @@
                     }
 
                     <div class="mt-3">
-                        <a href="@Url.Action("CheckoutTable", "Payment", new { tableNumber = tableGroup.Key })"
+                        <a href="@Url.Action("CheckoutTable", "Payment", new { tableId = tableGroup.First().TableId })"
                            class="btn btn-success btn-lg">
                             Afrekenen - Tafel @tableGroup.Key
                         </a>
