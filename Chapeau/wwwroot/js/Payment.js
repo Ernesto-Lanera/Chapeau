@@ -222,7 +222,7 @@ function doPay() {
 
     saveAllPayments();
 }
-
+//loopt door alle orderids en stuurt voor alles een fetch.
 function saveAllPayments() {
     const totalTip = payments.reduce((s, p) => s + (p.tip || 0), 0);
     const allFeedback = payments.map(p => p.feedback).filter(f => f).join(', ');
@@ -239,7 +239,7 @@ function saveAllPayments() {
             })
         }).then(r => r.json())
     );
-
+    //alles moet gelukt zijn, als er iets mislukt is geeft het failed.
     Promise.all(savePromises)
         .then(results => {
             const failed = results.filter(r => !r.success);

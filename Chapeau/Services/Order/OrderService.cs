@@ -139,22 +139,6 @@ namespace Chapeau.Services
             _orderRepository.SaveOrder(order);
         }
 
-        public void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback)
-        {
-            if (orderId <= 0)
-            {
-                throw new ArgumentException("Ongeldig order ID.", nameof(orderId));
-            }
-
-            if (tableNumber <= 0)
-            {
-                throw new ArgumentException("Ongeldig tafel nummer.", nameof(tableNumber));
-            }
-
-            _orderRepository.SavePayment(orderId, tableNumber, tipAmount, feedback);
-        }
-
-
 
         public Order? GetServedOrderByTableId(int tableId)
         {
@@ -178,12 +162,12 @@ namespace Chapeau.Services
 
             return orders;
         }
-        public List<Order> GetServedOrdersByTableNumber(int tableNumber)
+        public List<Order> GetServedOrdersByTableId(int tableId)
         {
-            if (tableNumber <= 0)
-                throw new ArgumentException("Ongeldig tafelnummer.", nameof(tableNumber));
+            if (tableId <= 0)
+                throw new ArgumentException("Ongeldig tafel ID.", nameof(tableId));
 
-            return _orderRepository.GetOrdersByTableNumber(tableNumber);
+            return _orderRepository.GetOrdersByTableId(tableId);
         }
     }
 

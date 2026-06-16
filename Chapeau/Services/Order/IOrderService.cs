@@ -18,13 +18,12 @@ namespace Chapeau.Services
         void UpdateOrderItemStatus(int orderItemId, OrderStatus status);
         void MarkOrderAsServed(int orderId);
         int MarkTableServed(int tableId);
-        void SavePayment(int orderId, int tableNumber, decimal tipAmount, string? feedback);
         void UpdateOrderIfServed(int orderId);
         void UpdateAllOrderItemStatuses(int orderId, OrderType type, OrderStatus status);
         void UpdateCourseItemStatuses(int orderId, CourseType course, OrderStatus status);
         List<Order> GetFinishedOrdersToday(OrderType type);
 
         void SaveOrderToDb(Order order);
-        List<Order> GetServedOrdersByTableNumber(int tableNumber);
+        List<Order> GetServedOrdersByTableId(int tableId);
     }
 }

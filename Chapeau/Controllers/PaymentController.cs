@@ -1,9 +1,10 @@
-﻿using System.Linq;
-using Chapeau.Models;
+﻿using Chapeau.Models;
 using Chapeau.Services;
+using Chapeau.Services.Payment;
 using Chapeau.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace Chapeau.Controllers
 {
@@ -11,10 +12,12 @@ namespace Chapeau.Controllers
     public class PaymentController : Controller
     {
         private readonly IOrderService _orderService;
+        private readonly IPaymentService _paymentService;
 
-        public PaymentController(IOrderService orderService)
+        public PaymentController(IOrderService orderService, IPaymentService paymentService)
         {
             _orderService = orderService;
+            _paymentService = paymentService;
         }
 
         public IActionResult Index()
@@ -64,7 +67,7 @@ namespace Chapeau.Controllers
                     return Json(new { success = false, message = "Invalid order ID" });
                 }
 
-                _orderService.SavePayment(request.OrderId, request.TableNumber, request.TipAmount, request.Feedback);
+                _paymentService.SavePayment(request.OrderId, request.TipAmount, request.Feedback);
                 return Json(new { success = true, message = "Betaling opgeslagen" });
             }
             catch (Exception ex)
@@ -160,9 +163,9 @@ namespace Chapeau.Controllers
                 RequestId = HttpContext.TraceIdentifier
             });
         }
-        public IActionResult CheckoutTable(int tableNumber)
+        public IActionResult CheckoutTable(int tableId) //via tableid want dat is sneller.
         {
-            var orders = _orderService.GetServedOrdersByTableNumber(tableNumber);
+            var orders = _orderService.GetServedOrdersByTableId(tableId);
 
             if (!orders.Any())
                 return RedirectToAction("Index");
@@ -171,7 +174,7 @@ namespace Chapeau.Controllers
 
             var viewModel = new PaymentOrderViewModel
             {
-                TableNumber = tableNumber,
+                TableNumber = orders.First().TableNumber, //table number is zelfde voor alle orders van die tafel.
                 OrderID = orders.First().OrderId,
                 OrderIDs = orders.Select(o => o.OrderId).ToList(),
                 Items = allItems,
