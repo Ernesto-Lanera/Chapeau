@@ -5,36 +5,41 @@ namespace Chapeau.ViewModels
 {
     public class FinancialViewModel
     {
-        public FinancialPeriod SelectedPeriod { get; init; } = FinancialPeriod.Month;
-        public DateTime? CustomStartDate { get; init; }
-        public DateTime? CustomEndDate { get; init; }
-        public string? FilterError { get; init; }
+        public FinancialPeriod SelectedPeriod { get; set; } = FinancialPeriod.Month;
+        public DateTime? CustomStartDate { get; set; }
+        public DateTime? CustomEndDate { get; set; }
+        public string? FilterError { get; set; }
 
-        public string PeriodDisplay { get; init; } = string.Empty;
-        public DateTime StartDate { get; init; }
-        public DateTime EndDate { get; init; }
+        public string PeriodDisplay { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
 
-        public int DrinksSalesCount { get; init; }
-        public decimal DrinksIncome { get; init; }
+        public int DrinksSalesCount { get; set; }
+        public decimal DrinksIncome { get; set; }
         public decimal DrinksAverageIncome => Average(DrinksIncome, DrinksSalesCount);
 
-        public int LunchSalesCount { get; init; }
-        public decimal LunchIncome { get; init; }
+        public int LunchSalesCount { get; set; }
+        public decimal LunchIncome { get; set; }
         public decimal LunchAverageIncome => Average(LunchIncome, LunchSalesCount);
 
-        public int DinnerSalesCount { get; init; }
-        public decimal DinnerIncome { get; init; }
+        public int DinnerSalesCount { get; set; }
+        public decimal DinnerIncome { get; set; }
         public decimal DinnerAverageIncome => Average(DinnerIncome, DinnerSalesCount);
 
-        public decimal TotalTips { get; init; }
-        public IReadOnlyList<CategoryFinancialSummary> CategorySummaries { get; init; } = Array.Empty<CategoryFinancialSummary>();
-        public IReadOnlyList<RevenueTrendSummary> RevenueTrend { get; init; } = Array.Empty<RevenueTrendSummary>();
-
+        public decimal TotalTips { get; set; }
+        public List<RevenueTrendSummary> RevenueTrend { get; set; } = new List<RevenueTrendSummary>();
         public int TotalSalesCount => DrinksSalesCount + LunchSalesCount + DinnerSalesCount;
         public decimal TotalIncomeBeforeTips => DrinksIncome + LunchIncome + DinnerIncome;
-        public decimal GrandTotalIncome => TotalIncomeBeforeTips + TotalTips;
         public decimal TotalAverageIncome => Average(TotalIncomeBeforeTips, TotalSalesCount);
 
-        private static decimal Average(decimal total, int amount) => amount > 0 ? total / amount : 0m;
+        private static decimal Average(decimal total, int amount)
+        {
+            if (amount <= 0)
+            {
+                return 0m;
+            }
+
+            return total / amount;
+        }
     }
 }

@@ -1,9 +1,7 @@
-@model IEnumerable<Chapeau.Models.EmployeeRole>
+@model Chapeau.ViewModels.RolePermissionsIndexViewModel
 
 @{
     ViewData["Title"] = "Rol Permissies";
-
-    var rolePermissions = ViewBag.RolePermissions as Dictionary<int, List<string>>;
 }
 
 <div class="page-content">
@@ -22,18 +20,18 @@
             </thead>
 
             <tbody>
-                @foreach (var role in Model)
+                @foreach (var role in Model.Roles)
                 {
                     <tr>
                         <td><strong>@role.RoleName</strong></td>
 
                         <td>
-                            @if (rolePermissions != null && rolePermissions.TryGetValue(role.RoleID, out var permissions) && permissions.Any())
+                            @if (role.Permissions.Any())
                             {
                                 <div class="permission-tags">
-                                    @foreach (var perm in permissions)
+                                    @foreach (string permission in role.Permissions)
                                     {
-                                        <span class="badge bg-primary me-1">@perm</span>
+                                        <span class="badge bg-primary me-1">@permission</span>
                                     }
                                 </div>
                             }

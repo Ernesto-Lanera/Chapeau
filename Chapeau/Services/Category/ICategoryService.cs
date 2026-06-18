@@ -5,9 +5,9 @@ namespace Chapeau.Services
     public interface ICategoryService
     {
         List<Category> GetCategories();
-        void AddCategory(Category category);
-        void UpdateCategory(Category category);
-        int GetCategoryCount();
-        List<Category> SearchCategoriesByName(string searchTerm);
+        List<Category> GetCategoriesByCard(int? menuCardId);
+        Category? GetCategoryById(int categoryId);
+        int? GetValidCategoryId(int? menuCardId, int? categoryId);
+        List<MenuCard> GetMenuCards();
     }
 }

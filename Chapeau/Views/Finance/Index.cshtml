@@ -8,7 +8,7 @@
     CultureInfo culture = CultureInfo.GetCultureInfo("nl-NL");
     string Money(decimal amount) => amount.ToString("C2", culture);
 
-    var trendLabels = Model.RevenueTrend.Select(item => item.MonthStart.ToString("MMM", culture)).ToList();
+    var trendLabels = Model.RevenueTrend.Select(item => item.MonthStart.ToString("MMM yyyy", culture)).ToList();
     var drinksTrend = Model.RevenueTrend.Select(item => item.DrinksIncome).ToList();
     var lunchTrend = Model.RevenueTrend.Select(item => item.LunchIncome).ToList();
     var dinnerTrend = Model.RevenueTrend.Select(item => item.DinnerIncome).ToList();
@@ -76,34 +76,37 @@
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Omzet Dranken</p>
             <p class="finance-kpi-value is-drinks">@Money(Model.DrinksIncome)</p>
-            <p class="finance-kpi-support">@Model.DrinksSalesCount verkochte items</p>
+            <p class="finance-kpi-support">alleen betaalde orders</p>
         </article>
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Omzet Lunch</p>
             <p class="finance-kpi-value is-lunch">@Money(Model.LunchIncome)</p>
-            <p class="finance-kpi-support">@Model.LunchSalesCount verkochte items</p>
+            <p class="finance-kpi-support">alleen betaalde orders</p>
         </article>
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Omzet Diner</p>
             <p class="finance-kpi-value is-dinner">@Money(Model.DinnerIncome)</p>
-            <p class="finance-kpi-support">@Model.DinnerSalesCount verkochte items</p>
+            <p class="finance-kpi-support">alleen betaalde orders</p>
         </article>
         <article class="finance-kpi-card">
             <p class="finance-kpi-label">Totaal Fooien</p>
             <p class="finance-kpi-value is-tip">@Money(Model.TotalTips)</p>
-            <p class="finance-kpi-support">op betaalde orders</p>
+            <p class="finance-kpi-support">uit de Payment tabel</p>
         </article>
     </section>
 
     <section class="finance-panel finance-table-panel" aria-label="Omzet per menukaart">
         <h2 class="finance-panel-title">Verkopen en inkomsten per menukaart</h2>
+        <p class="text-muted">
+            Finance begint bij de Payment tabel. Alleen orders die betaald zijn tellen mee in dit overzicht.
+        </p>
         <div class="finance-table-wrapper">
             <table class="finance-category-table">
                 <thead>
                     <tr>
                         <th>Menukaart</th>
                         <th>Aantal verkopen</th>
-                        <th>Totaal inkomen</th>
+                        <th>Totaal inkomen incl. BTW</th>
                         <th>Gemiddelde per item</th>
                     </tr>
                 </thead>
@@ -139,6 +142,9 @@
 
     <section class="finance-panel finance-chart-panel" aria-label="Omzettrend">
         <h2 class="finance-panel-title">Omzettrend</h2>
+        <p class="text-muted">
+            De grafiek gebruikt dezelfde betaalde orders als de totalen hierboven.
+        </p>
         <div class="finance-chart-container">
             <canvas id="revenueTrendChart" aria-label="Maandelijkse omzet per menukaart"></canvas>
         </div>

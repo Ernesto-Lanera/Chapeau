@@ -56,7 +56,6 @@
                                     </svg>
                                 </a>
                                 <form asp-action="ToggleActive" method="post" class="inline-action-form preserve-scroll-form">
-                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@employee.EmployeeID" />
                                     @if (employee.IsActive)
                                     {

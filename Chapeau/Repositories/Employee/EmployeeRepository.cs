@@ -5,78 +5,101 @@ using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Repositories
 {
-    public class EmployeeRepository(IConfiguration configuration, ILogger<EmployeeRepository> logger) : IEmployeeRepository
+    public class EmployeeRepository : IEmployeeRepository
     {
-        private const string SelectEmployeeColumns = """
+        private const string SelectEmployeeColumns = @"
             SELECT e.EmployeeID, e.Name, e.PasswordHash, e.RoleID, e.IsActive, r.RoleName
             FROM Employee AS e
-            INNER JOIN Roles AS r ON r.RoleID = e.RoleID
-            """;
+            INNER JOIN Roles AS r ON r.RoleID = e.RoleID";
 
-        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-            ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
-        private readonly ILogger<EmployeeRepository> _logger = logger;
+        private readonly string _connectionString;
+        private readonly ILogger<EmployeeRepository> _logger;
+
+        public EmployeeRepository(IConfiguration configuration, ILogger<EmployeeRepository> logger)
+        {
+            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+                ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
+            _logger = logger;
+        }
 
         public List<Employee> GetEmployees()
         {
             string query = SelectEmployeeColumns + " ORDER BY e.Name;";
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            var employees = new List<Employee>();
-            while (reader.Read()) employees.Add(MapEmployee(reader));
+            List<Employee> employees = new List<Employee>();
+            while (reader.Read())
+            {
+                employees.Add(MapEmployee(reader));
+            }
+
             return employees;
         }
 
         public Employee? GetEmployeeById(int employeeId)
         {
             string query = SelectEmployeeColumns + " WHERE e.EmployeeID = @EmployeeID;";
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employeeId;
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            return reader.Read() ? MapEmployee(reader) : null;
+            if (reader.Read())
+            {
+                return MapEmployee(reader);
+            }
+
+            return null;
         }
 
         public Employee? GetEmployeeByName(string name)
         {
             string query = SelectEmployeeColumns + " WHERE e.Name = @Name;";
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
-            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name.Trim();
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name;
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            return reader.Read() ? MapEmployee(reader) : null;
+            if (reader.Read())
+            {
+                return MapEmployee(reader);
+            }
+
+            return null;
         }
 
         public async Task<Employee?> GetEmployeeByNameAsync(string name)
         {
             string query = SelectEmployeeColumns + " WHERE e.Name = @Name;";
-            await using SqlConnection connection = new(_connectionString);
-            await using SqlCommand command = new(query, connection);
-            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name.Trim();
+            await using SqlConnection connection = new SqlConnection(_connectionString);
+            await using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name;
             await connection.OpenAsync();
 
             await using SqlDataReader reader = await command.ExecuteReaderAsync();
-            return await reader.ReadAsync() ? MapEmployee(reader) : null;
+            if (await reader.ReadAsync())
+            {
+                return MapEmployee(reader);
+            }
+
+            return null;
         }
 
         public bool NameExists(string name, int? excludedEmployeeId = null)
         {
-            const string query = """
+            string query = @"
                 SELECT COUNT(1) FROM Employee
                 WHERE LOWER(Name) = LOWER(@Name)
-                  AND (@ExcludedEmployeeID IS NULL OR EmployeeID <> @ExcludedEmployeeID);
-                """;
+                  AND (@ExcludedEmployeeID IS NULL OR EmployeeID <> @ExcludedEmployeeID);";
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
-            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name.Trim();
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = name;
             command.Parameters.Add("@ExcludedEmployeeID", SqlDbType.Int).Value =
                 excludedEmployeeId.HasValue ? excludedEmployeeId.Value : DBNull.Value;
             connection.Open();
@@ -86,14 +109,13 @@ namespace Chapeau.Repositories
 
         public void AddEmployee(Employee employee)
         {
-            const string query = """
+            string query = @"
                 INSERT INTO Employee (Name, PasswordHash, RoleID, IsActive)
                 OUTPUT INSERTED.EmployeeID
-                VALUES (@Name, @PasswordHash, @RoleID, @IsActive);
-                """;
+                VALUES (@Name, @PasswordHash, @RoleID, @IsActive);";
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             AddEditableParameters(command, employee);
             connection.Open();
 
@@ -103,14 +125,13 @@ namespace Chapeau.Repositories
 
         public void UpdateEmployee(Employee employee)
         {
-            const string query = """
+            string query = @"
                 UPDATE Employee
                 SET Name = @Name, PasswordHash = @PasswordHash, RoleID = @RoleID, IsActive = @IsActive
-                WHERE EmployeeID = @EmployeeID;
-                """;
+                WHERE EmployeeID = @EmployeeID;";
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employee.EmployeeID;
             AddEditableParameters(command, employee);
             connection.Open();
@@ -120,9 +141,9 @@ namespace Chapeau.Repositories
 
         public void SetEmployeeActive(int employeeId, bool active)
         {
-            const string query = "UPDATE Employee SET IsActive = @IsActive WHERE EmployeeID = @EmployeeID;";
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            string query = "UPDATE Employee SET IsActive = @IsActive WHERE EmployeeID = @EmployeeID;";
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.Add("@EmployeeID", SqlDbType.Int).Value = employeeId;
             command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = active;
             connection.Open();
@@ -134,7 +155,7 @@ namespace Chapeau.Repositories
         {
             try
             {
-                using SqlConnection connection = new(_connectionString);
+                using SqlConnection connection = new SqlConnection(_connectionString);
                 connection.Open();
                 return true;
             }
@@ -147,7 +168,7 @@ namespace Chapeau.Repositories
 
         private static void AddEditableParameters(SqlCommand command, Employee employee)
         {
-            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = employee.Name.Trim();
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = employee.Name;
             command.Parameters.Add("@PasswordHash", SqlDbType.NVarChar, 255).Value = employee.PasswordHash;
             command.Parameters.Add("@RoleID", SqlDbType.Int).Value = employee.RoleID;
             command.Parameters.Add("@IsActive", SqlDbType.Bit).Value = employee.IsActive;
@@ -155,7 +176,11 @@ namespace Chapeau.Repositories
 
         private void EnsureUpdated(int rowsAffected, int employeeId)
         {
-            if (rowsAffected > 0) return;
+            if (rowsAffected > 0)
+            {
+                return;
+            }
+
             _logger.LogWarning("Medewerker niet gevonden: {EmployeeId}.", employeeId);
             throw new InvalidOperationException(ErrorMessages.EmployeeNotFound);
         }

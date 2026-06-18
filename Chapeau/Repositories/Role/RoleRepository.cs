@@ -6,33 +6,40 @@ using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Repositories
 {
-    public class RoleRepository(IConfiguration configuration) : IRoleRepository
+    public class RoleRepository : IRoleRepository
     {
-        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-            ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
+        private readonly string _connectionString;
 
-        private static readonly IReadOnlyDictionary<string, string> KnownPermissions =
+        private static readonly Dictionary<string, string> KnownPermissions =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                [PermissionConstants.TakeOrders] = "Bestellingen opnemen.",
-                [PermissionConstants.PrepareFood] = "Keukenbestellingen verwerken.",
-                [PermissionConstants.PrepareDrinks] = "Barbestellingen verwerken.",
-                [PermissionConstants.ManageEmployees] = "Medewerkers beheren.",
-                [PermissionConstants.ManageMenuItems] = "Menu-items beheren.",
-                [PermissionConstants.ManageStock] = "Voorraad beheren.",
-                [PermissionConstants.ViewFinance] = "Financieel overzicht bekijken.",
-                [PermissionConstants.ManageRoles] = "Rollen en permissies beheren."
+                { PermissionConstants.TakeOrders, "Bestellingen opnemen." },
+                { PermissionConstants.PrepareFood, "Keukenbestellingen verwerken." },
+                { PermissionConstants.PrepareDrinks, "Barbestellingen verwerken." },
+                { PermissionConstants.ManageEmployees, "Medewerkers beheren." },
+                { PermissionConstants.ManageMenuItems, "Menu-items beheren." },
+                { PermissionConstants.ManageStock, "Voorraad beheren." },
+                { PermissionConstants.ViewFinance, "Financieel overzicht bekijken." },
+                { PermissionConstants.ManageRoles, "Rollen en permissies beheren." }
             };
+
+        public RoleRepository(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+                ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
+        }
 
         public List<EmployeeRole> GetRoles()
         {
             const string query = "SELECT RoleID, RoleName FROM Roles ORDER BY RoleName;";
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            var roles = new List<EmployeeRole>();
+            List<EmployeeRole> roles = new List<EmployeeRole>();
+
             while (reader.Read())
             {
                 roles.Add(new EmployeeRole
@@ -55,30 +62,36 @@ namespace Chapeau.Repositories
                 ORDER BY p.PermissionName;
                 """;
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.Add("@RoleID", SqlDbType.Int).Value = roleId;
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            var permissions = new List<string>();
+            List<string> permissions = new List<string>();
+
             while (reader.Read())
             {
                 permissions.Add(NormalizePermissionName(reader.GetString(0)));
             }
 
-            return permissions.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(permission => permission).ToList();
+            return permissions
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(permission => permission)
+                .ToList();
         }
 
         public List<string> GetAllPermissionNames()
         {
             const string query = "SELECT PermissionName FROM Permissions ORDER BY PermissionName;";
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            var permissions = new List<string>();
+            List<string> permissions = new List<string>();
+
             while (reader.Read())
             {
                 permissions.Add(NormalizePermissionName(reader.GetString(0)));
@@ -93,13 +106,14 @@ namespace Chapeau.Repositories
 
         public void SetRolePermissions(int roleId, List<string> permissionNames)
         {
-            using SqlConnection connection = new(_connectionString);
+            using SqlConnection connection = new SqlConnection(_connectionString);
             connection.Open();
             using SqlTransaction transaction = connection.BeginTransaction();
 
             try
             {
                 DeleteRolePermissions(roleId, connection, transaction);
+
                 foreach (string permissionName in NormalizePermissionNames(permissionNames))
                 {
                     EnsurePermissionExists(permissionName, connection, transaction);
@@ -118,7 +132,8 @@ namespace Chapeau.Repositories
         private static void DeleteRolePermissions(int roleId, SqlConnection connection, SqlTransaction transaction)
         {
             const string query = "DELETE FROM RolePermissions WHERE RoleID = @RoleID;";
-            using SqlCommand command = new(query, connection, transaction);
+
+            using SqlCommand command = new SqlCommand(query, connection, transaction);
             command.Parameters.Add("@RoleID", SqlDbType.Int).Value = roleId;
             command.ExecuteNonQuery();
         }
@@ -133,7 +148,7 @@ namespace Chapeau.Repositories
                 END;
                 """;
 
-            using SqlCommand command = new(query, connection, transaction);
+            using SqlCommand command = new SqlCommand(query, connection, transaction);
             command.Parameters.Add("@PermissionName", SqlDbType.NVarChar, 100).Value = permissionName;
             command.Parameters.Add("@Description", SqlDbType.NVarChar, 255).Value = KnownPermissions[permissionName];
             command.ExecuteNonQuery();
@@ -148,21 +163,29 @@ namespace Chapeau.Repositories
                 WHERE PermissionName = @PermissionName;
                 """;
 
-            using SqlCommand command = new(query, connection, transaction);
+            using SqlCommand command = new SqlCommand(query, connection, transaction);
             command.Parameters.Add("@RoleID", SqlDbType.Int).Value = roleId;
             command.Parameters.Add("@PermissionName", SqlDbType.NVarChar, 100).Value = permissionName;
             command.ExecuteNonQuery();
         }
 
-        private static IEnumerable<string> NormalizePermissionNames(IEnumerable<string> permissionNames) =>
-            permissionNames
+        private static List<string> NormalizePermissionNames(IEnumerable<string> permissionNames)
+        {
+            return permissionNames
                 .Select(NormalizePermissionName)
                 .Where(permissionName => KnownPermissions.ContainsKey(permissionName))
-                .Distinct(StringComparer.OrdinalIgnoreCase);
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
 
-        private static string NormalizePermissionName(string permissionName) =>
-            string.Equals(permissionName, PermissionConstants.LegacyViewReports, StringComparison.OrdinalIgnoreCase)
-                ? PermissionConstants.ViewFinance
-                : permissionName;
+        private static string NormalizePermissionName(string permissionName)
+        {
+            if (string.Equals(permissionName, PermissionConstants.LegacyViewReports, StringComparison.OrdinalIgnoreCase))
+            {
+                return PermissionConstants.ViewFinance;
+            }
+
+            return permissionName;
+        }
     }
 }

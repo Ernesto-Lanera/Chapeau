@@ -4,13 +4,20 @@ namespace Chapeau.ViewModels
 {
     public class StockOverviewViewModel
     {
-        public IReadOnlyList<MenuItem> MenuItems { get; init; } = Array.Empty<MenuItem>();
-        public IReadOnlyList<MenuCard> MenuCards { get; init; } = Array.Empty<MenuCard>();
-        public IReadOnlyList<Category> Categories { get; init; } = Array.Empty<Category>();
-        public int? SelectedCardId { get; init; }
-        public int? SelectedCategoryId { get; init; }
+        public List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+        public List<MenuCard> MenuCards { get; set; } = new List<MenuCard>();
+        public List<Category> Categories { get; set; } = new List<Category>();
+        public int? SelectedCardId { get; set; }
+        public int? SelectedCategoryId { get; set; }
 
-        public int SoldOutCount => MenuItems.Count(item => item.IsActive && item.IsOutOfStock);
-        public int AlmostOutCount => MenuItems.Count(item => item.IsActive && item.IsAlmostOutOfStock);
+        public int SoldOutCount
+        {
+            get { return MenuItems.Count(item => item.IsActive && item.IsOutOfStock); }
+        }
+
+        public int AlmostOutCount
+        {
+            get { return MenuItems.Count(item => item.IsActive && item.IsAlmostOutOfStock); }
+        }
     }
 }

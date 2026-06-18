@@ -1,97 +1,102 @@
+// Kleine schermhulp voor menu beheer.
+// De echte controles staan in MenuService.
+// Hier regelen we alleen filters, categorieën en het alcoholveld.
+
 document.addEventListener("DOMContentLoaded", function () {
-    setupManageMenuFilters();
-    setupCreateCategoryFilter();
-    setupAlcoholicChoiceVisibility();
+    setupMenuFilters();
+    setupCreateMenuForm();
+    setupAlcoholFields();
 });
 
-function setupManageMenuFilters() {
-    const filterForm = document.getElementById("manageMenuFilterForm");
-    const cardFilter = document.getElementById("cardFilter");
-    const categoryFilter = document.getElementById("categoryFilter");
+function setupMenuFilters() {
+    var form = document.getElementById("manageMenuFilterForm");
+    var cardFilter = document.getElementById("cardFilter");
+    var categoryFilter = document.getElementById("categoryFilter");
 
-    if (!filterForm || !cardFilter || !categoryFilter) {
+    if (form == null || cardFilter == null || categoryFilter == null) {
         return;
     }
 
     cardFilter.addEventListener("change", function () {
+        // Bij een nieuwe kaart beginnen we weer met alle categorieën.
         categoryFilter.value = "";
-        filterForm.submit();
+        form.submit();
     });
 
     categoryFilter.addEventListener("change", function () {
-        filterForm.submit();
+        form.submit();
     });
 }
 
-function setupCreateCategoryFilter() {
-    const cardSelect = document.getElementById("createMenuCardSelect");
-    const categorySelect = document.getElementById("createCategorySelect");
+function setupCreateMenuForm() {
+    var cardSelect = document.getElementById("createMenuCardSelect");
+    var categorySelect = document.getElementById("createCategorySelect");
 
-    if (!cardSelect || !categorySelect) {
+    if (cardSelect == null || categorySelect == null) {
         return;
     }
 
-    function applySelectedCard(resetCategory) {
-        const selectedCardId = cardSelect.value;
-
-        Array.from(categorySelect.options).forEach(function (option) {
-            if (option.value === "") {
-                option.hidden = false;
-                option.disabled = false;
-                return;
-            }
-
-            const belongsToSelectedCard = option.dataset.cardid === selectedCardId;
-            option.hidden = !belongsToSelectedCard;
-            option.disabled = !belongsToSelectedCard;
-        });
-
-        const selectedCategory = categorySelect.options[categorySelect.selectedIndex];
-        if (resetCategory || (selectedCategory && selectedCategory.disabled)) {
-            categorySelect.value = "";
-        }
-
-        updateAlcoholicChoiceVisibility(categorySelect);
-    }
+    showCorrectCategories(cardSelect, categorySelect);
 
     cardSelect.addEventListener("change", function () {
-        applySelectedCard(true);
+        categorySelect.value = "";
+        showCorrectCategories(cardSelect, categorySelect);
     });
-
-    applySelectedCard(false);
 }
 
-function setupAlcoholicChoiceVisibility() {
-    const categorySelects = document.querySelectorAll(".menu-item-form select[name='CategoryID']");
+function showCorrectCategories(cardSelect, categorySelect) {
+    var selectedCardId = cardSelect.value;
+    var options = categorySelect.options;
 
-    categorySelects.forEach(function (categorySelect) {
+    for (var i = 0; i < options.length; i++) {
+        var option = options[i];
+        var categoryCardId = option.getAttribute("data-cardid");
+        var belongsToSelectedCard = categoryCardId === selectedCardId;
+        var isEmptyOption = option.value === "";
+
+        // Alleen categorieën van de gekozen kaart blijven zichtbaar.
+        option.hidden = !(isEmptyOption || belongsToSelectedCard);
+        option.disabled = !(isEmptyOption || belongsToSelectedCard);
+    }
+
+    updateAlcoholField(categorySelect);
+}
+
+function setupAlcoholFields() {
+    var categorySelects = document.querySelectorAll(".menu-item-form select[name='CategoryID']");
+
+    for (var i = 0; i < categorySelects.length; i++) {
+        var categorySelect = categorySelects[i];
+
+        updateAlcoholField(categorySelect);
+
         categorySelect.addEventListener("change", function () {
-            updateAlcoholicChoiceVisibility(categorySelect);
+            updateAlcoholField(this);
         });
-
-        updateAlcoholicChoiceVisibility(categorySelect);
-    });
+    }
 }
 
-function updateAlcoholicChoiceVisibility(categorySelect) {
-    const form = categorySelect.closest("form");
-    if (!form) {
+function updateAlcoholField(categorySelect) {
+    var form = categorySelect.closest("form");
+
+    if (form == null) {
         return;
     }
 
-    const alcoholicGroup = form.querySelector("[data-alcoholic-choice-group]");
-    const alcoholicCheckbox = form.querySelector("input[type='checkbox'][name='IsAlcoholic']");
+    var alcoholGroup = form.querySelector("[data-alcoholic-choice-group]");
+    var alcoholCheckbox = form.querySelector("input[name='IsAlcoholic'][type='checkbox']");
+    var selectedOption = categorySelect.options[categorySelect.selectedIndex];
 
-    if (!alcoholicGroup || !alcoholicCheckbox) {
+    if (alcoholGroup == null || alcoholCheckbox == null || selectedOption == null) {
         return;
     }
 
-    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-    const canChooseAlcohol = selectedOption && selectedOption.dataset.allowsAlcohol === "true";
+    var categoryAllowsAlcohol = selectedOption.getAttribute("data-allows-alcohol") === "true";
 
-    alcoholicGroup.hidden = !canChooseAlcohol;
+    alcoholGroup.hidden = !categoryAllowsAlcohol;
 
-    if (!canChooseAlcohol) {
-        alcoholicCheckbox.checked = false;
+    if (!categoryAllowsAlcohol) {
+        // Geen alcoholcategorie gekozen, dus het vinkje mag niet per ongeluk blijven staan.
+        alcoholCheckbox.checked = false;
     }
 }

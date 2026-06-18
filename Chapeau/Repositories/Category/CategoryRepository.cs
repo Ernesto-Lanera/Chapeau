@@ -5,27 +5,32 @@ using Microsoft.Data.SqlClient;
 
 namespace Chapeau.Repositories
 {
-    public class CategoryRepository(IConfiguration configuration, ILogger<CategoryRepository> logger) : ICategoryRepository
+    public class CategoryRepository : ICategoryRepository
     {
-        private readonly string _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
-            ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
-        private readonly ILogger<CategoryRepository> _logger = logger;
+        private readonly string _connectionString;
+        private readonly ILogger<CategoryRepository> _logger;
 
-        public List<Chapeau.Models.Category> GetCategories()
+        public CategoryRepository(IConfiguration configuration, ILogger<CategoryRepository> logger)
         {
-            const string query = """
+            _connectionString = configuration.GetConnectionString("ChapeauDatabaseSQL")
+                ?? throw new InvalidOperationException(ErrorMessages.ConnectionStringMissing);
+            _logger = logger;
+        }
+
+        public List<Category> GetCategories()
+        {
+            string query = @"
                 SELECT c.CategoryID, c.Name, c.MenuCardID, mc.Name AS MenuCardName
                 FROM Categories AS c
                 INNER JOIN MenuCards AS mc ON mc.MenuCardID = c.MenuCardID
-                ORDER BY c.MenuCardID, c.Name;
-                """;
+                ORDER BY c.MenuCardID, c.Name;";
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            var categories = new List<Chapeau.Models.Category>();
+            List<Category> categories = new List<Category>();
             while (reader.Read())
             {
                 categories.Add(MapCategory(reader));
@@ -34,34 +39,86 @@ namespace Chapeau.Repositories
             return categories;
         }
 
-        public Chapeau.Models.Category? GetCategoryById(int categoryId)
+        public List<Category> GetCategoriesByCard(int menuCardId)
         {
-            const string query = """
+            string query = @"
                 SELECT c.CategoryID, c.Name, c.MenuCardID, mc.Name AS MenuCardName
                 FROM Categories AS c
                 INNER JOIN MenuCards AS mc ON mc.MenuCardID = c.MenuCardID
-                WHERE c.CategoryID = @CategoryID;
-                """;
+                WHERE c.MenuCardID = @MenuCardID
+                ORDER BY c.Name;";
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.Add("@MenuCardID", SqlDbType.Int).Value = menuCardId;
+            connection.Open();
+
+            using SqlDataReader reader = command.ExecuteReader();
+            List<Category> categories = new List<Category>();
+            while (reader.Read())
+            {
+                categories.Add(MapCategory(reader));
+            }
+
+            return categories;
+        }
+
+        public Category? GetCategoryById(int categoryId)
+        {
+            string query = @"
+                SELECT c.CategoryID, c.Name, c.MenuCardID, mc.Name AS MenuCardName
+                FROM Categories AS c
+                INNER JOIN MenuCards AS mc ON mc.MenuCardID = c.MenuCardID
+                WHERE c.CategoryID = @CategoryID;";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = categoryId;
             connection.Open();
 
             using SqlDataReader reader = command.ExecuteReader();
-            return reader.Read() ? MapCategory(reader) : null;
+            if (reader.Read())
+            {
+                return MapCategory(reader);
+            }
+
+            return null;
         }
 
-        public void AddCategory(Chapeau.Models.Category category)
+        public List<MenuCard> GetMenuCards()
         {
-            const string query = """
+            string query = @"
+                SELECT MenuCardID, Name
+                FROM MenuCards
+                ORDER BY MenuCardID;";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
+            connection.Open();
+
+            using SqlDataReader reader = command.ExecuteReader();
+            List<MenuCard> menuCards = new List<MenuCard>();
+            while (reader.Read())
+            {
+                menuCards.Add(new MenuCard
+                {
+                    MenuCardID = reader.GetInt32(reader.GetOrdinal("MenuCardID")),
+                    Name = reader.GetString(reader.GetOrdinal("Name"))
+                });
+            }
+
+            return menuCards;
+        }
+
+        public void AddCategory(Category category)
+        {
+            string query = @"
                 INSERT INTO Categories (Name, MenuCardID)
                 OUTPUT INSERTED.CategoryID
-                VALUES (@Name, @MenuCardID);
-                """;
+                VALUES (@Name, @MenuCardID);";
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             AddParameters(command, category);
             connection.Open();
 
@@ -69,15 +126,15 @@ namespace Chapeau.Repositories
             _logger.LogInformation("Categorie toegevoegd: {CategoryId}.", category.CategoryID);
         }
 
-        public void UpdateCategory(Chapeau.Models.Category category)
+        public void UpdateCategory(Category category)
         {
-            const string query = """
-                UPDATE Categories SET Name = @Name, MenuCardID = @MenuCardID
-                WHERE CategoryID = @CategoryID;
-                """;
+            string query = @"
+                UPDATE Categories
+                SET Name = @Name, MenuCardID = @MenuCardID
+                WHERE CategoryID = @CategoryID;";
 
-            using SqlConnection connection = new(_connectionString);
-            using SqlCommand command = new(query, connection);
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = category.CategoryID;
             AddParameters(command, category);
             connection.Open();
@@ -88,23 +145,24 @@ namespace Chapeau.Repositories
             }
         }
 
-        private static void AddParameters(SqlCommand command, Chapeau.Models.Category category)
+        private static void AddParameters(SqlCommand command, Category category)
         {
-            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = category.Name.Trim();
+            command.Parameters.Add("@Name", SqlDbType.NVarChar, 100).Value = category.Name;
             command.Parameters.Add("@MenuCardID", SqlDbType.Int).Value = category.MenuCardID;
         }
 
-        private static Chapeau.Models.Category MapCategory(SqlDataReader reader)
+        private static Category MapCategory(SqlDataReader reader)
         {
-            int cardId = reader.GetInt32(reader.GetOrdinal("MenuCardID"));
-            return new Chapeau.Models.Category
+            int menuCardId = reader.GetInt32(reader.GetOrdinal("MenuCardID"));
+
+            return new Category
             {
                 CategoryID = reader.GetInt32(reader.GetOrdinal("CategoryID")),
                 Name = reader.GetString(reader.GetOrdinal("Name")),
-                MenuCardID = cardId,
+                MenuCardID = menuCardId,
                 MenuCard = new MenuCard
                 {
-                    MenuCardID = cardId,
+                    MenuCardID = menuCardId,
                     Name = reader.GetString(reader.GetOrdinal("MenuCardName"))
                 }
             };

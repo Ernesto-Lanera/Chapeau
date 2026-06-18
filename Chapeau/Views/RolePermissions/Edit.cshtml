@@ -1,14 +1,12 @@
+@model Chapeau.ViewModels.RolePermissionsEditViewModel
+
 @{
     ViewData["Title"] = "Permissies Bewerken";
-
-    var role = ViewBag.Role as Chapeau.Models.EmployeeRole;
-    var allPermissions = ViewBag.AllPermissions as List<string> ?? new List<string>();
-    var currentPermissions = ViewBag.CurrentPermissions as List<string> ?? new List<string>();
 }
 
 <div class="page-content">
     <div class="page-title-row">
-        <h2 class="page-title">Permissies voor @role?.RoleName</h2>
+        <h2 class="page-title">Permissies voor @Model.RoleName</h2>
 
         <a href="@Url.Action("Index", "RolePermissions")"
            class="btn-close-form">
@@ -18,14 +16,12 @@
 
     <div class="form-card">
         <form method="post"
-              action="@Url.Action("Edit", "RolePermissions", new { id = role?.RoleID })">
-
-            @Html.AntiForgeryToken()
+              action="@Url.Action("Edit", "RolePermissions", new { id = Model.RoleID })">
 
             <div class="permission-checklist">
-                @foreach (var permission in allPermissions)
+                @foreach (string permission in Model.AllPermissions)
                 {
-                    bool isChecked = currentPermissions.Contains(permission);
+                    bool isChecked = Model.CurrentPermissions.Contains(permission, StringComparer.OrdinalIgnoreCase);
 
                     <div class="form-check mb-2">
                         <input type="checkbox"

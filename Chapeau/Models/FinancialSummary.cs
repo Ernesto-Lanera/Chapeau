@@ -10,17 +10,6 @@ namespace Chapeau.Models
         public decimal AverageIncomePerItem => SalesCount > 0 ? TotalIncome / SalesCount : 0m;
     }
 
-    public class CategoryFinancialSummary
-    {
-        public int MenuCardID { get; set; }
-        public string MenuCardName { get; set; } = string.Empty;
-        public string CategoryName { get; set; } = string.Empty;
-        public int SalesCount { get; set; }
-        public decimal TotalIncome { get; set; }
-
-        public decimal AveragePerSoldItem => SalesCount > 0 ? TotalIncome / SalesCount : 0m;
-    }
-
     public class RevenueTrendSummary
     {
         public DateTime MonthStart { get; set; }

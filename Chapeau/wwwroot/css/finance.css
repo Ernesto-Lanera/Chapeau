@@ -1,257 +1,216 @@
-/* Financieel Overzicht - dashboard styling volgens het aangeleverde ontwerp */
+/* Financieel overzicht
+   De pagina bestaat uit periodekeuze, totalen, een tabel en een grafiek. */
 
 .finance-dashboard {
-    color: var(--bs-body-color);
     padding: 25px 0 34px;
+    color: var(--bs-body-color);
 }
 
 .finance-page-title {
+    margin: 0 0 25px;
     color: var(--bs-body-color);
     font-size: 25px;
     font-weight: 700;
-    line-height: 1.2;
-    margin: 0 0 25px;
 }
 
 .finance-panel,
 .finance-kpi-card {
-    background-color: var(--bs-body-bg);
     border: 1px solid var(--bs-border-color);
     border-radius: 11px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    background-color: var(--bs-body-bg);
 }
 
 .finance-panel-title {
+    margin: 0;
     color: var(--bs-body-color);
     font-size: 18px;
     font-weight: 700;
-    line-height: 1.25;
-    margin: 0;
 }
 
+/* Keuze voor maand, kwartaal, jaar of eigen periode */
 .finance-period-panel {
     margin-bottom: 22px;
-    padding: 30px 28px 26px;
+    padding: 28px;
 }
 
 .finance-period-buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: 17px;
+    gap: 14px;
     margin-top: 22px;
 }
 
 .finance-period-button {
+    display: inline-flex;
     align-items: center;
-    background-color: var(--bs-tertiary-bg);
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 20px;
     border: 0;
-    border-radius: 11px;
+    border-radius: 10px;
+    background-color: var(--bs-tertiary-bg);
     color: var(--bs-body-color);
     cursor: pointer;
-    display: inline-flex;
     font-size: 16px;
     font-weight: 600;
-    gap: 10px;
-    height: 46px;
-    justify-content: center;
-    padding: 0 20px;
     text-decoration: none;
-    transition: background-color .15s ease, color .15s ease;
 }
 
-    .finance-period-button:hover {
-        background-color: var(--bs-secondary-bg);
-        color: var(--bs-body-color);
-    }
+.finance-period-button:hover {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
 
-    .finance-period-button.is-selected,
-    .finance-period-button.is-selected:hover {
-        background-color: #2563eb;
-        color: #ffffff;
-    }
+.finance-period-button.is-selected {
+    background-color: #2563eb;
+    color: #ffffff;
+}
 
 .finance-custom-period-form {
-    align-items: end;
     display: flex;
     flex-wrap: wrap;
-    gap: 17px;
+    align-items: end;
+    gap: 14px;
     margin-top: 20px;
 }
 
-    .finance-custom-period-form[hidden] {
-        display: none;
-    }
+.finance-custom-period-form[hidden] {
+    display: none;
+}
 
 .finance-field label {
-    color: var(--bs-secondary-color);
     display: block;
+    margin-bottom: 8px;
+    color: var(--bs-secondary-color);
     font-size: 15px;
     font-weight: 600;
-    margin-bottom: 9px;
 }
 
 .finance-field input {
-    background-color: var(--bs-body-bg);
+    height: 48px;
+    min-width: 190px;
+    padding: 0 15px;
     border: 1px solid var(--bs-border-color);
     border-radius: 10px;
+    background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
     font-size: 16px;
-    height: 48px;
-    min-width: 196px;
-    padding: 0 15px;
 }
 
-    .finance-field input:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
-        outline: none;
-    }
+.finance-field input:focus {
+    border-color: #2563eb;
+    outline: none;
+}
 
 .finance-submit-button {
-    background-color: #2563eb;
+    height: 48px;
+    padding: 0 20px;
     border: 0;
-    border-radius: 11px;
+    border-radius: 10px;
+    background-color: #2563eb;
     color: #ffffff;
     cursor: pointer;
     font-size: 16px;
     font-weight: 600;
-    height: 48px;
-    padding: 0 20px;
 }
-
-    .finance-submit-button:hover {
-        background-color: #1d4ed8;
-    }
 
 .finance-filter-error {
-    background-color: rgba(154, 52, 18, 0.2);
-    border: 1px solid #9a3412;
-    border-radius: 8px;
-    color: #fdba74;
-    font-size: 14px;
     margin: 18px 0 0;
     padding: 10px 12px;
+    border: 1px solid #9a3412;
+    border-radius: 8px;
+    background-color: rgba(154, 52, 18, 0.2);
+    color: #fdba74;
+    font-size: 14px;
 }
 
+/* Kaarten met de belangrijkste bedragen */
 .finance-kpi-grid {
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 17px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-bottom: 22px;
 }
 
 .finance-kpi-card {
-    min-height: 150px;
-    padding: 31px 27px 25px;
+    padding: 28px 24px;
 }
 
 .finance-kpi-label {
+    margin: 0 0 13px;
     color: var(--bs-secondary-color);
     font-size: 15px;
     font-weight: 600;
-    margin: 0 0 13px;
 }
 
 .finance-kpi-value {
+    margin: 0 0 6px;
     font-size: 27px;
     font-weight: 700;
-    line-height: 1.15;
-    margin: 0 0 6px;
 }
 
-    .finance-kpi-value.is-drinks {
-        color: #60a5fa;
-    }
+.finance-kpi-value.is-drinks {
+    color: #60a5fa;
+}
 
-    .finance-kpi-value.is-lunch {
-        color: #4ade80;
-    }
+.finance-kpi-value.is-lunch {
+    color: #4ade80;
+}
 
-    .finance-kpi-value.is-dinner {
-        color: #c084fc;
-    }
+.finance-kpi-value.is-dinner {
+    color: #c084fc;
+}
 
-    .finance-kpi-value.is-tip {
-        color: #fb923c;
-    }
+.finance-kpi-value.is-tip {
+    color: #fb923c;
+}
 
 .finance-kpi-support {
+    margin: 0;
     color: var(--bs-secondary-color);
     font-size: 15px;
-    margin: 0;
 }
 
+/* Tabel met omzet per menukaart */
 .finance-table-panel {
     margin-bottom: 22px;
-    padding: 28px 27px 24px;
+    padding: 28px;
 }
 
-    .finance-table-panel .finance-panel-title {
-        margin-bottom: 19px;
-    }
+.finance-table-panel .finance-panel-title {
+    margin-bottom: 19px;
+}
 
 .finance-table-wrapper {
     overflow-x: auto;
 }
 
 .finance-category-table {
-    border-collapse: collapse;
-    min-width: 660px;
     width: 100%;
+    min-width: 660px;
+    border-collapse: collapse;
 }
 
-    .finance-category-table thead {
-        background-color: var(--bs-tertiary-bg);
-    }
-
-    .finance-category-table th,
-    .finance-category-table td {
-        font-size: 14px;
-        padding: 16px 22px;
-        text-align: left;
-    }
-
-    .finance-category-table thead th {
-        color: var(--bs-body-color);
-        font-weight: 600;
-    }
-
-    .finance-category-table tbody th {
-        color: var(--bs-body-color);
-        font-weight: 600;
-    }
-
-    .finance-category-table tbody td {
-        color: var(--bs-body-color);
-    }
-
-    .finance-category-table tbody tr:not(.finance-total-row) th,
-    .finance-category-table tbody tr:not(.finance-total-row) td {
-        border-bottom: 1px solid var(--bs-border-color);
-    }
-
-.finance-total-row {
+.finance-category-table thead {
     background-color: var(--bs-tertiary-bg);
 }
 
-    .finance-total-row th,
-    .finance-total-row td {
-        color: var(--bs-body-color) !important;
-        font-weight: 700;
-    }
-
-.finance-chart-panel {
-    padding: 27px 27px 20px;
+.finance-category-table th,
+.finance-category-table td {
+    padding: 16px 22px;
+    color: var(--bs-body-color);
+    font-size: 14px;
+    text-align: left;
 }
 
-    .finance-chart-panel .finance-panel-title {
-        margin-bottom: 16px;
-    }
+.finance-category-table tbody tr:not(.finance-total-row) th,
+.finance-category-table tbody tr:not(.finance-total-row) td {
+    border-bottom: 1px solid var(--bs-border-color);
+}
 
-.finance-chart-container {
-    height: 305px;
-    position: relative;
-    width: 100%;
+.finance-total-row {
+    background-color: var(--bs-tertiary-bg);
+    font-weight: 700;
 }
 
 @media (max-width: 1080px) {
@@ -261,26 +220,6 @@
 }
 
 @media (max-width: 720px) {
-    .finance-dashboard {
-        padding-top: 18px;
-    }
-
-    .finance-page-title {
-        font-size: 22px;
-        margin-bottom: 18px;
-    }
-
-    .finance-period-panel,
-    .finance-table-panel,
-    .finance-chart-panel {
-        padding: 20px 16px;
-    }
-
-    .finance-period-buttons,
-    .finance-custom-period-form {
-        gap: 10px;
-    }
-
     .finance-period-button,
     .finance-field,
     .finance-field input,
@@ -291,12 +230,25 @@
     .finance-kpi-grid {
         grid-template-columns: 1fr;
     }
+}
 
-    .finance-kpi-card {
-        min-height: auto;
-        padding: 21px 18px;
-    }
+/* Grafiek met omzet per menukaart */
+.finance-chart-panel {
+    margin-bottom: 22px;
+    padding: 28px;
+}
 
+.finance-chart-panel .finance-panel-title {
+    margin-bottom: 12px;
+}
+
+.finance-chart-container {
+    height: 305px;
+    position: relative;
+    width: 100%;
+}
+
+@media (max-width: 720px) {
     .finance-chart-container {
         height: 270px;
     }

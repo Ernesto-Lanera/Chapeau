@@ -1,4 +1,7 @@
-﻿.page-content {
+/* Menu beheer
+   Opbouw van boven naar beneden: pagina, knoppen, filters, tabel en formulier. */
+
+.page-content {
     padding: 28px 24px;
 }
 
@@ -10,89 +13,88 @@
 }
 
 .page-title {
+    margin: 0;
+    color: var(--bs-body-color);
     font-size: 22px;
     font-weight: 700;
-    color: var(--bs-body-color);
-    margin: 0;
+}
+
+/* Knoppen boven de lijst */
+.btn-new,
+.btn-close-form {
+    display: inline-block;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 8px;
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
 }
 
 .btn-new {
     background-color: #16a34a;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
 }
 
-    .btn-new:hover {
-        background-color: #15803d;
-        color: white;
-    }
+.btn-new:hover {
+    background-color: #15803d;
+    color: #ffffff;
+}
 
 .btn-close-form {
     background-color: #6b7280;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
 }
 
-    .btn-close-form:hover {
-        background-color: #4b5563;
-        color: white;
-    }
+.btn-close-form:hover {
+    background-color: #4b5563;
+    color: #ffffff;
+}
 
+/* Filterbalk */
 .filter-row {
     display: flex;
+    flex-wrap: wrap;
+    align-items: end;
     gap: 14px;
     margin-bottom: 22px;
-    align-items: end;
-    flex-wrap: wrap;
 }
 
 .filter-group label {
     display: block;
+    margin-bottom: 6px;
+    color: var(--bs-secondary-color);
     font-size: 13px;
     font-weight: 600;
-    color: var(--bs-secondary-color);
-    margin-bottom: 6px;
 }
 
 .filter-group select {
     height: 38px;
+    min-width: 140px;
+    padding-left: 10px;
     border: 1px solid var(--bs-border-color);
     border-radius: 7px;
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
     font-size: 14px;
-    padding-left: 10px;
 }
 
-    .filter-group select[name="cardId"] {
-        width: 140px;
-    }
+.filter-group select[name="categoryId"] {
+    width: 330px;
+    max-width: 100%;
+}
 
-    .filter-group select[name="categoryId"] {
-        width: 330px;
-        max-width: 100%;
-        text-overflow: ellipsis;
-    }
+.filter-group select:focus,
+.menu-item-form input:focus,
+.menu-item-form select:focus {
+    border-color: #93c5fd;
+    outline: none;
+}
 
-    .filter-group select:focus {
-        border-color: #93c5fd;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-    }
-
+/* Menu-items in de tabel */
 .menu-table-card {
-    background-color: var(--bs-body-bg);
+    overflow: hidden;
     border: 1px solid var(--bs-border-color);
     border-radius: 10px;
-    overflow: hidden;
+    background-color: var(--bs-body-bg);
 }
 
 .menu-table {
@@ -101,39 +103,33 @@
     border-collapse: collapse;
 }
 
-    .menu-table thead {
-        background-color: var(--bs-tertiary-bg);
-    }
+.menu-table thead {
+    background-color: var(--bs-tertiary-bg);
+}
 
-    .menu-table th {
-        padding: 16px 22px;
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--bs-body-color);
-        text-align: left;
-    }
+.menu-table th,
+.menu-table td {
+    padding: 16px 22px;
+    color: var(--bs-body-color);
+    font-size: 14px;
+    text-align: left;
+    vertical-align: middle;
+}
 
-    .menu-table td {
-        padding: 17px 22px;
-        border-top: 1px solid var(--bs-border-color);
-        color: var(--bs-body-color);
-        font-size: 14px;
-        vertical-align: middle;
-    }
+.menu-table td {
+    border-top: 1px solid var(--bs-border-color);
+}
 
-    .menu-table tbody tr:hover {
-        background-color: var(--bs-tertiary-bg);
-    }
+.menu-table tbody tr:hover {
+    background-color: var(--bs-tertiary-bg);
+}
 
 .inactive-row td {
+    background-color: var(--bs-tertiary-bg);
     color: var(--bs-secondary-color);
-    background-color: var(--bs-tertiary-bg);
 }
 
-.inactive-row:hover td {
-    background-color: var(--bs-tertiary-bg);
-}
-
+/* Actief / inactief label */
 .status-badge {
     display: inline-block;
     padding: 4px 9px;
@@ -152,6 +148,7 @@
     color: #f87171;
 }
 
+/* Knoppen voor wijzigen en activeren */
 .action-cell {
     display: flex;
     align-items: center;
@@ -159,47 +156,34 @@
 }
 
 .action-icon {
-    border: none;
-    background: transparent;
-    padding: 0;
-    width: 22px;
-    height: 22px;
-    cursor: pointer;
-    text-decoration: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
 }
 
-    .action-icon svg {
-        width: 18px;
-        height: 18px;
-        stroke-width: 2;
-    }
+.action-icon svg {
+    width: 18px;
+    height: 18px;
+}
 
 .action-edit {
     color: #60a5fa;
 }
 
-    .action-edit:hover {
-        color: #93c5fd;
-    }
-
 .action-active {
     color: #4ade80;
 }
 
-    .action-active:hover {
-        color: #86efac;
-    }
-
 .action-inactive {
     color: #f87171;
 }
-
-    .action-inactive:hover {
-        color: #fca5a5;
-    }
 
 .inline-action-form {
     display: inline;
@@ -207,31 +191,29 @@
     padding: 0;
 }
 
-.form-card {
-    background-color: var(--bs-tertiary-bg);
-    border: none;
-    border-radius: 10px;
-    margin-bottom: 28px;
-    padding: 28px 30px;
-}
-
-.inline-edit-row td {
-    background-color: var(--bs-tertiary-bg);
-    padding: 24px;
-}
-
+/* Formulier voor toevoegen en wijzigen */
+.form-card,
 .inline-edit-card {
-    background-color: var(--bs-tertiary-bg);
+    margin-bottom: 28px;
+    padding: 24px;
+    border: 1px solid var(--bs-border-color);
     border-radius: 10px;
+    background-color: var(--bs-tertiary-bg);
 }
 
-    .inline-edit-card h3,
-    .form-card h3 {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 18px;
-        color: var(--bs-body-color);
-    }
+.edit-row td,
+.inline-edit-row td {
+    padding: 24px;
+    background-color: var(--bs-tertiary-bg);
+}
+
+.form-card h3,
+.inline-edit-card h3 {
+    margin-bottom: 18px;
+    color: var(--bs-body-color);
+    font-size: 18px;
+    font-weight: 700;
+}
 
 .menu-item-form {
     display: grid;
@@ -239,90 +221,71 @@
     gap: 18px;
 }
 
-    .menu-item-form .form-group {
-        margin-bottom: 0 !important;
-    }
-
-    .menu-item-form input.form-control,
-    .menu-item-form select.form-select {
-        height: 48px;
-        border-radius: 8px;
-        border: 1px solid var(--bs-border-color);
-        background-color: var(--bs-body-bg);
-        padding: 10px 16px;
-        font-size: 15px;
-        color: var(--bs-body-color);
-        width: 100%;
-    }
-
-        .menu-item-form input.form-control::placeholder {
-            color: var(--bs-secondary-color);
-        }
-
-        .menu-item-form input.form-control:focus,
-        .menu-item-form select.form-select:focus {
-            border-color: #93c5fd;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-        }
-
-    .menu-item-form .form-actions {
-        grid-column: 1 / 3;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-top: 12px;
-    }
-
-        .menu-item-form .form-actions button[type="submit"] {
-            min-width: 110px;
-            height: 46px;
-            border-radius: 8px;
-            font-weight: 700;
-            background-color: #2563eb;
-            border-color: #2563eb;
-            color: white;
-        }
-
-            .menu-item-form .form-actions button[type="submit"]:hover {
-                background-color: #1d4ed8;
-                border-color: #1d4ed8;
-                color: white;
-            }
-
-        .menu-item-form .form-actions a.btn-secondary {
-            min-width: 110px;
-            height: 46px;
-            border-radius: 8px;
-            font-weight: 700;
-            background-color: var(--bs-secondary-bg);
-            border-color: var(--bs-border-color);
-            color: var(--bs-body-color);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-        }
-
-            .menu-item-form .form-actions a.btn-secondary:hover {
-                background-color: var(--bs-tertiary-bg);
-                border-color: var(--bs-border-color);
-                color: var(--bs-body-color);
-            }
-
-.menu-item-preview-image {
-    max-width: 150px;
-    max-height: 150px;
-    border-radius: 6px;
+.menu-item-form .form-group {
+    margin-bottom: 0;
 }
 
-@media (max-width: 768px) {
+.menu-item-form input.form-control,
+.menu-item-form select.form-select {
+    width: 100%;
+    height: 48px;
+    padding: 10px 16px;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-size: 15px;
+}
+
+.alcoholic-choice-group {
+    display: flex;
+    align-items: center;
+}
+
+.alcoholic-choice-group[hidden] {
+    display: none;
+}
+
+.menu-item-preview-image {
+    display: block;
+    max-width: 120px;
+    max-height: 90px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.menu-item-form .form-actions {
+    grid-column: 1 / 3;
+    display: flex;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.menu-item-form .form-actions button,
+.menu-item-form .form-actions a {
+    min-width: 110px;
+    height: 46px;
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+@media (max-width: 800px) {
+    .page-title-row,
+    .action-cell,
+    .menu-item-form .form-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
     .menu-item-form {
         grid-template-columns: 1fr;
     }
 
-        .menu-item-form .form-actions {
-            grid-column: 1 / 2;
-            flex-wrap: wrap;
-        }
+    .menu-item-form .form-actions {
+        grid-column: 1;
+    }
+
+    .menu-table-card {
+        overflow-x: auto;
+    }
 }

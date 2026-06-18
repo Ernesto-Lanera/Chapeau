@@ -19,7 +19,6 @@
     <h3>@heading</h3>
     <form asp-action="@action" method="post" enctype="multipart/form-data"
           class="menu-item-form preserve-scroll-form">
-        @Html.AntiForgeryToken()
         <!-- Gebruik aparte namen: categoryId zou botsen met CategoryID bij model binding. -->
         <input type="hidden" name="returnCardId" value="@Model.SelectedCardId" />
         <input type="hidden" name="returnCategoryId" value="@Model.SelectedCategoryId" />
@@ -83,8 +82,8 @@
                 }
             </select>
         </div>
-        @* Bij toevoegen moet de groep bestaan om te kunnen verschijnen na de categoriekeuze.
-           Bij bewerken is hij alleen nodig bij items die op de drankenkaart staan. *@
+        @* Bij toevoegen staat dit veld alvast in de pagina.
+           JavaScript toont het alleen als de gekozen categorie alcohol kan zijn. *@
         @if (!isEdit || menuCardId == Chapeau.Constants.MenuCardConstants.DrinksCardId)
         {
             <div id="@alcoholicGroupId"

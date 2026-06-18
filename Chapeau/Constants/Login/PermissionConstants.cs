@@ -10,6 +10,7 @@ namespace Chapeau.Constants.Login
         public const string ManageStock = "ManageStock";
         public const string ViewFinance = "ViewFinance";
         public const string LegacyViewReports = "ViewReports";
+        public const string LegacyViewMenu = "ViewMenu";
         public const string ManageRoles = "ManageRoles";
     }
 }

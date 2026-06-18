@@ -1,24 +1,27 @@
-"use strict";
+// Kleine schermhulp voor het financiële overzicht.
+// De berekeningen komen uit de service en repository.
+// Hier openen we alleen het datumformulier en tekenen we de grafiek.
 
 document.addEventListener("DOMContentLoaded", function () {
-    initializeCustomPeriodSelection();
-    initializeRevenueTrendChart();
+    setupCustomPeriodForm();
+    setupRevenueChart();
 });
 
-function initializeCustomPeriodSelection() {
-    const customButton = document.getElementById("selectCustomPeriod");
-    const customForm = document.getElementById("customPeriodForm");
-    const startDate = document.getElementById("startDate");
-    const periodButtons = document.querySelectorAll(".finance-period-button");
+function setupCustomPeriodForm() {
+    var customButton = document.getElementById("selectCustomPeriod");
+    var customForm = document.getElementById("customPeriodForm");
+    var startDate = document.getElementById("startDate");
 
-    if (!customButton || !customForm || !startDate) {
+    if (customButton == null || customForm == null || startDate == null) {
         return;
     }
 
     customButton.addEventListener("click", function () {
-        periodButtons.forEach(function (button) {
-            button.classList.remove("is-selected");
-        });
+        var periodButtons = document.querySelectorAll(".finance-period-button");
+
+        for (var i = 0; i < periodButtons.length; i++) {
+            periodButtons[i].classList.remove("is-selected");
+        }
 
         customButton.classList.add("is-selected");
         customButton.setAttribute("aria-expanded", "true");
@@ -27,102 +30,80 @@ function initializeCustomPeriodSelection() {
     });
 }
 
-function initializeRevenueTrendChart() {
-    const chartCanvas = document.getElementById("revenueTrendChart");
-    const trendDataElement = document.getElementById("revenueTrendData");
+function setupRevenueChart() {
+    var chartCanvas = document.getElementById("revenueTrendChart");
+    var dataElement = document.getElementById("revenueTrendData");
 
-    if (!chartCanvas || !trendDataElement || typeof Chart === "undefined") {
+    if (chartCanvas == null || dataElement == null || typeof Chart === "undefined") {
         return;
     }
 
-    let trendData;
+    // De view zet de omzetdata in een scriptblok. Hier lezen we die data uit.
+    var chartData = readChartData(dataElement);
 
-    try {
-        trendData = JSON.parse(trendDataElement.textContent);
-    } catch (error) {
-        console.error("De omzettrendgegevens konden niet worden geladen.", error);
+    if (chartData == null) {
         return;
     }
 
     new Chart(chartCanvas, {
         type: "bar",
         data: {
-            labels: trendData.labels || [],
+            labels: chartData.labels,
             datasets: [
-                {
-                    label: "Dranken",
-                    data: trendData.drinks || [],
-                    backgroundColor: "#3b82f6",
-                    borderColor: "#3b82f6",
-                    borderWidth: 0,
-                    borderRadius: 0
-                },
-                {
-                    label: "Lunch",
-                    data: trendData.lunch || [],
-                    backgroundColor: "#13b981",
-                    borderColor: "#13b981",
-                    borderWidth: 0,
-                    borderRadius: 0
-                },
-                {
-                    label: "Diner",
-                    data: trendData.dinner || [],
-                    backgroundColor: "#a64cec",
-                    borderColor: "#a64cec",
-                    borderWidth: 0,
-                    borderRadius: 0
-                }
+                createDataset("Dranken", chartData.drinks, "#3b82f6"),
+                createDataset("Lunch", chartData.lunch, "#16a34a"),
+                createDataset("Diner", chartData.dinner, "#9333ea")
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: {
-                legend: {
-                    position: "bottom",
-                    labels: {
-                        boxWidth: 14,
-                        boxHeight: 14,
-                        padding: 10,
-                        font: { size: 13 }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            return context.dataset.label + ": € " + Number(context.raw).toFixed(2);
-                        }
+        options: createChartOptions()
+    });
+}
+
+function readChartData(dataElement) {
+    try {
+        return JSON.parse(dataElement.textContent);
+    } catch (error) {
+        console.error("De omzetgegevens voor de grafiek konden niet worden gelezen.", error);
+        return null;
+    }
+}
+
+function createDataset(label, values, color) {
+    return {
+        label: label,
+        data: values || [],
+        backgroundColor: color,
+        borderColor: color,
+        borderWidth: 0
+    };
+}
+
+function createChartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+            legend: {
+                position: "bottom"
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        return context.dataset.label + ": € " + Number(context.raw).toFixed(2);
                     }
                 }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        color: "#d1d5db",
-                        borderDash: [4, 4]
-                    },
-                    ticks: {
-                        color: "#6b7280",
-                        font: { size: 13 }
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: "#d1d5db",
-                        borderDash: [4, 4]
-                    },
-                    ticks: {
-                        color: "#6b7280",
-                        font: { size: 13 },
-                        callback: function (value) {
-                            return Number(value).toLocaleString("nl-NL");
-                        }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function (value) {
+                        return Number(value).toLocaleString("nl-NL");
                     }
                 }
             }
         }
-    });
+    };
 }

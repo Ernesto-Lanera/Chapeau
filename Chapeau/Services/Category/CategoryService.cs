@@ -1,45 +1,61 @@
-using Chapeau.Constants;
 using Chapeau.Models;
 using Chapeau.Repositories;
-using Microsoft.Extensions.Logging;
 
 namespace Chapeau.Services
 {
-    public class CategoryService(ICategoryRepository categoryRepository, ILogger<CategoryService> logger) : ICategoryService
+    public class CategoryService : ICategoryService
     {
-        private readonly ICategoryRepository _categoryRepository = categoryRepository;
-        private readonly ILogger<CategoryService> _logger = logger;
+        private readonly ICategoryRepository _categoryRepository;
+
+        public CategoryService(ICategoryRepository categoryRepository)
+        {
+            _categoryRepository = categoryRepository;
+        }
 
         public List<Category> GetCategories()
         {
             return _categoryRepository.GetCategories();
         }
 
-        public void AddCategory(Category category)
+        public List<Category> GetCategoriesByCard(int? menuCardId)
         {
-            _categoryRepository.AddCategory(category);
-            _logger.LogInformation("Category added: {CategoryName}", category.Name);
+            if (!menuCardId.HasValue)
+            {
+                return GetCategories();
+            }
+
+            return _categoryRepository.GetCategoriesByCard(menuCardId.Value);
         }
 
-        public void UpdateCategory(Category category)
+        public Category? GetCategoryById(int categoryId)
         {
-            _categoryRepository.UpdateCategory(category);
-            _logger.LogInformation("Category updated: {CategoryId}", category.CategoryID);
+            return _categoryRepository.GetCategoryById(categoryId);
         }
 
-        public int GetCategoryCount()
+        public int? GetValidCategoryId(int? menuCardId, int? categoryId)
         {
-            var categories = _categoryRepository.GetCategories();
-            return categories.Count;
+            if (!categoryId.HasValue)
+            {
+                return null;
+            }
+
+            Category? category = GetCategoryById(categoryId.Value);
+            if (category == null)
+            {
+                return null;
+            }
+
+            if (menuCardId.HasValue && category.MenuCardID != menuCardId.Value)
+            {
+                return null;
+            }
+
+            return category.CategoryID;
         }
 
-        public List<Category> SearchCategoriesByName(string searchTerm)
+        public List<MenuCard> GetMenuCards()
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return _categoryRepository.GetCategories();
-
-            var categories = _categoryRepository.GetCategories();
-            return categories.Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+            return _categoryRepository.GetMenuCards();
         }
     }
 }

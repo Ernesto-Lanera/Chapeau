@@ -132,6 +132,7 @@ namespace Chapeau.Controllers
             return new PaymentOrderViewModel
             {
                 OrderID = orderId,
+                OrderIDs = new List<int> { orderId },
                 TableNumber = tableNumber,
                 Items = groupedItems.AsReadOnly(),
                 LowVAT = Math.Round(order.LowVATTotal, 2),

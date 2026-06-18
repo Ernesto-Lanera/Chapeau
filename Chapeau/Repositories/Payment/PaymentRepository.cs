@@ -22,7 +22,7 @@ namespace Chapeau.Repositories.Payment
 
             try
             {
-                
+
                 int tableId;
                 string orderInfoQuery = "SELECT TableID, OrderStatus FROM Orders WHERE OrderID = @OrderID"; //zoekt de order, tableid gaat ook via order.
                 using (SqlCommand command = new SqlCommand(orderInfoQuery, connection, transaction))
