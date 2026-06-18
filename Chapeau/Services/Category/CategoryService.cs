@@ -34,7 +34,6 @@ namespace Chapeau.Services
 
         public int? GetValidCategoryId(int? menuCardId, int? categoryId)
         {
-            // Geen categorie gekozen betekent: alle categorieën van de kaart tonen.
             if (!categoryId.HasValue)
             {
                 return null;
@@ -48,7 +47,6 @@ namespace Chapeau.Services
 
             if (menuCardId.HasValue && category.MenuCardID != menuCardId.Value)
             {
-                // De categorie hoort niet bij de gekozen kaart, daarom gebruiken we deze filter niet.
                 return null;
             }
 

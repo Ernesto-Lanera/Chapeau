@@ -29,7 +29,6 @@ namespace Chapeau.Services
         public MenuManagementViewModel GetManagementOverview(
             int? cardId, int? categoryId, int? editId, bool showCreate)
         {
-            // Eerst maken we de filter veilig: categorie en kaart moeten bij elkaar horen.
             int? selectedCategoryId = _categoryService.GetValidCategoryId(cardId, categoryId);
             MenuItem? editItem = editId.HasValue ? _menuRepository.GetMenuItemById(editId.Value) : null;
 
@@ -102,14 +101,11 @@ namespace Chapeau.Services
                 return _categoryService.GetCategoriesByCard(editItem.Category.MenuCardID);
             }
 
-            // Bij een nieuw item staan alle categorieën in de HTML.
-            // JavaScript laat daarna alleen zien wat bij de gekozen kaart hoort.
             return allCategories;
         }
 
         private Category ValidateForCreate(MenuItemInputModel input)
         {
-            // Bij toevoegen controleren we eerst de invoer, daarna slaan we het item pas op.
             ValidateInput(input);
             if (!MenuCardConstants.IsValidMenuCardId(input.MenuCardID))
             {
@@ -180,7 +176,6 @@ namespace Chapeau.Services
 
         private static MenuItem CreateItem(MenuItemInputModel input, Category category)
         {
-            // Van de formuliergegevens maken we één MenuItem object voor de repository.
             return new MenuItem
             {
                 Name = input.Name,

@@ -23,7 +23,6 @@ namespace Chapeau.Services
 
         public StockOverviewViewModel GetOverview(int? cardId, int? categoryId)
         {
-            // Voorraad gebruikt dezelfde categoriefilter als menu beheer.
             int? selectedCategoryId = _categoryService.GetValidCategoryId(cardId, categoryId);
 
             return new StockOverviewViewModel
@@ -49,7 +48,6 @@ namespace Chapeau.Services
                 throw new InvalidOperationException(ErrorMessages.InactiveMenuItemStockChangeNotAllowed);
             }
 
-            // Het MenuItem controleert of de voorraad geldig is. Daarna slaan we hem op.
             item.ChangeStock(newStock);
             _menuRepository.ChangeStock(item.MenuItemID, item.Stock);
             _logger.LogInformation("Voorraad gewijzigd: {MenuItemId} naar {Stock}.", item.MenuItemID, item.Stock);

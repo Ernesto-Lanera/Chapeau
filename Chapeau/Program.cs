@@ -43,7 +43,6 @@ namespace Chapeau
 
             builder.Services.AddScoped<IClaimsTransformation, Services.Login.PermissionClaimsTransformation>();
 
-            // Session wordt gebruikt voor TempData en kleine gebruikersinformatie.
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -51,7 +50,6 @@ namespace Chapeau
                 options.Cookie.IsEssential = true;
             });
 
-            // Response compression houdt de pagina's iets kleiner tijdens het laden.
             builder.Services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true;
@@ -105,21 +103,18 @@ namespace Chapeau
                 options.AddPolicy("IsKitchenStaff", policy => policy.RequireRole("Kitchen"));
             });
 
-            // Bestaande order en payment code.
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
             builder.Services.AddScoped<IPaymentService, PaymentService>();
             builder.Services.AddScoped<ITableRepository, TableRepository>();
 
-            // Scenario 5 repositories.
             builder.Services.AddScoped<IMenuRepository, MenuRepository>();
             builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IFinancialRepository, FinancialRepository>();
 
-            // Scenario 5 services.
             builder.Services.AddScoped<IMenuService, MenuService>();
             builder.Services.AddScoped<IStockService, StockService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -128,13 +123,11 @@ namespace Chapeau
             builder.Services.AddScoped<IRolePermissionsService, RolePermissionsService>();
             builder.Services.AddScoped<Services.Overview.IEmployeeService, Services.Overview.EmployeeService>();
 
-            // Deze concrete services zijn er nog voor oudere controllers in het project.
             builder.Services.AddScoped<MenuService>();
             builder.Services.AddScoped<CategoryService>();
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<OrderService>();
 
-            // Login services.
             builder.Services.AddScoped<Services.Login.IAuthService, Services.Login.AuthService>();
             builder.Services.AddScoped<Services.Login.IClaimsService, Services.Login.ClaimsService>();
             builder.Services.AddScoped<Services.Login.IDashboardRouterService, Services.Login.DashboardRouterService>();
