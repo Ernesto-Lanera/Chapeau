@@ -1,4 +1,4 @@
-namespace Chapeau.Emums
+namespace Chapeau.Enums
 {
     public enum FinancialPeriod
     {
